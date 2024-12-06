@@ -24,7 +24,11 @@ def _configure() -> dict[str, str]:
     accumulated_logs = "Starting cloning of defaults ...\n"
     old_cwd = _os.getcwd()
     install_dir = _os.path.join(old_cwd, "default-config")
-    base_app_dir = _os.path.join(_os.environ.get("LOCALAPPDATA", "."), "dudpy")
+    base_app_dir = _os.path.join(old_cwd, "localconfig")  # _os.path.join(_os.environ.get("LOCALAPPDATA", "."), "dudpy")
+
+    if INDEV and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
+        _shutil.rmtree(base_app_dir)
+        _os.mkdir(base_app_dir)
 
     dirs_to_create = []
     dir_structure = (

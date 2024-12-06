@@ -25,8 +25,6 @@ from aplustools.package.timid import TimidTimer
 from aplustools.io import ActLogger
 from aplustools.io.qtquick import QQuickMessageBox, QNoSpacingBoxLayout, QBoxDirection
 
-print(os.getcwd())
-
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 
@@ -149,7 +147,7 @@ class DudPyApp:  # Like actdirect, the main logic and gui are separated
     qgui: DBMainWindowInterface | None = None
 
     def __init__(self) -> None:
-        # Setting up the base directory in AppData\Local
+        # Setting up the base directory in AppData\Local? For now it's in ./localconfig
         self.base_app_dir: str = config.base_app_dir
         self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui

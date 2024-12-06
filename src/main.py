@@ -12,9 +12,10 @@ import re
 
 # Third party imports
 from PySide6.QtWidgets import (QApplication, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget, QMainWindow,
-                               QCheckBox, QMessageBox, QVBoxLayout)
-from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QUrl
-from PySide6.QtGui import QPainter, QWheelEvent, QIcon, QDesktopServices
+                               QCheckBox, QMessageBox, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
+                               QStyleOptionGraphicsItem)
+from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QUrl, QTimer
+from PySide6.QtGui import QPainter, QWheelEvent, QIcon, QDesktopServices, QMouseEvent, QCursor
 from packaging.version import Version, InvalidVersion
 import stdlib_list
 import requests
@@ -37,14 +38,37 @@ hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
 
 
+class MyItem(QGraphicsWidget):
+    def __init__(self, node_item):
+        super().__init__(parent=None)
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.ItemIsMovable, False)
+        self.setFlag(QGraphicsWidget.ItemIsMovable, True)
+        self.setFlag(QGraphicsWidget.ItemIsSelectable, True)
+
+        self.offset : QPointF = None
+
+    def boundingRect(self) -> QRectF:
+        return QRect(0,0,30,30)
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
+        r = QRect(0, 0, 30, 30)
+        painter.drawRect(r)
+
+
+    def mouseMoveEvent(self, event):
+        self.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
+        self.moveBy(event.pos().x() - self.offset.x(), event.pos().y() - self.offset.y())
+
+
 class GridView(QGraphicsView):
     """TBA"""
     def __init__(self, parent: QWidget | None = None, grid_size: int = 100, start_x: int = 50, start_y: int = 50,
-                 fixed_objects: list[tuple[int, int]] | None = None) -> None:
+                 fixed_objects: list[tuple[float, float, QGraphicsItem]] | None = None) -> None:
         super().__init__(parent=parent)
         self.setScene(QGraphicsScene(self))
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
 
         self._grid_size: int = grid_size
         self._offset: QPointF = QPointF(start_x * grid_size, start_y * grid_size)
@@ -58,11 +82,10 @@ class GridView(QGraphicsView):
         center_rect.setPen(Qt.PenStyle.NoPen)
         self._objects.append(center_rect)
 
-        for (x, y) in fixed_objects:
-            rect = QGraphicsRectItem(x * self._grid_size, y * self._grid_size, self._grid_size, self._grid_size)
-            rect.setBrush(Qt.GlobalColor.blue)
-            rect.setPen(Qt.PenStyle.NoPen)
-            self._objects.append(rect)
+        if fixed_objects is not None:
+            for (x, y, item) in fixed_objects:
+                item.setPos(x * self._grid_size, y * self._grid_size)
+                self._objects.append(item)
         for obj in self._objects:  # Can be combined
             self.scene().addItem(obj)
 
@@ -70,6 +93,10 @@ class GridView(QGraphicsView):
         self.zoom_step: float = 0.1
         self.min_zoom: float = 0.2
         self.max_zoom: float = 5.0
+
+        # Panning attributes
+        self._is_panning: bool = False
+        self._pan_start: QPointF = QPointF(0, 0)
 
     def drawBackground(self, painter: QPainter, rect: QRect | QRectF) -> None:  # Overwrite
         """Draw an infinite grid."""
@@ -98,6 +125,38 @@ class GridView(QGraphicsView):
         if self.min_zoom <= new_zoom <= self.max_zoom:
             self.scale(zoom_factor, zoom_factor)
             self.zoom_level = new_zoom
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Start panning on right or middle mouse button click."""
+        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+            self._is_panning = True
+            self._pan_start = event.position()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._is_panning:
+            delta = event.position() - self._pan_start
+
+            # Only process significant deltas
+            if abs(delta.x()) > 2 or abs(delta.y()) > 2:
+                self.horizontalScrollBar().setValue(
+                    self.horizontalScrollBar().value() - int(delta.x())
+                )
+                self.verticalScrollBar().setValue(
+                    self.verticalScrollBar().value() - int(delta.y())
+                )
+                self._pan_start = event.position()
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Stop panning on mouse button release."""
+        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+            self._is_panning = False
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().mouseReleaseEvent(event)
 
 
 class DBMainWindowInterface(QMainWindow):
@@ -132,7 +191,18 @@ class DBMainWindow(DBMainWindowInterface):
         self.setCentralWidget(central_widget)
         self.window_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom, parent=central_widget)
 
-        fixed_positions = [(10, 10), (100, 100), (20, 50), (50, 20)]  # Define positions of fixed objects
+        # Define positions of fixed objects with their respective QGraphicsItems
+        fixed_positions = [
+            (10, 10, QGraphicsRectItem(0, 0, 100, 100)),  # A rectangle at (10, 10)
+            (100, 100, QGraphicsEllipseItem(0, 0, 150, 150)),  # A circle at (100, 100)
+            (20, 50, QGraphicsRectItem(0, 0, 75, 75)),  # A smaller rectangle at (20, 50)
+            (50, 20, QGraphicsEllipseItem(0, 0, 50, 100)),  # An ellipse at (50, 20)
+        ]
+
+        # Customize appearance of the objects if necessary
+        for _, _, item in fixed_positions:
+            item.setBrush(Qt.GlobalColor.blue)  # Set the fill color to blue
+            item.setPen(Qt.PenStyle.NoPen)  # Remove the border
         self.grid_view = GridView(grid_size=100, start_x=50, start_y=50, fixed_objects=fixed_positions)
         self.window_layout.addWidget(self.grid_view)
 

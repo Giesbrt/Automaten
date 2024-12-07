@@ -471,7 +471,7 @@ class DudPyApp:  # The main logic and gui are separated
 
     def timer_tick(self):
         # print("Tick")
-        self.update_titlebox()
+        # self.update_titlebox()
         return
         if not self.threading:
             self.update_content()

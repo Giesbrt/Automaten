@@ -73,7 +73,7 @@ class GridView(QGraphicsView):
         self._grid_size: int = grid_size
         self._offset: QPointF = QPointF(start_x * grid_size, start_y * grid_size)
 
-        self.scene().setSceneRect(-10000, -10000, 20000, 20000)
+        self.scene().setSceneRect(-1000, -1000, 2000, 2000)
         self._objects: list[QGraphicsRectItem] = []
 
         # Center object (input)
@@ -210,7 +210,7 @@ class DBMainWindow(DBMainWindowInterface):
         return
 
 
-class DudPyApp:  # Like actdirect, the main logic and gui are separated
+class DudPyApp:  # The main logic and gui are separated
     """TBA"""
     version, version_add = 100, "a0"
     qapp: QApplication | None = None

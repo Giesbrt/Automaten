@@ -10,3 +10,4 @@ pillow~=11.0.0
 stdlib_list
 cachetools
 pywin32>=306
+returns>=0.24.0

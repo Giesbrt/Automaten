@@ -1,0 +1,121 @@
+{
+ "version": "auto-py-to-exe-configuration_v1",
+ "pyinstallerOptions": [
+  {
+   "optionDest": "noconfirm",
+   "value": true
+  },
+  {
+   "optionDest": "filenames",
+   "value": "./src/main.py"
+  },
+  {
+   "optionDest": "onefile",
+   "value": false
+  },
+  {
+   "optionDest": "console",
+   "value": true
+  },
+  {
+   "optionDest": "icon_file",
+   "value": ".\\src\\default-config\\data\\assets\\logo-nobg.ico"
+  },
+  {
+   "optionDest": "clean_build",
+   "value": false
+  },
+  {
+   "optionDest": "strip",
+   "value": false
+  },
+  {
+   "optionDest": "noupx",
+   "value": false
+  },
+  {
+   "optionDest": "disable_windowed_traceback",
+   "value": false
+  },
+  {
+   "optionDest": "uac_admin",
+   "value": false
+  },
+  {
+   "optionDest": "uac_uiaccess",
+   "value": false
+  },
+  {
+   "optionDest": "argv_emulation",
+   "value": false
+  },
+  {
+   "optionDest": "bootloader_ignore_signals",
+   "value": false
+  },
+  {
+   "optionDest": "datas",
+   "value": "./src/default-config;default-config/"
+  },
+  {
+   "optionDest": "hiddenimports",
+   "value": "pywin32"
+  },
+  {
+   "optionDest": "hiddenimports",
+   "value": "cachetools"
+  },
+  {
+   "optionDest": "hiddenimports",
+   "value": "PySide6"
+  },
+  {
+   "optionDest": "collect_all",
+   "value": "PySide6"
+  },
+  {
+   "optionDest": "recursive_copy_metadata",
+   "value": "PySide6"
+  },
+  {
+   "optionDest": "collect_all",
+   "value": "cachetools"
+  },
+  {
+   "optionDest": "recursive_copy_metadata",
+   "value": "cachetools"
+  },
+  {
+   "optionDest": "collect_all",
+   "value": "pywin32"
+  },
+  {
+   "optionDest": "recursive_copy_metadata",
+   "value": "pywin32"
+  },
+  {
+   "optionDest": "datas",
+   "value": "./.env/Lib/site-packages/stdlib_list;stdlib_list/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "./.env/Lib/site-packages/win32;win32/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "./.env/Lib/site-packages/win32com;win32com/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "./.env/Lib/site-packages/win32comext;win32comext/"
+  },
+  {
+   "optionDest": "datas",
+   "value": "./.env/Lib/site-packages/win32ctypes;win32ctypes/"
+  }
+ ],
+ "nonPyinstallerOptions": {
+  "increaseRecursionLimit": true,
+  "manualArguments": ""
+ }
+}

@@ -212,7 +212,7 @@ class DBMainWindow(DBMainWindowInterface):
 
 class DudPyApp:  # The main logic and gui are separated
     """TBA"""
-    version, version_add = 100, "a0"
+    version, version_add = 10, "a0"
     qapp: QApplication | None = None
     qgui: DBMainWindowInterface | None = None
 
@@ -371,7 +371,7 @@ class DudPyApp:  # The main logic and gui are separated
         retval_func = lambda button: None
 
         try:
-            response = requests.get("https://raw.githubusercontent.com/adalfarus/update_check/main/mv/update.json",
+            response = requests.get("https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
                                     timeout=self.app_settings.retrieve("update_check_request_timeout", float))
             print("Response time: ", timer.tock())
             update_json = response.json()
@@ -450,13 +450,9 @@ class DudPyApp:  # The main logic and gui are separated
 
     def timer_tick(self):
         # print("Tick")
-        return
-        if not self.threading:
-            self.update_content()
-        if random.randint(0, 20) == 0:
-            os_theme = (self.system.get_windows_theme() or os.environ.get("MV_THEME")).lower()
-            if os_theme != self.os_theme:
-                self.update_theme(os_theme)
+        # if not self.threading:
+        #     self.update_content()
+        ...
 
     def exit(self) -> None:
         if hasattr(self, "timer"):
@@ -480,7 +476,7 @@ if __name__ == "__main__":
         if current_exit_code == RESTART_CODE:
             os.execv(sys.executable, [sys.executable] + sys.argv)
         else:
-            exit(current_exit_code)
+            sys.exit(current_exit_code)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -505,4 +501,4 @@ if __name__ == "__main__":
             qgui.close()
         if "qapp" in locals():
             qapp.instance().quit()
-        exit(current_exit_code)
+        sys.exit(current_exit_code)

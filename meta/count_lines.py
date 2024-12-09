@@ -42,5 +42,5 @@ def count_code_lines(file_path):
 
 if __name__ == "__main__":
     # Replace this with the path to your Python file
-    file_path = "./lines-to-count.txt"
+    file_path = "lines-to-count.txt"
     count_code_lines(file_path)

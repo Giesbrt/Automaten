@@ -228,11 +228,6 @@ class CustomProgressDialog(QProgressDialog):
         event.accept()
 
 
-class ImageLabel(QLabel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
 class SearchResultItem(QWidget):
     def __init__(self, title, description, icon_path):
         super().__init__()
@@ -253,60 +248,3 @@ class SearchResultItem(QWidget):
         self.text_layout.addWidget(self.description_label)
 
         self.layout.addLayout(self.text_layout)
-
-
-class QNoSpacingVBoxLayout(QVBoxLayout):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(0)
-
-
-class QNoSpacingHBoxLayout(QHBoxLayout):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.setSpacing(0)
-
-
-class AutoProviderManager:
-    def __init__(self, path, prov_plug, prov_sub_plugs: list):
-        self.path = path
-        self.prov_plug = prov_plug
-        self.prov_sub_plugs = prov_sub_plugs
-        self.providers = self._load_providers()
-
-    def _load_providers(self):
-        providers = {}
-        for file in os.listdir(self.path):
-            if file.endswith('.py') or file.endswith('.pyd') and file != '__init__.py':
-                module_name = file.split(".")[0]
-                module_path = os.path.join(self.path, file)
-                spec = importlib.util.spec_from_file_location(module_name, module_path)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                for attribute_name in dir(module):
-                    attribute = getattr(module, attribute_name)
-                    if (isinstance(attribute, type) and issubclass(attribute, self.prov_plug) and attribute not in
-                            self.prov_sub_plugs):
-                        providers[attribute_name] = attribute
-        return providers
-
-    def get_providers(self):
-        return self.providers
-
-
-if __name__ == '__main__':
-    import sys
-    app = QApplication(sys.argv)
-    window = QAdvancedSmoothScrollingArea()
-    window.setWindowTitle('Custom Scroll Area')
-    window.setGeometry(100, 100, 300, 200)
-
-    # Add some example content
-    for i in range(20):
-        label = QLabel(f"Item {i}" * 30)
-        window.content_layout.addWidget(label)
-
-    window.show()
-    sys.exit(app.exec_())

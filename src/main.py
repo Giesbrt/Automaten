@@ -282,8 +282,6 @@ class DudPyApp:  # The main logic and gui are separated
         if self.abs_window_icon_path.startswith("#"):
             self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
         self.qgui.setWindowIcon(QIcon(self.abs_window_icon_path))
-        self.reload_titlebox()
-        self.update_titlebox()
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
         # TODO: self.update_theme()
@@ -450,28 +448,8 @@ class DudPyApp:  # The main logic and gui are separated
             if checkbox is not None and checkbox.isChecked():
                 self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
 
-    def reload_titlebox(self) -> None:
-        self.title = "x exists in either local or global scopex exists in either local or global scopex exists in either local or global scope"
-        self.titlebox: str = self.app_settings.retrieve("window_title_template")  # Space is necessary
-        self.titlebox = self.titlebox.format(version=self.version, version_add=self.version_add, title=self.title)
-        self.period = 0
-        self.titlebox_sleep_count = 0
-
-    def update_titlebox(self) -> None:
-        if self.titlebox_sleep_count:
-            self.titlebox_sleep_count -= 1
-            return
-        if self.period == 0:
-            self.titlebox_sleep_count = self.app_settings.retrieve("titlebox_rotation_reset_delay_seconds", int) * 2
-        curr_titlebox = self.titlebox[self.period:] + self.titlebox[:self.period]
-        self.period = (self.period + self.app_settings.retrieve("titlebox_rotation_rate", int)) % len(self.titlebox)
-        if self.titlebox[self.period] == " " and self.period != 0:
-            self.period = (self.period + 1) % len(self.titlebox)
-        self.qgui.setWindowTitle(curr_titlebox)
-
     def timer_tick(self):
         # print("Tick")
-        # self.update_titlebox()
         return
         if not self.threading:
             self.update_content()

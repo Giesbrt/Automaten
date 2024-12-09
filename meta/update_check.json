@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "newestVersion": "100",
+    "authors": "adalfarus; Giesbrt; TheCodeJak",
+    "lastUpdated": "2024-12-09",
+    "sorryUrl": "https://github.com/adalfarus/update_check/blob/main/sorry.md"
+  },
+  "versions": [
+    {
+      "versionNumber": "10",
+      "description": "[Alpha Release: Not Fully Stable]\nWhat we have right now :).",
+      "updateUrl": "None",
+      "push": "False"
+    },
+    {
+      "versionNumber": "100",
+      "description": "[Stable Release]\nInitial release with basic functionality, no known bugs.",
+      "updateUrl": "None",
+      "push": "True"
+    }
+  ]
+}

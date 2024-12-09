@@ -1,7 +1,0 @@
-{
-    "update_check_request_timeout": "2.0",
-    "titlebox_rotation_reset_delay_seconds": "5",
-    "titlebox_rotation_rate": "1",
-    "window_icon_abs_path": "#/data/assets/logo-nobg.png",
-    "window_title_template": "DudPy {version}{version_add} {title} "
-}

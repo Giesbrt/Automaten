@@ -22,8 +22,8 @@ class Automaton:
 
     Note:
         This class is abstract and intended to be subclassed for specific types of automata. The
-        `simulate` method must be implemented in subclasses to define the specific behavior of the
-        automaton's simulation.
+        `simulate`, `save`, and `load` methods must be implemented in subclasses to define the specific
+        behavior of the automaton's simulation and persistence.
 
     Attributes:
         states (_ty.Set[State]):
@@ -66,6 +66,12 @@ class Automaton:
         simulate() -> _result.Result:
             Abstract method that must be implemented in subclasses to simulate the automaton's behavior
             based on its transitions and input. The simulation logic differs based on the type of automaton.
+
+        save(file_path: str) -> bool:
+            Abstract method to save the automaton's configuration to a file. Must be implemented in subclasses.
+
+        load(file_path: str) -> bool:
+            Abstract method to load an automaton's configuration from a file. Must be implemented in subclasses.
     """
 
     def __init__(self) -> None:  # TODO input alphabet?
@@ -186,7 +192,40 @@ class Automaton:
         raise NotImplementedError("simulate must be implemented in a subclass.")
 
     def save(self, file_path: str) -> bool:
+        """
+        Abstract method to save the automaton's configuration to a file.
+
+        This method should be implemented in subclasses to serialize the automaton's states, transitions,
+        and other relevant attributes into a file format (e.g., JSON, XML, or a custom format).
+
+        Args:
+            file_path (str): The path of the file where the automaton's configuration will be saved.
+
+        Returns:
+            bool: True if the save operation is successful, False otherwise.
+
+        Raises:
+            NotImplementedError:
+                If this method is not implemented in a subclass.
+        """
         raise NotImplementedError("save must be implemented in a subclass.")
 
     def load(self, file_path: str) -> bool:
+        """
+        Abstract method to load an automaton's configuration from a file.
+
+        This method should be implemented in subclasses to deserialize the automaton's configuration
+        from a file format (e.g., JSON, XML, or a custom format).
+
+        Args:
+            file_path (str): The path of the file from which the automaton's configuration will be loaded.
+
+        Returns:
+            bool: True if the load operation is successful, False otherwise.
+
+        Raises:
+            NotImplementedError:
+                If this method is not implemented in a subclass.
+        """
         raise NotImplementedError("load must be implemented in a subclass.")
+

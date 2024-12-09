@@ -2,6 +2,7 @@ from transitionFunction import TransitionFunction
 from state import State
 from utils import Result
 
+
 class Automaton:
     def __init__(self) -> None:
         self.states: set[State] = set()
@@ -20,7 +21,8 @@ class Automaton:
 
     def nextChar(self) -> None:
         self.wordIndex += 1
-        self.currentChar: str = self.word[max(0, min(self.wordIndex, len(self.word) -1))] # Clamp the index between 0 and word length -1
+        self.currentChar: str = self.word[
+            max(0, min(self.wordIndex, len(self.word) - 1))]  # Clamp the index between 0 and word length -1
 
     def nextState(self) -> Result:
         possibleState: Result = self.currentState.transitionToPossibleStates(self.currentChar)
@@ -31,9 +33,9 @@ class Automaton:
         transitionedState: State = possibleState.returnValue
         if transitionedState not in self.states:
             return Result(False, "State is not in the automatons states!")
-        
+
         self.currentState = transitionedState
-        
+
         return Result(True)
 
     def addState(self, state: State) -> None:
@@ -47,11 +49,10 @@ class Automaton:
         self.__ifNotStateAdd(endState)
         self.endStates.add(endState)
 
-
     def addTransitionalFunction(self, startState: State, transitionFunction: TransitionFunction) -> None:
         if startState not in self.states:
             return
-        
+
         self.transitionFunctions[startState] = transitionFunction
 
     def removeState(self, state: State) -> None:
@@ -64,7 +65,6 @@ class Automaton:
 
         if self.currentState == state:
             self.currentState = None
-        
 
     def __ifNotStateAdd(self, state: State) -> bool:
         if state in self.states:
@@ -89,18 +89,17 @@ class Automaton:
             if self.wordIndex >= len(self.word):
                 break
 
-            
         if self.currentState in self.endStates:
             return Result(True, "Automaton terminated in an endstate!")
         else:
             return Result(False, "Automaton did not terminate in an endstate!")
-        
+
+
 if __name__ == '__main__':
     automaton = Automaton()
 
     s1 = State("q0")
     s2 = State("q1")
-
 
     s1f1 = TransitionFunction(s1, 'a')
     s1f2 = TransitionFunction(s2, 'b')
@@ -114,12 +113,8 @@ if __name__ == '__main__':
     s2.addTransitionFunction(s2f1)
     s2.addTransitionFunction(s2f2)
 
-
     automaton.setStartState(s1)
     automaton.addEndstate(s2)
 
     automaton.setWord("aaaaabaaab")
     print(automaton.simulate().message)
-
-
-        

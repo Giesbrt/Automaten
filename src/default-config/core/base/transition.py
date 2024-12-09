@@ -17,106 +17,89 @@ from core.base.state import State
 
 class Transition:
     """
-    Represents a generic transition between states in an automaton. This class is designed to be
-    flexible and abstract, allowing it to be adapted to different types of automata, such as
-    deterministic finite automata (DFA), Turing machines, and Mealy machines.
-
-    Note:
-        Unlike more specific transition implementations, this class does not include a fixed
-        `accepted_char` attribute or similar predefined condition. This omission ensures flexibility
-        for automata that may rely on more complex or varied transition conditions (e.g., reading
-        and writing symbols on a Turing machine tape, generating output in a Mealy machine, or
-        handling epsilon transitions in NFAs).
+    Represents a generic transition between states in an automaton. It is flexible to support
+    various automata by allowing custom logic for transition conditions.
 
     Attributes:
-        start_state (State):
-            The state from which the transition originates.
-
-        transition_target_state (State):
-            The state that the automaton moves to when this transition is triggered.
-
-    Methods:
-        __init__(start_state: State, transition_target_state: State) -> None:
-            Initializes the transition with the start state and target state.
-
-        canTransition(current_input: _ty.Any) -> _result.Result:
-            Abstract method to determine if the transition can occur based on the current input.
-            This method must be implemented in subclasses.
-
-        get_transition_target() -> State:
-            Returns the target state of this transition.
-
-        get_start_state() -> State:
-            Returns the starting state of this transition.
+        start_state (State): The state where the transition originates.
+        transition_target_state (State): The state to which the transition leads.
+        activation_callback (_ty.Callable or None): An optional callback triggered when the transition is activated.
     """
 
     def __init__(self, start_state: State, transition_target_state: State) -> None:
         """
-        Initializes the transition with the start state and target state.
+        Initializes a transition with a starting and a target state.
 
         Args:
-            start_state (State):
-                The state from which the transition originates.
-
-            transition_target_state (State):
-                The state to transition to when this transition is triggered.
+            start_state (State): The state from which this transition starts.
+            transition_target_state (State): The state this transition leads to.
         """
         self.start_state: State = start_state
         self.transition_target_state: State = transition_target_state
-
         self.activation_callback: _ty.Callable or None = None
 
-        # Adds this Transition automatically to the start state
+        # Automatically adds this transition to the start state's set of transitions.
         self.start_state.transitions.add(self)
 
     def canTransition(self, current_input: _ty.Any) -> _result.Result:
         """
-        Abstract method to check if the transition can occur based on the current input.
+        Abstract method to determine if the transition is valid based on the input.
 
-        This method should be implemented in subclasses to define custom transition conditions,
-        which might involve single characters (as in DFAs), tape symbols (as in Turing machines),
-        or input-output pairs (as in Mealy machines).
+        This should be implemented in subclasses, as the logic for valid transitions depends
+        on the type of automaton (e.g., character matching in DFAs, symbol checks in Turing machines).
 
         Args:
-            current_input (_ty.Any):
-                The input being processed (e.g., a character, tape symbol, etc.).
+            current_input (_ty.Any): The input to evaluate for this transition.
 
         Returns:
             _result.Result:
-                Indicates whether the transition can occur.
+                - Success: If the transition is valid.
+                - Failure: If the transition is invalid.
 
         Raises:
-            NotImplementedError:
-                If the method is not implemented in a subclass.
+            NotImplementedError: If the method is not overridden in a subclass.
         """
         raise NotImplementedError("canTransition must be implemented in a subclass.")
 
     def get_transition_target(self) -> State:
         """
-        Returns the target state of this transition.
+        Retrieves the state this transition leads to.
 
         Returns:
-            State:
-                The state that this transition leads to.
+            State: The target state of the transition.
         """
         return self.transition_target_state
 
     def get_start_state(self) -> State:
         """
-        Returns the starting state of this transition.
+        Retrieves the state where this transition originates.
 
         Returns:
-            State:
-                The state where this transition originates from.
+            State: The starting state of the transition.
         """
         return self.start_state
 
     def set_activation_callback(self, callback: _ty.Callable) -> None:
+        """
+        Sets a callback function to be executed when the transition is activated.
+
+        Args:
+            callback (_ty.Callable): The function to call upon activation.
+        """
         self.activation_callback = callback
 
     def get_activation_callback(self) -> _ty.Callable or None:
+        """
+        Retrieves the activation callback function, if any.
+
+        Returns:
+            _ty.Callable or None: The activation callback function.
+        """
         return self.activation_callback
 
     def activate(self) -> None:
+        """
+        Triggers the activation callback, if one is set.
+        """
         if self.activation_callback:
             self.activation_callback()

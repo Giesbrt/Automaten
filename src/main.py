@@ -140,6 +140,7 @@ class DudPyApp:  # The main logic and gui are separated
         self.os_theme: SystemTheme = self.get_os_theme()
         # TODO: self.update_theme()
         x, y, height, width = self.user_settings.retrieve("configs", "geometry", "tuple")
+        self.gui.setWindowTitle(self.app_settings.retrieve("window_title_template"))
         self.gui.setGeometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
         self.gui.setup_gui()  # I guess windows does some weird shit with the title bar
 

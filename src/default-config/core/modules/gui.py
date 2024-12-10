@@ -31,7 +31,6 @@ class MyItem(QGraphicsWidget):
         r = QRect(0, 0, 30, 30)
         painter.drawRect(r)
 
-
     def mouseMoveEvent(self, event):
         self.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
         self.moveBy(event.pos().x() - self.offset.x(), event.pos().y() - self.offset.y())
@@ -184,4 +183,3 @@ class DBMainWindow(DBMainWindowInterface):
 
     def set_scroll_speed(self, value: float) -> None:
         return
-

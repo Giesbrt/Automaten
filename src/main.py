@@ -1,4 +1,6 @@
 """TBA"""
+import threading
+
 import config
 
 # Standard imports
@@ -65,8 +67,7 @@ class DBMainWindowInterface(QMainWindow):
 class DudPyApp:  # The main logic and gui are separated
     """TBA"""
     version, version_add = 10, "a0"
-    qapp: QApplication | None = None
-    qgui: DBMainWindowInterface | None = None
+    gui: DBMainWindowInterface | None = None
 
     def __init__(self) -> None:
         # Setting up the base directory in AppData\Local? For now it's in ./localconfig
@@ -82,7 +83,7 @@ class DudPyApp:  # The main logic and gui are separated
         self.logger.logger.setLevel(logging.DEBUG if config.INDEV else logging.INFO)
         self.logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
         self.logger.monitor_pipe(sys.stderr, level=logging.ERROR)
-        print(config.exported_logs, end="", flush=True)  # Flush config prints
+        self.logger.debug(config.exported_logs)  # Flush config prints
 
         # Load settings
         self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
@@ -133,20 +134,20 @@ class DudPyApp:  # The main logic and gui are separated
         # Setup window
         if self.abs_window_icon_path.startswith("#"):
             self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
-        self.qgui.setWindowIcon(QIcon(self.abs_window_icon_path))
+        self.gui.setWindowIcon(QIcon(self.abs_window_icon_path))
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
         # TODO: self.update_theme()
         x, y, height, width = self.user_settings.retrieve("configs", "geometry", "tuple")
-        self.qgui.setGeometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
-        self.qgui.setup_gui()  # I guess windows does some weird shit with the title bar
+        self.gui.setGeometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
+        self.gui.setup_gui()  # I guess windows does some weird shit with the title bar
 
         # Setup values, signals, ...
-        self.qgui.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
+        self.gui.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
 
         # Show gui
-        self.qgui.show()
-        self.qgui.raise_()
+        self.gui.show()
+        self.gui.raise_()
 
         self.timer: TimidTimer = TimidTimer(start_now=False)
         self.timer.fire_ms(500, self.timer_tick, daemon=True)
@@ -326,15 +327,15 @@ if __name__ == "__main__":
     try:
         qapp = QApplication(sys.argv)
         qgui = DBMainWindow()
-        DudPyApp.qapp = qapp
-        DudPyApp.qgui = qgui
+        DudPyApp.gui = qgui
+        side_thread = threading.Thread()
         dp_app = DudPyApp()  # Shows gui
         current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         title = "Info"
-        text = ("There was an error while running the app DudPy.\n"
+        text = ("There was an error while running the app E.F.S' Simulator.\n"
                 "This error is unrecoverable.\nPlease submit the details to our GitHub issues page.")
         description = format_exc()
         msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning, title, text, description,
@@ -347,8 +348,11 @@ if __name__ == "__main__":
         msg_box.exec()
         raise e
     finally:
-        if dp_app is not None:
-            dp_app.exit()
+        if side_thread is not None:
+            event.set()
+            side_thread.join(timeout=10)
+            # if dp_app is not None:
+            #     dp_app.exit()
         if qgui is not None:
             qgui.close()
         if qapp is not None:

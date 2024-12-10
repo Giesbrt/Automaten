@@ -65,6 +65,9 @@ class DFAAutomaton(BaseAutomaton):
 
         simulate() -> _result.Result:
             Runs the DFA simulation on the input word and returns the result of acceptance or rejection.
+
+        simulate_one_step() -> _result.Result:
+            Runs one step of the DFA simulation on the input word and returns the result of acceptance or rejection.
     """
 
     def __init__(self) -> None:
@@ -201,10 +204,12 @@ class DFAAutomaton(BaseAutomaton):
             return _result.Failure("Start state not in automaton states")
 
         self.current_state = self.start_state
+        self.current_state.activate()
+
         while True:
-            self.current_state.activate()  # Activate the current state (if such behavior is defined).
             self.next_state()  # Transition to the next state.
             self.next_char()   # Move to the next character in the input.
+            self.current_state.activate()  # Activate the current state (if such behavior is defined).
 
             if self.char_index >= len(self.word):
                 break  # Stop simulation when the end of the word is reached.
@@ -212,4 +217,46 @@ class DFAAutomaton(BaseAutomaton):
         if self.current_state in self.end_states:
             return _result.Success("Automaton terminated in an end state!")
         return _result.Failure("Automaton failed to terminate in an end state!")
+
+    def simulate_one_step(self) -> _result.Result:
+        """
+        Runs one step of the DFA simulation on the input word.
+
+        The simulation begins at the start state and processes each character in the input word,
+        transitioning between states based on the DFA's transition rules. If the DFA ends in an
+        accepting state after processing the entire word, it returns a success result. Otherwise,
+        it returns a failure result.
+
+        Returns:
+            _result.Result:
+                - Success: If the DFA terminates in an accepting state.
+                - Failure: If the DFA fails to terminate in an accepting state.
+
+        Notes:
+            If no start state is set or the start state is not part of the automaton's states,
+            an error is logged and the simulation returns a failure.
+        """
+        if self.char_index >= len(self.word):
+            if self.current_state in self.end_states:
+                return _result.Success("Automaton terminated in an end state!")
+            return _result.Failure("Automaton failed to terminate in an end state!")
+
+        if not self.start_state:
+            ActLogger().error("Tried to start simulation of DFA-Automaton without start state!")
+            return _result.Failure("No start state found")
+
+        if self.start_state not in self.states:
+            ActLogger().error("Tried to start simulation of DFA-Automaton without start state in automaton states!")
+            return _result.Failure("Start state not in automaton states")
+
+        if self.current_state is None:
+            self.current_state = self.start_state
+            self.current_state.activate()
+
+        self.next_state()  # Transition to the next state.
+        self.next_char()  # Move to the next character in the input.
+        self.current_state.activate()  # Activate the current state (if such behavior is defined).
+
+
+
 

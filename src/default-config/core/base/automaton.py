@@ -68,6 +68,10 @@ class Automaton(_abc.ABC):
             Abstract method that must be implemented in subclasses to simulate the automaton's behavior
             based on its transitions and input. The simulation logic differs based on the type of automaton.
 
+        simulate_one_step() -> _result.Result:
+            Abstract method that must be implemented in subclasses to simulate one step of the automaton's behavior
+            based on its transitions and input. The simulation logic differs based on the type of automaton.
+
         save(file_path: str) -> bool:
             Abstract method to save the automaton's configuration to a file. Must be implemented in subclasses.
 
@@ -178,7 +182,28 @@ class Automaton(_abc.ABC):
         Abstract method that must be implemented in subclasses to simulate the automaton's behavior.
 
         The simulation behavior depends on the type of automaton. For example:
-        - In a DFA or NFA, the simulation would process input and determine the next state based on the
+        - In a DFA, the simulation would process input and determine the next state based on the
+          current state and input symbol.
+        - In a Turing machine, the simulation would involve moving along the tape, reading and writing symbols.
+        - In a Mealy machine, the simulation might produce outputs while transitioning between states.
+
+        Returns:
+            _result.Result: The _result of the simulation. This could indicate whether the automaton successfully
+            accepted or rejected an input, or it could represent some other outcome specific to the type of automaton.
+
+        Raises:
+            NotImplementedError:
+                If this method is not implemented in a subclass.
+        """
+        raise NotImplementedError("simulate must be implemented in a subclass.")
+
+    @_abc.abstractmethod
+    def simulate_one_step(self) -> _result.Result:
+        """
+        Abstract method that must be implemented in subclasses to simulate one step of the automaton's behavior.
+
+        The simulation behavior depends on the type of automaton. For example:
+        - In a DFA, the simulation would process input and determine the next state based on the
           current state and input symbol.
         - In a Turing machine, the simulation would involve moving along the tape, reading and writing symbols.
         - In a Mealy machine, the simulation might produce outputs while transitioning between states.
@@ -232,4 +257,3 @@ class Automaton(_abc.ABC):
                 If this method is not implemented in a subclass.
         """
         raise NotImplementedError("load must be implemented in a subclass.")
-

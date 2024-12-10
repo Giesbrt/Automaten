@@ -170,7 +170,8 @@ class DFAAutomaton(BaseAutomaton):
         # TODO: Implement saving logic for DFA.
         return False
 
-    def load(self, file_path: str) -> bool:
+    @staticmethod
+    def load(file_path: str) -> bool:
         """
         Placeholder for loading the DFA configuration from a file.
 

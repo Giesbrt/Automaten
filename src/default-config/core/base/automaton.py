@@ -238,8 +238,8 @@ class Automaton(_abc.ABC):
         """
         raise NotImplementedError("save must be implemented in a subclass.")
 
-    @_abc.abstractmethod
-    def load(self, file_path: str) -> bool:
+    @staticmethod
+    def load(file_path: str) -> bool:
         """
         Abstract method to load an automaton's configuration from a file.
 

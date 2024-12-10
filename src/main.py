@@ -67,8 +67,7 @@ class DBMainWindowInterface(QMainWindow):
 class DudPyApp:  # The main logic and gui are separated
     """TBA"""
     version, version_add = 10, "a0"
-    qapp: QApplication | None = None
-    qgui: DBMainWindowInterface | None = None
+    gui: DBMainWindowInterface | None = None
 
     def __init__(self) -> None:
         # Setting up the base directory in AppData\Local? For now it's in ./localconfig
@@ -135,20 +134,20 @@ class DudPyApp:  # The main logic and gui are separated
         # Setup window
         if self.abs_window_icon_path.startswith("#"):
             self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
-        self.qgui.setWindowIcon(QIcon(self.abs_window_icon_path))
+        self.gui.setWindowIcon(QIcon(self.abs_window_icon_path))
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
         # TODO: self.update_theme()
         x, y, height, width = self.user_settings.retrieve("configs", "geometry", "tuple")
-        self.qgui.setGeometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
-        self.qgui.setup_gui()  # I guess windows does some weird shit with the title bar
+        self.gui.setGeometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
+        self.gui.setup_gui()  # I guess windows does some weird shit with the title bar
 
         # Setup values, signals, ...
-        self.qgui.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
+        self.gui.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
 
         # Show gui
-        self.qgui.show()
-        self.qgui.raise_()
+        self.gui.show()
+        self.gui.raise_()
 
         self.timer: TimidTimer = TimidTimer(start_now=False)
         self.timer.fire_ms(500, self.timer_tick, daemon=True)
@@ -328,8 +327,7 @@ if __name__ == "__main__":
     try:
         qapp = QApplication(sys.argv)
         qgui = DBMainWindow()
-        DudPyApp.qapp = qapp
-        DudPyApp.qgui = qgui
+        DudPyApp.gui = qgui
         side_thread = threading.Thread()
         dp_app = DudPyApp()  # Shows gui
         current_exit_code = qapp.exec()

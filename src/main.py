@@ -1,4 +1,6 @@
 """TBA"""
+import threading
+
 import config
 
 # Standard imports
@@ -82,7 +84,7 @@ class DudPyApp:  # The main logic and gui are separated
         self.logger.logger.setLevel(logging.DEBUG if config.INDEV else logging.INFO)
         self.logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
         self.logger.monitor_pipe(sys.stderr, level=logging.ERROR)
-        print(config.exported_logs, end="", flush=True)  # Flush config prints
+        self.logger.debug(config.exported_logs)  # Flush config prints
 
         # Load settings
         self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
@@ -328,13 +330,14 @@ if __name__ == "__main__":
         qgui = DBMainWindow()
         DudPyApp.qapp = qapp
         DudPyApp.qgui = qgui
+        side_thread = threading.Thread()
         dp_app = DudPyApp()  # Shows gui
         current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         title = "Info"
-        text = ("There was an error while running the app DudPy.\n"
+        text = ("There was an error while running the app E.F.S' Simulator.\n"
                 "This error is unrecoverable.\nPlease submit the details to our GitHub issues page.")
         description = format_exc()
         msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning, title, text, description,
@@ -347,8 +350,11 @@ if __name__ == "__main__":
         msg_box.exec()
         raise e
     finally:
-        if dp_app is not None:
-            dp_app.exit()
+        if side_thread is not None:
+            event.set()
+            side_thread.join(timeout=10)
+            # if dp_app is not None:
+            #     dp_app.exit()
         if qgui is not None:
             qgui.close()
         if qapp is not None:

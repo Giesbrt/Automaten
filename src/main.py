@@ -11,11 +11,9 @@ import os
 import re
 
 # Third party imports
-from PySide6.QtWidgets import (QApplication, QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget, QMainWindow,
-                               QCheckBox, QMessageBox, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
-                               QStyleOptionGraphicsItem)
-from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QUrl, QTimer
-from PySide6.QtGui import QPainter, QWheelEvent, QIcon, QDesktopServices, QMouseEvent, QCursor
+from PySide6.QtWidgets import QApplication, QMainWindow, QCheckBox, QMessageBox
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QIcon, QDesktopServices
 from packaging.version import Version, InvalidVersion
 import stdlib_list
 import requests
@@ -24,10 +22,11 @@ import requests
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType
 from aplustools.package.timid import TimidTimer
 from aplustools.io import ActLogger
-from aplustools.io.qtquick import QQuickMessageBox, QNoSpacingBoxLayout, QBoxDirection
+from aplustools.io.qtquick import QQuickMessageBox
 
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
+from core.modules.gui import DBMainWindow
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -36,127 +35,6 @@ import types as _ts
 
 hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
-
-
-class MyItem(QGraphicsWidget):
-    def __init__(self, node_item):
-        super().__init__(parent=None)
-        self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItem.ItemIsMovable, False)
-        self.setFlag(QGraphicsWidget.ItemIsMovable, True)
-        self.setFlag(QGraphicsWidget.ItemIsSelectable, True)
-
-        self.offset : QPointF = None
-
-    def boundingRect(self) -> QRectF:
-        return QRect(0,0,30,30)
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
-        r = QRect(0, 0, 30, 30)
-        painter.drawRect(r)
-
-
-    def mouseMoveEvent(self, event):
-        self.setCursor(QCursor(Qt.CursorShape.ClosedHandCursor))
-        self.moveBy(event.pos().x() - self.offset.x(), event.pos().y() - self.offset.y())
-
-
-class GridView(QGraphicsView):
-    """TBA"""
-    def __init__(self, parent: QWidget | None = None, grid_size: int = 100, start_x: int = 50, start_y: int = 50,
-                 fixed_objects: list[tuple[float, float, QGraphicsItem]] | None = None) -> None:
-        super().__init__(parent=parent)
-        self.setScene(QGraphicsScene(self))
-        self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setDragMode(QGraphicsView.DragMode.NoDrag)
-
-        self._grid_size: int = grid_size
-        self._offset: QPointF = QPointF(start_x * grid_size, start_y * grid_size)
-
-        self.scene().setSceneRect(-1000, -1000, 2000, 2000)
-        self._objects: list[QGraphicsRectItem] = []
-
-        # Center object (input)
-        center_rect = QGraphicsRectItem(0, 0, self._grid_size, self._grid_size)
-        center_rect.setBrush(Qt.GlobalColor.red)
-        center_rect.setPen(Qt.PenStyle.NoPen)
-        self._objects.append(center_rect)
-
-        if fixed_objects is not None:
-            for (x, y, item) in fixed_objects:
-                item.setPos(x * self._grid_size, y * self._grid_size)
-                self._objects.append(item)
-        for obj in self._objects:  # Can be combined
-            self.scene().addItem(obj)
-
-        self.zoom_level: float = 1  # Zoom parameters
-        self.zoom_step: float = 0.1
-        self.min_zoom: float = 0.2
-        self.max_zoom: float = 5.0
-
-        # Panning attributes
-        self._is_panning: bool = False
-        self._pan_start: QPointF = QPointF(0, 0)
-
-    def drawBackground(self, painter: QPainter, rect: QRect | QRectF) -> None:  # Overwrite
-        """Draw an infinite grid."""
-        left = int(rect.left()) - (int(rect.left()) % self._grid_size)
-        top = int(rect.top()) - (int(rect.top()) % self._grid_size)
-
-        line_t = float | int
-        lines: list[tuple[line_t, line_t, line_t, line_t]] = []
-        for x in range(left, int(rect.right()), self._grid_size):
-            lines.append((x, rect.top(), x, rect.bottom()))
-        for y in range(top, int(rect.bottom()), self._grid_size):
-            lines.append((rect.left(), y, rect.right(), y))
-
-        painter.setPen(Qt.GlobalColor.lightGray)
-        for line in lines:
-            painter.drawLine(*line)
-
-    def wheelEvent(self, event: QWheelEvent) -> None:
-        """Zoom in and out with the mouse wheel."""
-        if event.angleDelta().y() > 0:
-            zoom_factor = 1 + self.zoom_step
-        else:
-            zoom_factor = 1 - self.zoom_step
-
-        new_zoom: float = self.zoom_level * zoom_factor
-        if self.min_zoom <= new_zoom <= self.max_zoom:
-            self.scale(zoom_factor, zoom_factor)
-            self.zoom_level = new_zoom
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Start panning on right or middle mouse button click."""
-        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
-            self._is_panning = True
-            self._pan_start = event.position()
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        if self._is_panning:
-            delta = event.position() - self._pan_start
-
-            # Only process significant deltas
-            if abs(delta.x()) > 2 or abs(delta.y()) > 2:
-                self.horizontalScrollBar().setValue(
-                    self.horizontalScrollBar().value() - int(delta.x())
-                )
-                self.verticalScrollBar().setValue(
-                    self.verticalScrollBar().value() - int(delta.y())
-                )
-                self._pan_start = event.position()
-            event.accept()
-        else:
-            super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Stop panning on mouse button release."""
-        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
-            self._is_panning = False
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-        super().mouseReleaseEvent(event)
 
 
 class DBMainWindowInterface(QMainWindow):
@@ -182,32 +60,6 @@ class DBMainWindowInterface(QMainWindow):
 
     def set_scroll_speed(self, value: float) -> None:
         raise NotImplementedError
-
-
-class DBMainWindow(DBMainWindowInterface):
-    def setup_gui(self) -> None:
-        # Central Widget
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        self.window_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom, parent=central_widget)
-
-        # Define positions of fixed objects with their respective QGraphicsItems
-        fixed_positions = [
-            (10, 10, QGraphicsRectItem(0, 0, 100, 100)),  # A rectangle at (10, 10)
-            (100, 100, QGraphicsEllipseItem(0, 0, 150, 150)),  # A circle at (100, 100)
-            (20, 50, QGraphicsRectItem(0, 0, 75, 75)),  # A smaller rectangle at (20, 50)
-            (50, 20, QGraphicsEllipseItem(0, 0, 50, 100)),  # An ellipse at (50, 20)
-        ]
-
-        # Customize appearance of the objects if necessary
-        for _, _, item in fixed_positions:
-            item.setBrush(Qt.GlobalColor.blue)  # Set the fill color to blue
-            item.setPen(Qt.PenStyle.NoPen)  # Remove the border
-        self.grid_view = GridView(grid_size=100, start_x=50, start_y=50, fixed_objects=fixed_positions)
-        self.window_layout.addWidget(self.grid_view)
-
-    def set_scroll_speed(self, value: float) -> None:
-        return
 
 
 class DudPyApp:  # The main logic and gui are separated
@@ -463,8 +315,14 @@ class DudPyApp:  # The main logic and gui are separated
 
 
 if __name__ == "__main__":
-    RESTART_CODE = 1000
-    current_exit_code = -1
+    CODES: dict[int, _a.Callable] = {
+        1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)
+    }
+    qapp: QApplication | None = None
+    qgui: DBMainWindowInterface | None = None
+    dp_app: DudPyApp | None = None
+    current_exit_code: int = -1
+
     try:
         qapp = QApplication(sys.argv)
         qgui = DBMainWindow()
@@ -472,11 +330,6 @@ if __name__ == "__main__":
         DudPyApp.qgui = qgui
         dp_app = DudPyApp()  # Shows gui
         current_exit_code = qapp.exec()
-
-        if current_exit_code == RESTART_CODE:
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-        else:
-            sys.exit(current_exit_code)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -488,17 +341,16 @@ if __name__ == "__main__":
                                    standard_buttons=QMessageBox.StandardButton.Ok,
                                    default_button=QMessageBox.StandardButton.Ok)
         icon_path = os.path.abspath("./data/assets/logo-nobg.png")
-        if "mv_app" in locals():
-            if hasattr(dp_app, "abs_window_icon_path"):
-                icon_path = dp_app.abs_window_icon_path
+        if hasattr(dp_app, "abs_window_icon_path"):
+            icon_path = dp_app.abs_window_icon_path
         msg_box.setWindowIcon(QIcon(icon_path))
         msg_box.exec()
         raise e
     finally:
-        if "mv_app" in locals():
+        if dp_app is not None:
             dp_app.exit()
-        if "qgui" in locals():
+        if qgui is not None:
             qgui.close()
-        if "qapp" in locals():
+        if qapp is not None:
             qapp.instance().quit()
-        sys.exit(current_exit_code)
+        CODES.get(current_exit_code, lambda: sys.exit(current_exit_code))()

@@ -35,7 +35,6 @@ def _configure() -> dict[str, str]:
             ("config", ()),
             ("core", ("libs", "modules")),
             ("data", (("assets", ("icons", "logo_cache")),
-                      "chapter_cache",
                       "logs")),
             ("extensions", ()),
             ("themes", ())

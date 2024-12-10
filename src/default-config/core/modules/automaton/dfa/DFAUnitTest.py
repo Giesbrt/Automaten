@@ -45,6 +45,34 @@ class DFAUnitTest(unittest.TestCase):
         print(dfa_result._inner_value)
         self.assertEqual(type(_result.Success(None)), type(dfa_result))
 
+    def test_check_if_single_simulation_mode_works(self):
+        dfa: DFAAutomaton = DFAAutomaton()
+
+        s1: DFAState = DFAState("q0")
+        s2: DFAState = DFAState("q1")
+
+        s1f1: DFATransition = DFATransition(s1, s1, 'a')
+        s1f2: DFATransition = DFATransition(s1, s2, 'b')
+
+        s2f1: DFATransition = DFATransition(s2, s1, 'a')
+        s2f2: DFATransition = DFATransition(s2, s2, 'b')
+
+        dfa.states.add(s1)
+        dfa.states.add(s2)
+
+        dfa.set_start_state(s1)
+        dfa.set_end_states({s2})
+
+        dfa.set_word("aab")
+
+        i = 1
+        simulation_return = dfa.simulate_one_step()
+        while simulation_return is None:
+            simulation_return = dfa.simulate_one_step()
+            i += 1
+
+        self.assertEqual(len(dfa.get_word()), i-1)  # -1 because the last call is the end call (end of loop)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -330,6 +330,7 @@ if __name__ == "__main__":
         DudPyApp.gui = qgui
         side_thread = threading.Thread()
         dp_app = DudPyApp()  # Shows gui
+        side_thread.start()
         current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()

@@ -17,7 +17,7 @@ import types as _ts
 class Automaton:
     """
     Represents a generic automaton. This class serves as the foundation for different types of
-    automata (such as DFAs, NFAs, Turing machines, etc.), and it manages the states and transitions
+    automata (such as DFAs, Mealy-automaton, Turing machines, etc.), and it manages the states and transitions
     that define the automaton's behavior.
 
     Note:

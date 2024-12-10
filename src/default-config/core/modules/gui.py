@@ -184,4 +184,3 @@ class DBMainWindow(DBMainWindowInterface):
 
     def set_scroll_speed(self, value: float) -> None:
         return
-

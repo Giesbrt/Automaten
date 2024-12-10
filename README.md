@@ -1,5 +1,5 @@
-# DudPy
-This is a temporary name, change it if you come up with something better.
+# Enterprise-flavored sugar
+### E.F.S.' Simulator
 
 ## How to run
 

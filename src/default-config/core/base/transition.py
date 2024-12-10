@@ -5,6 +5,7 @@ import returns.result as _result
 
 # Standard typing imports for aps
 import collections.abc as _a
+import abc as _abc
 import typing as _ty
 import types as _ts
 
@@ -15,7 +16,7 @@ from core.base.state import State
 
 # Docs generated with Chat-GPT
 
-class Transition:
+class Transition(_abc.ABC):
     """
     Represents a generic transition between states in an automaton. It is flexible to support
     various automata by allowing custom logic for transition conditions.
@@ -41,6 +42,7 @@ class Transition:
         # Automatically adds this transition to the start state's set of transitions.
         self.start_state.transitions.add(self)
 
+    @_abc.abstractmethod
     def canTransition(self, current_input: _ty.Any) -> _result.Result:
         """
         Abstract method to determine if the transition is valid based on the input.

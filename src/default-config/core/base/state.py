@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 import returns.result as _result
+
+# Standard typing imports for aps
+import collections.abc as _a
+import abc as _abc
 import typing as _ty
+import types as _ts
 
 if _ty.TYPE_CHECKING:
     from core.base.transition import Transition
@@ -10,7 +15,7 @@ if _ty.TYPE_CHECKING:
 
 # Docs generated with Chat-GPT
 
-class State:
+class State(_abc.ABC):
     """
     Represents a state within an automaton.
 
@@ -88,6 +93,7 @@ class State:
         """
         return self.transitions
 
+    @_abc.abstractmethod
     def find_transition(self, current_input_char: str) -> _result.Result:
         """
         Abstract method to find a transition based on the current input character.

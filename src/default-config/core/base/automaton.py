@@ -8,13 +8,14 @@ from core.base.transition import Transition
 
 # Standard typing imports for aps
 import collections.abc as _a
+import abc as _abc
 import typing as _ty
 import types as _ts
 
 
 # Docs generated with Chat-GPT
 
-class Automaton:
+class Automaton(_abc.ABC):
     """
     Represents a generic automaton. This class serves as the foundation for different types of
     automata (such as DFAs, Mealy-automaton, Turing machines, etc.), and it manages the states and transitions
@@ -171,6 +172,7 @@ class Automaton:
         """
         self.transitions = new_transitions
 
+    @_abc.abstractmethod
     def simulate(self) -> _result.Result:
         """
         Abstract method that must be implemented in subclasses to simulate the automaton's behavior.
@@ -191,6 +193,7 @@ class Automaton:
         """
         raise NotImplementedError("simulate must be implemented in a subclass.")
 
+    @_abc.abstractmethod
     def save(self, file_path: str) -> bool:
         """
         Abstract method to save the automaton's configuration to a file.
@@ -210,6 +213,7 @@ class Automaton:
         """
         raise NotImplementedError("save must be implemented in a subclass.")
 
+    @_abc.abstractmethod
     def load(self, file_path: str) -> bool:
         """
         Abstract method to load an automaton's configuration from a file.

@@ -45,6 +45,9 @@ class DFAAutomaton(BaseAutomaton):
         set_word(new_word: str) -> None:
             Sets a new input word for the automaton to process.
 
+        get_word() -> str:
+            Retrieves the input word for the automaton to process.
+
         next_char() -> None:
             Advances the automaton to the next character in the input word.
 
@@ -99,6 +102,9 @@ class DFAAutomaton(BaseAutomaton):
         self.word = new_word
         self.char_index = 0
         self.current_char = self.word[self.char_index] if self.word else ""
+
+    def get_word(self) -> str:
+        return self.word
 
     def next_char(self) -> None:
         """

@@ -1,10 +1,10 @@
 """TBA"""
 
-from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget,
-                               QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
+from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget, QFormLayout, QFrame,
+                               QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget, QPushButton,
                                QStyleOptionGraphicsItem, QMainWindow)
-from PySide6.QtCore import Qt, QPointF, QRect, QRectF
-from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor
+from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation
+from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection
 
@@ -160,6 +160,8 @@ class DBMainWindowInterface(QMainWindow):
 
 
 class DBMainWindow(DBMainWindowInterface):
+    icons_folder = ""
+
     def setup_gui(self) -> None:
         # Central Widget
         central_widget = QWidget()
@@ -181,5 +183,68 @@ class DBMainWindow(DBMainWindowInterface):
         self.grid_view = GridView(grid_size=100, start_x=50, start_y=50, fixed_objects=fixed_positions)
         self.window_layout.addWidget(self.grid_view)
 
+        # Side Menu
+        self.side_menu = QFrame(self)
+        self.side_menu.setObjectName("sideMenu")
+        self.side_menu.setFrameShape(QFrame.Shape.StyledPanel)
+        self.side_menu.setAutoFillBackground(True)
+        self.side_menu.move(int(self.width() * 2 / 3), 0)
+        self.side_menu.resize(int(self.width() / 3), self.height())
+
+        # Animation for Side Menu
+        self.side_menu_animation = QPropertyAnimation(self.side_menu, b"geometry")
+        self.side_menu_animation.setDuration(500)
+
+        # Side Menu Layout & Widgets
+        side_menu_layout = QFormLayout(self.side_menu)
+        self.side_menu.setLayout(side_menu_layout)
+
+        # Menu Button
+        self.menu_button = QPushButton(QIcon(f"{self.icons_folder}/empty.png"), "", self.centralWidget())
+        self.menu_button.setFixedSize(40, 40)
+
+        self.menu_button.setIcon(QIcon(f"{self.icons_folder}/menu_icon.png"))
+
+        self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
+        self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
+
+    def toggle_side_menu(self):
+        width = max(200, int(self.width() / 3))
+        height = self.height()
+
+        if self.side_menu.x() >= self.width():
+            start_value = QRect(self.width(), 0, width, height)
+            end_value = QRect(self.width() - width, 0, width, height)
+        else:
+            start_value = QRect(self.width() - width, 0, width, height)
+            end_value = QRect(self.width(), 0, width, height)
+
+        self.side_menu_animation.setStartValue(start_value)
+        self.side_menu_animation.setEndValue(end_value)
+        self.side_menu_animation.start()
+
+    def update_menu_button_position(self, value=None):
+        if not value:
+            value = self.side_menu.x()
+        else:
+            value = value.x()
+        self.menu_button.move(value - self.menu_button.width(), (20))
+
+    def side_menu_animation_value_changed(self, value):
+        self.update_menu_button_position(value)
+
     def set_scroll_speed(self, value: float) -> None:
         return
+
+    # Window Methods
+    def resizeEvent(self, event):
+        window_width = self.width()
+
+        self.side_menu.move(window_width, 0)  # Update the position of the side menu
+        self.side_menu_animation.setStartValue(QRect(window_width, 0, 0, self.height()))
+        self.side_menu_animation.setEndValue(QRect(window_width - 200, 0, 200,
+                                                   self.height()))  # Adjust 200 as per the desired width of the side menu
+        self.menu_button.move(window_width - 40, 20)  # Update the position of the menu button
+        self.update_menu_button_position()
+
+        super().resizeEvent(event)

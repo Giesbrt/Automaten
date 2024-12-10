@@ -76,6 +76,7 @@ class DudPyApp:  # The main logic and gui are separated
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
+        self.gui.icons_folder = os.path.join(self.data_folder, "icons")
 
         # Setup logger
         self._order_logs(f"{self.data_folder}/logs")
@@ -293,7 +294,7 @@ class DudPyApp:  # The main logic and gui are separated
         finally:
             print("MSGBox exec start time: ", timer.tock())
             print("Total:", timer.end())
-            msg_box = QQuickMessageBox(self.qgui, icon, title, text, description, checkbox,
+            msg_box = QQuickMessageBox(self.gui, icon, title, text, description, checkbox,
                                        standard_buttons=standard_buttons,
                                        default_button=default_button)
             retval = msg_box.exec()  # Keep ref to msg_box so checkbox doesn't get deleted prematurely
@@ -349,11 +350,11 @@ if __name__ == "__main__":
         msg_box.exec()
         raise e
     finally:
-        if side_thread is not None:
-            event.set()
-            side_thread.join(timeout=10)
-            # if dp_app is not None:
-            #     dp_app.exit()
+        #if side_thread is not None:
+        #    event.set()
+        #    side_thread.join(timeout=10)
+        if dp_app is not None:
+            dp_app.exit()
         if qgui is not None:
             qgui.close()
         if qapp is not None:

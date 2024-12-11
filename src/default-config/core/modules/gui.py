@@ -2,11 +2,11 @@
 
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget, QFormLayout, QFrame,
                                QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget, QPushButton,
-                               QStyleOptionGraphicsItem, QMainWindow)
+                               QStyleOptionGraphicsItem, QMainWindow, QStackedLayout)
 from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon
 
-from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection
+from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -159,6 +159,10 @@ class DBMainWindowInterface(QMainWindow):
         raise NotImplementedError
 
 
+class RotatingLayout(QQuickBoxLayout):
+    ...  # Each sheet has one central widget that gets hidden plus any number of floating widgets.
+
+
 class DBMainWindow(DBMainWindowInterface):
     icons_folder = ""
 
@@ -188,8 +192,6 @@ class DBMainWindow(DBMainWindowInterface):
         self.side_menu.setObjectName("sideMenu")
         self.side_menu.setFrameShape(QFrame.Shape.StyledPanel)
         self.side_menu.setAutoFillBackground(True)
-        # self.side_menu.move(int(self.width() * 2 / 3), 0)
-        self.side_menu.resize(int(self.width() / 4), self.height())
 
         # Animation for Side Menu
         self.side_menu_animation = QPropertyAnimation(self.side_menu, b"geometry")
@@ -212,24 +214,24 @@ class DBMainWindow(DBMainWindowInterface):
         width = max(200, int(self.width() / 4))
         height = self.height()
 
-        if self.side_menu.x() > 0:
-            start_value = QRect(0, 0, width, height)
-            end_value = QRect(width, 0, width, height)
-        else:
-            start_value = QRect(width, 0, width, height)
+        if self.side_menu.x() < 0:
+            start_value = QRect(-width, 0, width, height)
             end_value = QRect(0, 0, width, height)
+        else:
+            start_value = QRect(0, 0, width, height)
+            end_value = QRect(-width, 0, width, height)
 
         self.side_menu_animation.setStartValue(start_value)
         self.side_menu_animation.setEndValue(end_value)
         self.side_menu_animation.start()
 
-    def update_menu_button_position(self, value=None):
-        if not value:
-            value = self.side_menu.x()
-        self.menu_button.move(value + self.menu_button.width(), 20)
+    def update_menu_button_position(self, preset_value: int | None = None):
+        if not preset_value:
+            preset_value = self.side_menu.x()
+        self.menu_button.move(preset_value + self.side_menu.width(), 20)
 
-    def side_menu_animation_value_changed(self, value):
-        self.update_menu_button_position(value)
+    def side_menu_animation_value_changed(self, value: QRect):
+        self.update_menu_button_position(value.x())
 
     def set_scroll_speed(self, value: float) -> None:
         return
@@ -238,13 +240,12 @@ class DBMainWindow(DBMainWindowInterface):
     def resizeEvent(self, event):
         height = self.height()
         width = max(200, int(self.width() / 4))
-        if self.side_menu.x() > 0:
-            self.side_menu.setGeometry(width, 0, width, height)
+        if self.side_menu.x() < 0:
+            self.side_menu.setGeometry(-width, 0, width, height)
             self.menu_button.move(width + 40, 20)  # Update the position of the menu button
         else:
             self.side_menu.setGeometry(0, 0, width, height)
             self.menu_button.move(40, 20)  # Update the position of the menu button
         self.update_menu_button_position()
-        print(self.geometry())
 
         super().resizeEvent(event)

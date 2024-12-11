@@ -9,13 +9,15 @@ import abc as _abc
 import typing as _ty
 import types as _ts
 
+# Abstract Machine related imports
+from core.modules.automaton.base._positionManager import PositionManager
 if _ty.TYPE_CHECKING:
-    from core.base.transition import Transition
+    from core.modules.automaton.base.transition import Transition
 
 
 # Docs generated with Chat-GPT
 
-class State(_abc.ABC):
+class State(_abc.ABC, PositionManager):
     """
     Represents a state within an automaton.
 
@@ -59,7 +61,9 @@ class State(_abc.ABC):
             Executes the activation callback function, if it exists.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, display_name: str = "", position: _ty.Tuple[float, float] = (0, 0),
+                 colour: _ty.Tuple[int, int, int] = (0, 0, 0),
+                 accent_colour: _ty.Tuple[int, int, int] = (255, 0, 0)) -> None:
         """
         Initializes a state with a name and an empty set of transitions.
 
@@ -71,6 +75,7 @@ class State(_abc.ABC):
             - `state_name`: The provided name for the state.
             - `activation_callback`: Set to `None` initially.
         """
+        super().__init__(display_name, position, colour, accent_colour)
         self.transitions: _ty.Set[Transition] = set()
         self.state_name: str = name
         self.activation_callback: _ty.Callable or None = None

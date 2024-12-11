@@ -2,13 +2,11 @@
 from returns import result as _result
 
 # Abstract Machine related imports
-from core.base.state import State as BaseState
-from core.base.transition import Transition as BaseTransition
+from core.modules.automaton.base.state import State as BaseState
+from core.modules.automaton.base.transition import Transition as BaseTransition
 
 # Standard typing imports for aps
-import collections.abc as _a
 import typing as _ty
-import types as _ts
 
 
 # Docs generated with Chat-GPT

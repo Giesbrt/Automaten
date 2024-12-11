@@ -11,12 +11,13 @@ import types as _ts
 
 
 # Abstract Machine related imports
-from core.base.state import State
+from core.modules.automaton.base.state import State
+from core.modules.automaton.base._positionManager import PositionManager
 
 
 # Docs generated with Chat-GPT
 
-class Transition(_abc.ABC):
+class Transition(_abc.ABC, PositionManager):
     """
     Represents a generic transition between states in an automaton. It is flexible to support
     various automata by allowing custom logic for transition conditions.
@@ -27,7 +28,10 @@ class Transition(_abc.ABC):
         activation_callback (_ty.Callable or None): An optional callback triggered when the transition is activated.
     """
 
-    def __init__(self, start_state: State, transition_target_state: State) -> None:
+    def __init__(self, start_state: State, transition_target_state: State, display_name: str = "",
+                 position: _ty.Tuple[float, float] = (0, 0),
+                 colour: _ty.Tuple[int, int, int] = (0, 0, 0),
+                 accent_colour: _ty.Tuple[int, int, int] = (255, 0, 0)) -> None:
         """
         Initializes a transition with a starting and a target state.
 
@@ -35,6 +39,7 @@ class Transition(_abc.ABC):
             start_state (State): The state from which this transition starts.
             transition_target_state (State): The state this transition leads to.
         """
+        super().__init__(display_name, position, colour, accent_colour)
         self.start_state: State = start_state
         self.transition_target_state: State = transition_target_state
         self.activation_callback: _ty.Callable or None = None

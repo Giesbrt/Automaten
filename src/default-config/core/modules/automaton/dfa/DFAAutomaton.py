@@ -3,14 +3,11 @@ from returns import result as _result
 from aplustools.io import ActLogger
 
 # Standard typing imports for aps
-import collections.abc as _a
 import typing as _ty
-import types as _ts
 
 # Abstract Machine related imports
 from DFAState import DFAState
-from core.base.automaton import Automaton as BaseAutomaton
-from core.base.transition import Transition as BaseTransition
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 
 
 # Docs generated with Chat-GPT

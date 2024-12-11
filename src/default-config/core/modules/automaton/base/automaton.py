@@ -3,8 +3,8 @@
 import returns.result as _result
 
 # Abstract Machine related imports
-from core.base.state import State
-from core.base.transition import Transition
+from core.modules.automaton.base.state import State
+from core.modules.automaton.base.transition import Transition
 
 # Standard typing imports for aps
 import collections.abc as _a

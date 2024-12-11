@@ -228,7 +228,7 @@ class DBMainWindow(DBMainWindowInterface):
             value = self.side_menu.x()
         else:
             value = value.x()
-        self.menu_button.move(value - self.menu_button.width(), (20))
+        self.menu_button.move(value - self.menu_button.width(), 20)
 
     def side_menu_animation_value_changed(self, value):
         self.update_menu_button_position(value)

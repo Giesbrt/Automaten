@@ -188,8 +188,8 @@ class DBMainWindow(DBMainWindowInterface):
         self.side_menu.setObjectName("sideMenu")
         self.side_menu.setFrameShape(QFrame.Shape.StyledPanel)
         self.side_menu.setAutoFillBackground(True)
-        self.side_menu.move(int(self.width() * 2 / 3), 0)
-        self.side_menu.resize(int(self.width() / 3), self.height())
+        # self.side_menu.move(int(self.width() * 2 / 3), 0)
+        self.side_menu.resize(int(self.width() / 4), self.height())
 
         # Animation for Side Menu
         self.side_menu_animation = QPropertyAnimation(self.side_menu, b"geometry")
@@ -209,15 +209,15 @@ class DBMainWindow(DBMainWindowInterface):
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
 
     def toggle_side_menu(self):
-        width = max(200, int(self.width() / 3))
+        width = max(200, int(self.width() / 4))
         height = self.height()
 
-        if self.side_menu.x() >= self.width():
-            start_value = QRect(self.width(), 0, width, height)
-            end_value = QRect(self.width() - width, 0, width, height)
+        if self.side_menu.x() > 0:
+            start_value = QRect(0, 0, width, height)
+            end_value = QRect(width, 0, width, height)
         else:
-            start_value = QRect(self.width() - width, 0, width, height)
-            end_value = QRect(self.width(), 0, width, height)
+            start_value = QRect(width, 0, width, height)
+            end_value = QRect(0, 0, width, height)
 
         self.side_menu_animation.setStartValue(start_value)
         self.side_menu_animation.setEndValue(end_value)
@@ -226,9 +226,7 @@ class DBMainWindow(DBMainWindowInterface):
     def update_menu_button_position(self, value=None):
         if not value:
             value = self.side_menu.x()
-        else:
-            value = value.x()
-        self.menu_button.move(value - self.menu_button.width(), 20)
+        self.menu_button.move(value + self.menu_button.width(), 20)
 
     def side_menu_animation_value_changed(self, value):
         self.update_menu_button_position(value)
@@ -238,13 +236,15 @@ class DBMainWindow(DBMainWindowInterface):
 
     # Window Methods
     def resizeEvent(self, event):
-        window_width = self.width()
-
-        self.side_menu.move(window_width, 0)  # Update the position of the side menu
-        self.side_menu_animation.setStartValue(QRect(window_width, 0, 0, self.height()))
-        self.side_menu_animation.setEndValue(QRect(window_width - 200, 0, 200,
-                                                   self.height()))  # Adjust 200 as per the desired width of the side menu
-        self.menu_button.move(window_width - 40, 20)  # Update the position of the menu button
+        height = self.height()
+        width = max(200, int(self.width() / 4))
+        if self.side_menu.x() > 0:
+            self.side_menu.setGeometry(width, 0, width, height)
+            self.menu_button.move(width + 40, 20)  # Update the position of the menu button
+        else:
+            self.side_menu.setGeometry(0, 0, width, height)
+            self.menu_button.move(40, 20)  # Update the position of the menu button
         self.update_menu_button_position()
+        print(self.geometry())
 
         super().resizeEvent(event)

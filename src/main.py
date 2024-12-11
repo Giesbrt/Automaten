@@ -103,7 +103,7 @@ class DudPyApp:  # The main logic and gui are separated
             "acrylic_background": "False",
             "hide_scrollbar": "True",
             "stay_on_top": "False",
-            "geometry": "(100, 100, 640, 480)",
+            "geometry": "(100, 100, 1050, 640)",
             "provider_type": "direct",
             "chapter_rate": "0.5",
             "no_update_info": "True",

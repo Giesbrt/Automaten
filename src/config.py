@@ -2,9 +2,17 @@
 import sys as _sys
 import os as _os
 import shutil as _shutil
+import platform as _platform
 
 
 INDEV = 1
+OLD_CWD = _os.getcwd()
+PROGRAM_NAME = "efs_simulator"
+VERSION, VERSION_ADD = "0.1.0.0", "a1"
+OS_LIST = ["Windows"]
+OS_VERSIONS_LIST = [("any",)]
+MAJOR_OS_VERSIONS_LIST = [("10", "11")]
+PY_VERSIONS = [(3, 10), (3, 11), (3, 12)]
 
 
 def is_compiled() -> bool:
@@ -74,6 +82,30 @@ def _configure() -> dict[str, str]:
         "accumulated_logs": accumulated_logs, "old_cwd": old_cwd, "install_dir": install_dir,
         "base_app_dir": base_app_dir,
     }
+
+
+# Check if environment is suitable
+exit_code, exit_message = 0, "An unknown error occurred"
+platform_idx = OS_LIST.index(_platform.system())
+os_versions = OS_VERSIONS_LIST[platform_idx]
+major_os_versions = MAJOR_OS_VERSIONS_LIST[platform_idx]
+if _platform.system() not in OS_LIST:
+    exit_code, exit_message = 1, (f"You are currently on {_platform.system()}. "
+                                  f"Please run this on a supported OS ({', '.join(OS_LIST)}).")
+elif _platform.version() != os_versions and os_versions != ("any",):
+    exit_code, exit_message = 1, (f"You are currently on {_platform.version()}. "
+                                  f"Please run this on a supported OS version ({', '.join(os_versions)}).")
+elif not _platform.release() in major_os_versions:
+    exit_code, exit_message = 1, (f"You are currently on {_platform.release()}. "
+                                  f"Please run this on a supported major OS version ({', '.join(major_os_versions)}).")
+elif _sys.version_info[:2] not in PY_VERSIONS:
+    py_versions_strs = [f"{major}.{minor}" for (major, minor) in PY_VERSIONS]
+    exit_code, exit_message = 1, (f"You are currently on {'.'.join([str(x) for x in _sys.version_info])}. "
+                                  f"Please run this using a supported python version ({', '.join(py_versions_strs)}).")
+if exit_code:
+    raise RuntimeError(exit_message)
+
+print(f"Starting {PROGRAM_NAME} {VERSION + VERSION_ADD} with py{'.'.join([str(x) for x in _sys.version_info])} ...")
 
 
 exported_vars = _configure()

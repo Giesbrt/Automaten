@@ -218,7 +218,7 @@ class Automaton(_abc.ABC):
         """
         raise NotImplementedError("simulate must be implemented in a subclass.")
 
-    @_abc.abstractmethod
+    @_abc.abstractmethod  # Maybe not do loading here?
     def save(self, file_path: str) -> bool:
         """
         Abstract method to save the automaton's configuration to a file.

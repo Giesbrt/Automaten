@@ -86,6 +86,18 @@ class State(_abc.ABC, DisplayManager):
         self.state_name: str = name
         self.activation_callback: _ty.Callable or None = None
 
+        self.set_display_name(name)
+
+    def set_name(self, new_name: str) -> None:
+        """
+        Sets the new name for this state.
+
+        Args:
+            new_name (str): The new name for the state
+        """
+        self.state_name = new_name
+        self.set_display_name(new_name)
+
     def get_name(self) -> str:
         """
         Retrieves the name of the state.

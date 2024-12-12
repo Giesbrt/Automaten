@@ -66,5 +66,9 @@ class DFAState(BaseState):
         # If no valid transition is found, return a failure result
         return _result.Failure(f"No transition found for state {self.get_name()}!")
 
+    def serialise(self) -> _result.Result:
+        pass
 
-
+    @staticmethod
+    def load(json_data: str) -> _result.Result:
+        pass

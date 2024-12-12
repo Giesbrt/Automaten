@@ -154,7 +154,7 @@ class DFAAutomaton(BaseAutomaton):
 
         self.current_state = transition
 
-    def save(self, file_path: str) -> bool:
+    def serialise(self, file_path: str) -> bool:
         """
         Placeholder for saving the DFA configuration to a file.
 

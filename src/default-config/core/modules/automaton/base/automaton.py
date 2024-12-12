@@ -23,7 +23,7 @@ class Automaton(_abc.ABC):
 
     Note:
         This class is abstract and intended to be subclassed for specific types of automata. The
-        `simulate`, `save`, and `load` methods must be implemented in subclasses to define the specific
+        `simulate`, `serialise`, and `load` methods must be implemented in subclasses to define the specific
         behavior of the automaton's simulation and persistence.
 
     Attributes:
@@ -72,10 +72,10 @@ class Automaton(_abc.ABC):
             Abstract method that must be implemented in subclasses to simulate one step of the automaton's behavior
             based on its transitions and input. The simulation logic differs based on the type of automaton.
 
-        save(file_path: str) -> bool:
-            Abstract method to save the automaton's configuration to a file. Must be implemented in subclasses.
+        serialise(file_path: str) -> _result.Result:
+            Abstract method to serialise the automaton's configuration to a file. Must be implemented in subclasses.
 
-        load(file_path: str) -> bool:
+        load(file_path: str) -> _result.Result:
             Abstract method to load an automaton's configuration from a file. Must be implemented in subclasses.
     """
 
@@ -219,27 +219,28 @@ class Automaton(_abc.ABC):
         raise NotImplementedError("simulate must be implemented in a subclass.")
 
     @_abc.abstractmethod  # Maybe not do loading here?
-    def save(self, file_path: str) -> bool:
+    def serialise(self, file_path: str) -> _result.Result:
         """
-        Abstract method to save the automaton's configuration to a file.
+        Abstract method to serialise the automaton's configuration to a file.
 
-        This method should be implemented in subclasses to serialize the automaton's states, transitions,
+        This method should be implemented in subclasses to serialise the automaton's states, transitions,
         and other relevant attributes into a file format (e.g., JSON, XML, or a custom format).
 
         Args:
             file_path (str): The path of the file where the automaton's configuration will be saved.
 
         Returns:
-            bool: True if the save operation is successful, False otherwise.
+            _result.Result: The _result of the serialisation. This could indicate whether the serialisation process
+            was successful
 
         Raises:
             NotImplementedError:
                 If this method is not implemented in a subclass.
         """
-        raise NotImplementedError("save must be implemented in a subclass.")
+        raise NotImplementedError("serialise must be implemented in a subclass.")
 
     @staticmethod
-    def load(file_path: str) -> bool:
+    def load(file_path: str) -> _result.Result:
         """
         Abstract method to load an automaton's configuration from a file.
 

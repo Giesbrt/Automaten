@@ -110,3 +110,39 @@ class Transition(_abc.ABC, PositionManager):
         """
         if self.activation_callback:
             self.activation_callback()
+
+    @_abc.abstractmethod
+    def serialise(self) -> _result.Result:
+        """
+        Abstract method to serialise the automaton's configuration to a file.
+
+        This method should be implemented in subclasses to serialise the automaton's transitions
+        into a file format (e.g., JSON, XML, or a custom format).
+
+        Returns:
+            _result.Result: The _result of the serialisation. This could indicate whether the serialisation process
+            was successful
+
+        Raises:
+            NotImplementedError:
+                If this method is not implemented in a subclass.
+        """
+        raise NotImplementedError("serialise must be implemented in a subclass.")
+
+    @staticmethod
+    def load(json_data: str) -> _result.Result:
+        """
+        Abstract method to load an automaton's transitions from a file.
+
+        Args:
+            json_data (str): The data of the state, which is serialised in JSON
+
+        Returns:
+            _result.Result: The _result of the simulation. This could indicate whether the serialisation process
+            was successful
+
+        Raises:
+            NotImplementedError:
+                If this method is not implemented in a subclass.
+        """
+        raise NotImplementedError("load must be implemented in a subclass.")

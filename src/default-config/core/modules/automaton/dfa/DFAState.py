@@ -1,4 +1,6 @@
 """TBA"""
+import json
+
 from returns import result as _result
 
 # Abstract Machine related imports
@@ -7,6 +9,8 @@ from core.modules.automaton.base.transition import Transition as BaseTransition
 
 # Standard typing imports for aps
 import typing as _ty
+
+from aplustools.io import ActLogger
 
 
 # Docs generated with Chat-GPT
@@ -67,7 +71,36 @@ class DFAState(BaseState):
         return _result.Failure(f"No transition found for state {self.get_name()}!")
 
     def serialise(self) -> _result.Result:
-        pass
+        try:
+            data: dict = {}
+
+            display_manager_serialisation: _result.Result = self.serialise_displaymanager()
+            if not isinstance(display_manager_serialisation, _result.Success):
+                return display_manager_serialisation
+
+            json_data_dm: str = display_manager_serialisation.value_or('{}')
+            json_dm: dict = json.loads(json_data_dm)
+
+            # Build dict
+            data["position"] = json_dm
+            data['name'] = self.get_name()
+
+            transition_dict: dict = {}
+            for i, function in enumerate(self.get_transitions()):
+                transition_serialisation: _result.Result = function.serialise()
+                if not isinstance(transition_serialisation, _result.Success):
+                    return transition_serialisation
+
+                json_data_transition: str = transition_serialisation.value_or('{}')
+                json_transition: dict = json.loads(json_data_transition)
+                transition_dict[i] = json_transition
+
+            data['transitions'] = transition_dict
+
+        except Exception as e:
+            log_message: str = f"An error occurred whilst trying to serialise DFAState! {e}"
+            ActLogger().error(log_message)
+            return _result.Failure(log_message)
 
     @staticmethod
     def load(json_data: str) -> _result.Result:

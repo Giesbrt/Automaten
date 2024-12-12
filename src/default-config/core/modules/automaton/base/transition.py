@@ -12,12 +12,12 @@ import types as _ts
 
 # Abstract Machine related imports
 from core.modules.automaton.base.state import State
-from core.modules.automaton.base._positionManager import PositionManager
+from core.modules.automaton.base._displayManager import DisplayManager
 
 
 # Docs generated with Chat-GPT
 
-class Transition(_abc.ABC, PositionManager):
+class Transition(_abc.ABC, DisplayManager):
     """
     Represents a generic transition between states in an automaton. It is flexible to support
     various automata by allowing custom logic for transition conditions.

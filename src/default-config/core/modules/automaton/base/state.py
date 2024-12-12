@@ -10,14 +10,14 @@ import typing as _ty
 import types as _ts
 
 # Abstract Machine related imports
-from core.modules.automaton.base._positionManager import PositionManager
+from core.modules.automaton.base._displayManager import DisplayManager
 if _ty.TYPE_CHECKING:
     from core.modules.automaton.base.transition import Transition
 
 
 # Docs generated with Chat-GPT
 
-class State(_abc.ABC, PositionManager):
+class State(_abc.ABC, DisplayManager):
     """
     Represents a state within an automaton.
 

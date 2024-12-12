@@ -1,15 +1,20 @@
 """TBA"""
 
+import returns.result as _result
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
 import typing as _ty
 import types as _ts
 
+from aplustools.io import ActLogger
+import json
+
 
 # Docs generated with Chat-GPT
 
-class PositionManager:
+class DisplayManager:
     """
     Represents the visual properties for automaton elements such as states and transitions.
 
@@ -133,4 +138,38 @@ class PositionManager:
         """
         self._accent_colour = new_accent_colour
 
+    def serialise(self) -> _result.Result:
+        data: dict = {"position": self.get_position(),
+                      "colour": self.get_colour(),
+                      "accent_colour": self.get_accent_colour(),
+                      "display_name": self.get_display_name()}
+        try:
+            json_data: str = json.dumps(data)
+            return _result.Success(json_data)
+        except Exception as e:
+            log_message: str = f"An error occurred whilst trying to serialise positionManager! {e}"
+            ActLogger().error(log_message)
+            return _result.Failure(log_message)
+
+    def load(self, json_data: str) -> _result.Result:
+
+        # Note: This function aims to check if the data is complete & set the data
+        try:
+            json_data: dict = json.loads(json_data)
+
+            display_name: str = json_data['display_name']
+            position: _ty.Tuple[float, float] = json_data['position']
+            colour: _ty.Tuple[int, int, int] = json_data['colour']
+            accent_colour: _ty.Tuple[int, int, int] = json_data['accent_colour']
+
+            self.set_display_name(display_name)
+            self.set_position(position)
+            self.set_colour(colour)
+            self.set_accent_colour(accent_colour)
+
+            return _result.Success(None)
+        except Exception as e:
+            log_message: str = f"An error occurred whilst trying to load positionManager! {e}"
+            ActLogger().error(log_message)
+            return _result.Failure(log_message)
 

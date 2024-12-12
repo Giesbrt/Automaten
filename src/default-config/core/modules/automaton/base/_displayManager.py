@@ -138,7 +138,7 @@ class DisplayManager:
         """
         self._accent_colour = new_accent_colour
 
-    def serialise(self) -> _result.Result:
+    def serialise_displaymanager(self) -> _result.Result:
         data: dict = {"position": self.get_position(),
                       "colour": self.get_colour(),
                       "accent_colour": self.get_accent_colour(),
@@ -151,7 +151,7 @@ class DisplayManager:
             ActLogger().error(log_message)
             return _result.Failure(log_message)
 
-    def load(self, json_data: str) -> _result.Result:
+    def load_displaymanager(self, json_data: str) -> _result.Result:
 
         # Note: This function aims to check if the data is complete & set the data
         try:

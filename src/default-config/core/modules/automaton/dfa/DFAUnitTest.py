@@ -71,7 +71,35 @@ class DFAUnitTest(unittest.TestCase):
             simulation_return = dfa.simulate_one_step()
             i += 1
 
-        self.assertEqual(len(dfa.get_word()), i-1)  # -1 because the last call is the end call (end of loop)
+        self.assertEqual(len(dfa.get_word()), i - 1)  # -1 because the last call is the end call (end of loop)
+
+    def test_serialisation_with_pickle(self):
+        dfa: DFAAutomaton = DFAAutomaton()
+
+        s1: DFAState = DFAState("q0")
+        s2: DFAState = DFAState("q1")
+
+        s1f1: DFATransition = DFATransition(s1, s1, 'a')
+        s1f2: DFATransition = DFATransition(s1, s2, 'b')
+
+        s2f1: DFATransition = DFATransition(s2, s1, 'a')
+        s2f2: DFATransition = DFATransition(s2, s2, 'b')
+
+        dfa.states.add(s1)
+        dfa.states.add(s2)
+
+        dfa.set_start_state(s1)
+        dfa.set_end_states({s2})
+
+        dfa.set_word("aab")
+
+        path = "./tests.txt"
+        serialisation_result = dfa.serialise(path)
+        self.assertTrue(isinstance(serialisation_result, _result.Success))
+
+        loading_result = DFAAutomaton.load(path)
+        self.assertTrue(isinstance(loading_result, _result.Success))
+        self.assertTrue(isinstance(loading_result.value_or(None), DFAAutomaton))
 
 
 if __name__ == '__main__':

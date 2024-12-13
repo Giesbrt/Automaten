@@ -56,11 +56,4 @@ class DFATransition(BaseTransition):
             return _result.Success(None)  # Transition can occur
         return _result.Failure(f"Can not transition with input {str(current_input)}!")  # Invalid transition
 
-    def serialise(self) -> _result.Result:
-        pass
-
-    @staticmethod
-    def load(json_data: str) -> _result.Result:
-        pass
-
 

@@ -9,6 +9,8 @@ import typing as _ty
 from DFAState import DFAState
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 
+import pickle
+
 
 # Docs generated with Chat-GPT
 
@@ -154,7 +156,7 @@ class DFAAutomaton(BaseAutomaton):
 
         self.current_state = transition
 
-    def serialise(self, file_path: str) -> bool:
+    def serialise(self, file_path: str) -> _result.Result:
         """
         Placeholder for saving the DFA configuration to a file.
 
@@ -162,13 +164,20 @@ class DFAAutomaton(BaseAutomaton):
             file_path (str): The path where the DFA configuration will be saved.
 
         Returns:
-            bool: False since the method is not yet implemented.
+            _result.Result: The _result of the serialisation. This could indicate whether the serialisation process
+            was successful
         """
-        # TODO: Implement saving logic for DFA.
-        return False
+        try:
+            with open(file_path, 'wb') as file:
+                pickle.dump(self, file)
+            return _result.Success("Stored automaton in file!")
+        except Exception as e:
+            log_message: str = f"An error occurred whilst serialising DFA automaton! {e}"
+            ActLogger().error(log_message)
+            return _result.Failure(log_message)
 
     @staticmethod
-    def load(file_path: str) -> bool:
+    def load(file_path: str) -> _result.Result:
         """
         Placeholder for loading the DFA configuration from a file.
 
@@ -178,8 +187,14 @@ class DFAAutomaton(BaseAutomaton):
         Returns:
             bool: False since the method is not yet implemented.
         """
-        # TODO: Implement loading logic for DFA.
-        return False
+        try:
+            with open(file_path, 'rb') as file:
+                obj: DFAAutomaton = pickle.load(file)
+            return _result.Success(obj)
+        except Exception as e:
+            log_message: str = f"An error occurred whilst deserializing DFA automaton! {e}"
+            ActLogger().error(log_message)
+            return _result.Failure(log_message)
 
     def simulate(self) -> _result.Result:
         """

@@ -1,0 +1,34 @@
+[
+    {
+        "position": [
+            102.0,
+            22.0
+        ],
+        "connections": [
+            {
+                "transition": [
+                    2
+                ],
+                "node_idx": 1
+            }
+        ],
+        "extra_info": "",
+        "root": true
+    },
+    {
+        "position": [
+            1002.1,
+            2289.22
+        ],
+        "connections": [
+            {
+                "transition": [
+                    3
+                ],
+                "node_idx": 0
+            }
+        ],
+        "extra_info": "is_end",
+        "root": false
+    }
+]

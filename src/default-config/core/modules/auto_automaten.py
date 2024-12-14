@@ -1,4 +1,5 @@
 """TBA"""
+import ctypes
 
 from serializer import DCGNode, activate_dcg_node_root
 
@@ -29,6 +30,20 @@ class AutoAutomat(ABC):
     def activate(self, directed_cyclic_graph: DCGNode) -> tuple[list | None, ...]:
         if not directed_cyclic_graph.root:
             raise RuntimeError("Activate failed because directed_cyclic_graph root wasn't root")
+
+
+class Enum:
+    IC_NOTHING = 0
+    AC_RUN = 0
+
+
+class AutoBahn:
+    automat_code = ctypes.c_int8()
+    pyside6_code = ctypes.c_int8()
+
+
+class AutoInterpreter(ABC):
+    ...
 
 
 class DFAAutomat(AutoAutomat):

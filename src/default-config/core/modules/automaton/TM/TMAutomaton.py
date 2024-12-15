@@ -8,8 +8,8 @@ import types as _ts
 
 # Abstract Machine related imports
 from TMState import TMState
-from core.base.automaton import Automaton as BaseAutomaton
-from core.base.transition import Transition as BaseTransition
+from core.modules.automaton.base.automaton  import Automaton as BaseAutomaton
+from core.modules.automaton.base.transition  import Transition as BaseTransition
 
 class TMAutomaton(BaseAutomaton):
     """

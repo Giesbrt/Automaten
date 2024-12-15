@@ -1,8 +1,8 @@
 from returns import result as _result
 
 # Abstract Machine related imports
-from core.base.state import State as BaseState
-from core.base.transition import Transition as BaseTransition
+from core.modules.automaton.base.state import State as BaseState
+from core.modules.automaton.base.transition import Transition as BaseTransition
 
 # Standard typing imports for advanced functionality
 import collections.abc as _a

@@ -76,7 +76,7 @@ class DudPyApp:  # The main logic and gui are separated
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
-        self.gui.icons_folder = os.path.join(self.data_folder, "icons")
+        self.gui.icons_dir = os.path.join(self.data_folder, "icons")
 
         # Setup logger
         self._order_logs(f"{self.data_folder}/logs")

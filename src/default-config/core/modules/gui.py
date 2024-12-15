@@ -1,12 +1,11 @@
 """TBA"""
-
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget, QFormLayout, QFrame,
                                QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget, QPushButton,
-                               QStyleOptionGraphicsItem, QMainWindow, QStackedLayout)
+                               QStyleOptionGraphicsItem, QMainWindow, QStackedLayout, QMessageBox)
 from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon
 
-from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
+from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout, QQuickMessageBox
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -136,7 +135,7 @@ class GridView(QGraphicsView):
 
 class DBMainWindowInterface(QMainWindow):
     """TBA"""
-    icons_folder: str = ""
+    icons_dir: str
 
     def __init__(self) -> None:
         super().__init__(parent=None)
@@ -164,7 +163,7 @@ class RotatingLayout(QQuickBoxLayout):
 
 
 class DBMainWindow(DBMainWindowInterface):
-    icons_folder = ""
+    icons_dir: str
 
     def setup_gui(self) -> None:
         # Central Widget
@@ -202,10 +201,10 @@ class DBMainWindow(DBMainWindowInterface):
         self.side_menu.setLayout(side_menu_layout)
 
         # Menu Button
-        self.menu_button = QPushButton(QIcon(f"{self.icons_folder}/empty.png"), "", self.centralWidget())
+        self.menu_button = QPushButton(QIcon(f"{self.icons_dir}/empty.png"), "", self.centralWidget())
         self.menu_button.setFixedSize(40, 40)
 
-        self.menu_button.setIcon(QIcon(f"{self.icons_folder}/menu_icon.png"))
+        self.menu_button.setIcon(QIcon(f"{self.icons_dir}/menu_icon.png"))
 
         self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu

@@ -5,7 +5,9 @@ from multiprocessing import Lock, Process
 from enum import Enum
 import ctypes
 import struct
+import os
 
+from aplustools.io.env import MAX_PATH
 from aplustools.io.env import auto_repr
 
 # Standard typing imports for aps
@@ -81,7 +83,7 @@ class SharedStruct:
         :param index: Index of the field to set (starting from 0).
         :param value: The value to set, matching the struct format at the specified index.
         """
-        format_parts = self._struct_format.replace(" ", "")
+        format_parts = self._struct_format.split()
 
         if index < 0 or index >= len(format_parts):
             raise IndexError("Field index out of range")
@@ -106,7 +108,7 @@ class SharedStruct:
         :param index: Index of the field to get (starting from 0).
         :return: The value of the field, unpacked based on the struct format.
         """
-        format_parts = self._struct_format.replace(" ", "")
+        format_parts = self._struct_format.split()
 
         if index < 0 or index >= len(format_parts):
             raise IndexError("Field index out of range")
@@ -190,9 +192,15 @@ class ABType(Enum):
 
     single_float = "f"
     double_float = "d"
-    uncounted_string = "s"
-    counted_string = "p"
+    uncounted_string = "{n}s"
+    counted_string = "{n}p"
     pointer = "P"
+
+
+class ICType(Enum):
+    """Different types of interrupt codes"""
+    IC_NOTHING = 0
+    ALC_LOAD_FILE = 1
 
 
 class Autobahn:
@@ -200,11 +208,12 @@ class Autobahn:
     values: dict[str, tuple[ABType, _ty.Any]] = {
         "automat_loader_code": (ABType.uint8, 0),  # GUI->AutomatLoader (ALC)
         "gui_code": (ABType.uint8, 0),  # AutomatLoader->GUI (GIC)
+        "path_to_load": (ABType.counted_string.value.format(n=MAX_PATH), b""),
     }
 
     def __init__(self, process_type: _ty.Literal["parent", "child"], optional_reference: SharedReference | None = None):
         self._shared_struct = SharedStruct(
-            "".join([value[0].value for value in self.values.values()]),
+            " ".join([value[0].value if not isinstance(value[0], str) else value[0] for value in self.values.values()]),
             process_type == "parent",
             optional_reference.shm_name if optional_reference is not None else None,
             overwrite_mp_lock=optional_reference.lock if optional_reference is not None else None
@@ -238,8 +247,9 @@ if __name__ == "__main__":
     with autobahn:
         print(autobahn.get("automat_loader_code"))
         print(autobahn.get("gui_code"))
+        print(autobahn.get("path_to_load"))
 
-    shared_struct = SharedStruct("iif", create=True)
+    shared_struct = SharedStruct("i i f", create=True)
     ref = shared_struct.reference()
     ss2 = SharedStruct.from_reference(ref)
 

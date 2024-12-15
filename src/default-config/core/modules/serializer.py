@@ -7,6 +7,7 @@ import json
 from aplustools.data.bintools import (get_variable_bytes_like, encode_float, encode_integer, read_variable_bytes_like,
                                       decode_integer, decode_float)
 from aplustools.io.fileio import os_open
+from aplustools.io.env import auto_repr
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -39,13 +40,16 @@ class DCGNode:
             Specifies if this node acts as the root of the graph. Defaults to False.
     """
     representative_lists: tuple[list[str] | None, ...]
+    node_list: list[_ty.Self] = []
 
-    def __init__(self, position: tuple[float, float], connections: set[tuple[tuple[int | str, ...], _ty.Self]] | None = None, *_,
+    def __init__(self, position: tuple[float, float], connections: set[tuple[tuple[int | str, ...], int]] | None = None, *_,
                  root: bool = False, extra_info: bytes = b"") -> None:
         self.position: tuple[float, float] = position
-        self.connections: set[tuple[tuple[int | str, ...], _ty.Self]] = connections or set()  # Max conns = len(sum)
+        self.connections: set[tuple[tuple[int | str, ...], int]] = connections or set()  # Max conns = len(sum)
         self.extra_info: bytes = extra_info  # idk would mean we limit ourselves
         self.root: bool = root
+        if root:
+            self.node_list.append(self)
 
     def tie_to(self, transition: tuple[int | str, ...], node: _ty.Self) -> None:
         """
@@ -71,13 +75,12 @@ class DCGNode:
                 ...
             else:
                 raise RuntimeError(f"Transition '{transition}' is invalid for the reprlsts {self.representative_lists}")
-        self.connections.add((transition, node))
+        self.connections.add((transition, len(self.node_list)))
+        self.node_list.append(node)
 
     def __hash__(self) -> int:
         return hash(repr(self))
-
-    def __repr__(self) -> str:
-        return f"Node(position={self.position}, connections={self.connections}, root={self.root})"
+auto_repr(DCGNode, use_repr=True)
 
 
 def activate_dcg_node_root(node: DCGNode, representative_lists: tuple[list[str] | None, ...]) -> None:
@@ -101,6 +104,13 @@ def activate_dcg_node_root(node: DCGNode, representative_lists: tuple[list[str] 
     if not node.root:
         raise RuntimeError("DCGNode needs to be the root node to be activated")
     DCGNode.representative_lists = representative_lists
+
+
+def reset_dcg_node_root(node: DCGNode) -> None:
+    if not node.root:
+        raise RuntimeError("DCGNode needs to be the root node to be activated")
+    DCGNode.representative_lists = []
+    DCGNode.node_list = []
 
 
 def encode_str_or_int_iterable(str_iter: _a.Iterable[str | int]) -> bytes:
@@ -175,28 +185,15 @@ def serialize_dcg_to_file(output_file: str, content: DCGNode) -> None:
                 f.write(get_variable_bytes_like(encode_str_or_int_iterable(lst)))
             else:
                 f.write(get_variable_bytes_like(encode_integer(0)))
-        stack: deque[DCGNode] = deque()
-        stack.append(content)
-        counter: int = 1
-        counted_nodes: dict[DCGNode, int] = {content: 0}
-
-        while stack:
-            item: DCGNode = stack.popleft()
+        for item in content.node_list:
             f.write(encode_float(item.position[0], "double"))
             f.write(encode_float(item.position[1], "double"))
 
             f.write(get_variable_bytes_like(encode_integer(len(item.connections))))
-            for (transition, node) in item.connections:
-                if node not in counted_nodes:
-                    stack.append(node)
-                    counted_nodes[node] = counter
-                    f.write(get_variable_bytes_like(encode_str_or_int_iterable(transition)))
-                    f.write(get_variable_bytes_like(encode_integer(counter)))
-                    counter += 1
-                else:
-                    f.write(get_variable_bytes_like(encode_str_or_int_iterable(transition)))
-                    f.write(get_variable_bytes_like(encode_integer(counted_nodes[node])))
 
+            for (transition, node_idx) in item.connections:
+                f.write(get_variable_bytes_like(encode_str_or_int_iterable(transition)))
+                f.write(get_variable_bytes_like(encode_integer(node_idx)))
             f.write(get_variable_bytes_like(item.extra_info))
             f.write(b"\xFF" if item.root else b"\x00")
 
@@ -216,47 +213,22 @@ def dump_dcg_to_file(output_file: str, node: DCGNode) -> None:
     """
     with os_open(output_file, "w") as f:
         nodes_list = []  # List of nodes to be serialized
-        stack: deque[DCGNode] = deque()  # Stack for traversal
-        stack.append(node)
 
-        counted_nodes: dict[DCGNode, int] = {}  # Mapping of nodes to their indices
-        counted_nodes[node] = 0
+        for current_node in node.node_list:
+            current_data = {
+                "position": current_node.position,
+                "connections": [],
+                "extra_info": current_node.extra_info.decode('utf-8', errors='ignore'),
+                "root": current_node.root,
+            }
 
-        # Add the root node to the list
-        nodes_list.append({
-            "position": node.position,
-            "connections": [],
-            "extra_info": node.extra_info.decode('utf-8', errors='ignore'),  # Decode bytes for JSON compatibility
-            "root": node.root,
-        })
-
-        while stack:
-            current_node = stack.pop()
-            current_idx = counted_nodes[current_node]  # Get the index of the current node
-            current_data = nodes_list[current_idx]
-
-            for transition, connected_node in current_node.connections:
-                if connected_node not in counted_nodes:
-                    # Assign a new index to the connected node
-                    new_idx = len(nodes_list)
-                    counted_nodes[connected_node] = new_idx
-
-                    # Add the connected node to the nodes list
-                    nodes_list.append({
-                        "position": connected_node.position,
-                        "connections": [],
-                        "extra_info": connected_node.extra_info.decode('utf-8', errors='ignore'),
-                        "root": connected_node.root,
-                    })
-
-                    # Push the connected node onto the stack
-                    stack.append(connected_node)
-
+            for transition, connected_node_idx in current_node.connections:
                 # Append the connection using the index of the connected node
                 current_data["connections"].append({
                     "transition": transition,
-                    "node_idx": counted_nodes[connected_node],  # Reference by index
+                    "node_idx": connected_node_idx,  # Reference by index
                 })
+            nodes_list.append(current_data)
         f.write(json.dumps(nodes_list, indent=4).encode())
 
 
@@ -289,8 +261,6 @@ def deserialize_dcg_from_file(input_file: str) -> DCGNode:
                 repr_lsts.append(decode_str_or_int_iterable(read_variable_bytes_like(f), (None,) * lst_length))
             else:
                 repr_lsts.append(None)
-        counter: int = 0
-        counted_nodes: dict[int, DCGNode] = {}
 
         current = f.tell()
         end_position = f.seek(0, f.SEEK_END)
@@ -309,15 +279,11 @@ def deserialize_dcg_from_file(input_file: str) -> DCGNode:
             extra_info = read_variable_bytes_like(f)
             root = f.read(1) == b"\xFF"
             node = DCGNode((x, y), connections, extra_info=extra_info, root=root)
-            if root:
+            DCGNode.node_list.append(node)
+            if root and root_node is None:
                 root_node = node
-            counted_nodes[counter] = node
-            counter += 1
-        for (_, node) in counted_nodes.items():
-            new_connections: set[tuple[tuple[str | int, ...], DCGNode]] = set()
-            for (trans, node_idx) in node.connections:
-                new_connections.add((trans, counted_nodes[node_idx]))
-            node.connections = new_connections
+            elif root:
+                raise RuntimeError("Found second root node")
         return root_node
 
 
@@ -338,38 +304,34 @@ def load_dcg_from_json(input_file: str) -> DCGNode:
     with open(input_file, "r") as f:
         nodes_list = json.load(f)
 
-    # Create placeholder nodes to fill connections later
-    counted_nodes: dict[int, DCGNode] = {
-        idx: DCGNode(
-            tuple(node_data["position"]),
-            set(),
-            extra_info=node_data["extra_info"].encode("utf-8"),
-            root=node_data["root"]
-        )
-        for idx, node_data in enumerate(nodes_list)
-    }
+    counted_nodes: list[DCGNode] = []
+    root_node = None
 
-    # Populate connections
     for idx, node_data in enumerate(nodes_list):
-        current_node = counted_nodes[idx]
-        new_connections: set[tuple[tuple[str, ...], DCGNode]] = set()
-
+        connections = set()
         for connection in node_data["connections"]:
             transition = tuple(connection["transition"])
-            connected_node = counted_nodes[connection["node_idx"]]
-            new_connections.add((transition, connected_node))
+            connections.add((transition, connection["node_idx"]))
 
-        current_node.connections = new_connections
-
-    # Find and return the root node
-    root_node = next(node for node in counted_nodes.values() if node.root)
+        counted_nodes.append(
+            DCGNode(
+                tuple(node_data["position"]),
+                connections,
+                extra_info=node_data["extra_info"].encode("utf-8"),
+                root=node_data["root"]
+            )
+        )
+        if node_data["root"] and root_node is None:
+            root_node = counted_nodes[-1]
+        elif node_data["root"]:
+            raise RuntimeError("Found second root node")
     return root_node
 
 
 if __name__ == "__main__":
     root = DCGNode((102.0, 22.0), root=True)
     activate_dcg_node_root(root, (["a", "b", "c", "d", "e"],))
-    other_node = DCGNode((1002.1, 2289.22), {((3,), root)}, extra_info=b"is_end")
+    other_node = DCGNode((1002.1, 2289.22), {((3,), 0)}, extra_info=b"is_end")
     root.tie_to((2,), other_node)
     serialize_dcg_to_file("./test.bin", root)
     dump_dcg_to_file("./test.json", root)

@@ -335,6 +335,15 @@ if __name__ == "__main__":
     root.tie_to((2,), other_node)
     serialize_dcg_to_file("./test.bin", root)
     dump_dcg_to_file("./test.json", root)
+
+    # There can only be one root network at a time. Could be changed but is unneeded
     print(root)
-    print(deserialize_dcg_from_file("./test.bin"))
-    print(load_dcg_from_json("./test.json"))
+    reset_dcg_node_root(root)
+    
+    bin_root = deserialize_dcg_from_file("./test.bin")
+    print(bin_root)
+    reset_dcg_node_root(bin_root)
+    
+    json_root = load_dcg_from_json("./test.json")
+    print(json_root)
+    reset_dcg_node_root(json_root)

@@ -209,8 +209,8 @@ class DBMainWindow(DBMainWindowInterface):
         self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
 
-    def popup(self, title: str, text: str, description: str, icon: QMessageBox.Icon = QMessageBox.Icon.Information,n
-              buttons: list [QMessageBox.StandardButton] | QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
+    def popup(self, title: str, text: str, description: str, icon: QMessageBox.Icon = QMessageBox.Icon.Information,
+              buttons: list[QMessageBox.StandardButton] | QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
               default_button: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok) -> QMessageBox.StandardButton:
         msg_box = QQuickMessageBox(self, icon, title, text, description,
                                    standard_buttons=buttons,

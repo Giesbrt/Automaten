@@ -91,18 +91,18 @@ class DFAAutomaton(BaseAutomaton):
 
         self.end_states: _ty.Set[DFAState] = set()
 
-    def set_word(self, new_word: str) -> None:
+    def set_input(self, automaton_input: _ty.Any) -> None:
         """
         Sets a new input word for the DFA to process.
 
         Args:
-            new_word (str): The string of characters to be processed by the automaton.
+            automaton_input (str): The string of characters to be processed by the automaton.
         """
-        self.word = new_word
+        self.word = automaton_input
         self.char_index = 0
         self.current_char = self.word[self.char_index] if self.word else ""
 
-    def get_word(self) -> str:
+    def get_input(self) -> _ty.Any:
         return self.word
 
     def next_char(self) -> None:

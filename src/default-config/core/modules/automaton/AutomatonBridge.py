@@ -129,7 +129,7 @@ class AutomatonBridge:
 
     @_abc.abstractmethod
     def set_input(self, automaton_input: _ty.Any) -> None:
-        raise NotImplementedError("set_input must be implemented in a subclass.")
+        self.automaton_impl.set_input(automaton_input)
 
     def get_input(self) -> _ty.Any:
-        raise NotImplementedError("get_input must be implemented in a subclass.")
+        return self.automaton_impl.get_input()

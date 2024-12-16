@@ -156,46 +156,6 @@ class DFAAutomaton(BaseAutomaton):
 
         self.current_state = transition
 
-    def serialise(self, file_path: str) -> _result.Result:
-        """
-        Placeholder for saving the DFA configuration to a file.
-
-        Args:
-            file_path (str): The path where the DFA configuration will be saved.
-
-        Returns:
-            _result.Result: The _result of the serialisation. This could indicate whether the serialisation process
-            was successful
-        """
-        try:
-            with open(file_path, 'wb') as file:
-                pickle.dump(self, file)
-            return _result.Success("Stored automaton in file!")
-        except Exception as e:
-            log_message: str = f"An error occurred whilst serialising DFA automaton! {e}"
-            ActLogger().error(log_message)
-            return _result.Failure(log_message)
-
-    @staticmethod
-    def load(file_path: str) -> _result.Result:
-        """
-        Placeholder for loading the DFA configuration from a file.
-
-        Args:
-            file_path (str): The path to the file containing the DFA configuration.
-
-        Returns:
-            bool: False since the method is not yet implemented.
-        """
-        try:
-            with open(file_path, 'rb') as file:
-                obj: DFAAutomaton = pickle.load(file)
-            return _result.Success(obj)
-        except Exception as e:
-            log_message: str = f"An error occurred whilst deserializing DFA automaton! {e}"
-            ActLogger().error(log_message)
-            return _result.Failure(log_message)
-
     def simulate(self) -> _result.Result:
         """
         Runs the DFA simulation on the input word.
@@ -227,7 +187,7 @@ class DFAAutomaton(BaseAutomaton):
 
         while True:
             self.next_state()  # Transition to the next state.
-            self.next_char()   # Move to the next character in the input.
+            self.next_char()  # Move to the next character in the input.
             self.current_state.activate()  # Activate the current state (if such behavior is defined).
 
             if self.char_index >= len(self.word):
@@ -275,7 +235,3 @@ class DFAAutomaton(BaseAutomaton):
         self.next_state()  # Transition to the next state.
         self.next_char()  # Move to the next character in the input.
         self.current_state.activate()  # Activate the current state (if such behavior is defined).
-
-
-
-

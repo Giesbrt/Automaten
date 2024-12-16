@@ -14,9 +14,14 @@ import typing as _ty
 import types as _ts
 
 
+#  TODO: File is WIP
+
 class AutomatonBridge:
     def __init__(self, automaton_impl: Automaton) -> None:
         self.automaton_impl: Automaton = automaton_impl
+
+    def set_implementation(self, automaton_impl: Automaton) -> None:
+        self.automaton_impl = automaton_impl
 
     def get_states(self) -> _ty.Set:
         """

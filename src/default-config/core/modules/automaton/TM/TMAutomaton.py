@@ -8,8 +8,9 @@ import types as _ts
 
 # Abstract Machine related imports
 from TMState import TMState
-from core.modules.automaton.base.automaton  import Automaton as BaseAutomaton
-from core.modules.automaton.base.transition  import Transition as BaseTransition
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from core.modules.automaton.base.transition import Transition as BaseTransition
+
 
 class TMAutomaton(BaseAutomaton):
     """
@@ -222,32 +223,6 @@ class TMAutomaton(BaseAutomaton):
 
         self.current_state = transition
         return condition
-
-    def save(self, file_path: str) -> bool:
-        """
-        Placeholder for saving the Turing Machine configuration to a file.
-
-        Args:
-            file_path (str): The path where the configuration will be saved.
-
-        Returns:
-            bool: False since the method is not yet implemented.
-        """
-        # TODO: Implement saving logic for Turing Machine.
-        return False
-
-    def load(self, file_path: str) -> bool:
-        """
-        Placeholder for loading the Turing Machine configuration from a file.
-
-        Args:
-            file_path (str): The path to the file containing the machine configuration.
-
-        Returns:
-            bool: False since the method is not yet implemented.
-        """
-        # TODO: Implement loading logic for Turing Machine.
-        return False
 
     def next_location(self, callback=None):
         """

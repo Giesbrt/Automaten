@@ -15,7 +15,7 @@ import types as _ts
 
 # Docs generated with Chat-GPT
 
-class Automaton(_abc.ABC):
+class Automaton(_abc.ABC):  # Todo: Maybe add end states to here (unused in Mealy automatons)
     """
     Represents a generic automaton. This class serves as the foundation for different types of
     automata (such as DFAs, Mealy-automaton, Turing machines, etc.), and it manages the states and transitions
@@ -71,12 +71,6 @@ class Automaton(_abc.ABC):
         simulate_one_step() -> _result.Result:
             Abstract method that must be implemented in subclasses to simulate one step of the automaton's behavior
             based on its transitions and input. The simulation logic differs based on the type of automaton.
-
-        serialise(file_path: str) -> _result.Result:
-            Abstract method to serialise the automaton's configuration to a file. Must be implemented in subclasses.
-
-        load(file_path: str) -> _result.Result:
-            Abstract method to load an automaton's configuration from a file. Must be implemented in subclasses.
     """
 
     def __init__(self) -> None:  # TODO input alphabet?
@@ -218,43 +212,10 @@ class Automaton(_abc.ABC):
         """
         raise NotImplementedError("simulate must be implemented in a subclass.")
 
-    @_abc.abstractmethod  # Maybe not do loading here?
-    def serialise(self, file_path: str) -> _result.Result:
-        """
-        Abstract method to serialise the automaton's configuration to a file.
+    @_abc.abstractmethod
+    def set_input(self, automaton_input: _ty.Any) -> None:
+        raise NotImplementedError("set_input must be implemented in a subclass.")
 
-        This method should be implemented in subclasses to serialise the automaton's states, transitions,
-        and other relevant attributes into a file format (e.g., JSON, XML, or a custom format).
+    def get_input(self) -> _ty.Any:
+        raise NotImplementedError("get_input must be implemented in a subclass.")
 
-        Args:
-            file_path (str): The path of the file where the automaton's configuration will be saved.
-
-        Returns:
-            _result.Result: The _result of the serialisation. This could indicate whether the serialisation process
-            was successful
-
-        Raises:
-            NotImplementedError:
-                If this method is not implemented in a subclass.
-        """
-        raise NotImplementedError("serialise must be implemented in a subclass.")
-
-    @staticmethod
-    def load(file_path: str) -> _result.Result:
-        """
-        Abstract method to load an automaton's configuration from a file.
-
-        This method should be implemented in subclasses to deserialize the automaton's configuration
-        from a file format (e.g., JSON, XML, or a custom format).
-
-        Args:
-            file_path (str): The path of the file from which the automaton's configuration will be loaded.
-
-        Returns:
-            bool: True if the load operation is successful, False otherwise.
-
-        Raises:
-            NotImplementedError:
-                If this method is not implemented in a subclass.
-        """
-        raise NotImplementedError("load must be implemented in a subclass.")

@@ -132,7 +132,6 @@ class AutomatonBridge:
         """
         return self.automaton_impl.simulate_one_step()
 
-    @_abc.abstractmethod
     def set_input(self, automaton_input: _ty.Any) -> None:
         self.automaton_impl.set_input(automaton_input)
 

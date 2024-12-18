@@ -1,7 +1,7 @@
 """TBA"""
 
 import json
-from core.modules.utils.singleton import singleton
+from queue import Queue
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -10,48 +10,38 @@ import typing as _ty
 import types as _ts
 
 
-@singleton
 class UiBridge:
-    def __init__(self) -> None:
-        self.ui_queue: _ty.List[_ty.Dict[str, str]] = []
-        self.backend_queue: _ty.List[_ty.Dict[str, str]] = []
+    _ui_queue: Queue[_ty.Dict[str, str]] = Queue()
+    _backend_queue: Queue[_ty.Dict[str, str]] = Queue()
 
     # Ui
-    def get_ui_queue(self) -> _ty.List[_ty.Dict[str, str]]:
-        return self.ui_queue
+    def get_ui_queue(self) -> Queue[_ty.Dict[str, str]]:
+        return self._ui_queue
 
-    def get_ui_current_queue_item(self) -> _ty.Dict[str, str] or None:
-        if not self.ui_queue:
-            return None
-        return self.ui_queue[0]
+    def get_ui_task(self) -> _ty.Dict[str, str] or None:
+        return self._ui_queue.get_nowait()
 
-    def add_ui_queue_item(self, item: _ty.Dict[str, str]) -> None:
-        self.ui_queue.append(item)
+    def add_ui_current_item(self, item: _ty.Dict[str, str]) -> None:
+        self._ui_queue.put(item)
 
-    def remove_ui_current_queue_item(self) -> None:
-        if not self.ui_queue:
-            return
-        self.ui_queue.pop(0)
+    def complete_ui_task(self) -> None:
+        self._ui_queue.task_done()
 
     def has_ui_items(self) -> bool:
-        return len(self.ui_queue) > 0
+        return self._ui_queue.empty()
 
     # Backend
-    def get_backend_queue(self) -> _ty.List[_ty.Dict[str, str]]:
-        return self.backend_queue
+    def get_backend_queue(self) -> Queue[_ty.Dict[str, str]]:
+        return self._backend_queue
 
-    def get_backend_current_queue_item(self) -> _ty.Dict[str, str] or None:
-        if not self.backend_queue:
-            return None
-        return self.backend_queue[0]
+    def get_backend_task(self) -> _ty.Dict[str, str] or None:
+        return self._backend_queue.get_nowait()
 
-    def add_backend_queue_item(self, item: _ty.Dict[str, str]) -> None:
-        self.backend_queue.append(item)
+    def add_backend_item(self, item: _ty.Dict[str, str]) -> None:
+        self._backend_queue.put(item)
 
-    def remove_backend_current_queue_item(self) -> None:
-        if not self.backend_queue:
-            return
-        self.backend_queue.pop(0)
+    def complete_backend_task(self) -> None:
+        self._backend_queue.task_done()
 
     def has_backend_items(self) -> bool:
-        return len(self.backend_queue) > 0
+        return self._backend_queue.empty()

@@ -138,7 +138,7 @@ class DFAAutomaton(BaseAutomaton):
         """
         return self.end_states
 
-    def next_state(self) -> None:
+    def next_state(self) -> _result.Result:
         """
         Transitions the DFA to the next state based on the current state and input character.
 
@@ -148,13 +148,14 @@ class DFAAutomaton(BaseAutomaton):
         transition_result: _result.Result = self.current_state.find_transition(self.current_char)
 
         if not isinstance(transition_result, _result.Success):
-            return  # No valid transition found.
+            return _result.Failure("No valid transition found!")      # No valid transition found.
 
         transition: DFAState = transition_result.value_or(None)
         if not transition or transition not in self.states:
-            return  # Invalid target state.
+            return _result.Failure("Invalid target state!")  # Invalid target state.
 
         self.current_state = transition
+        return _result.Success(None)
 
     def simulate(self) -> _result.Result:
         """
@@ -186,7 +187,11 @@ class DFAAutomaton(BaseAutomaton):
         self.current_state.activate()
 
         while True:
-            self.next_state()  # Transition to the next state.
+            result: _result.Result = self.next_state()  # Transition to the next state.
+            if not isinstance(result, _result.Success):
+                ActLogger().error(result.value_or("Failed to cache error message!"))
+                return result
+            
             self.next_char()  # Move to the next character in the input.
             self.current_state.activate()  # Activate the current state (if such behavior is defined).
 
@@ -232,6 +237,10 @@ class DFAAutomaton(BaseAutomaton):
             self.current_state = self.start_state
             self.current_state.activate()
 
-        self.next_state()  # Transition to the next state.
+        result: _result.Result = self.next_state()  # Transition to the next state.
+        if not isinstance(result, _result.Success):
+            ActLogger().error(result.value_or("Failed to cache error message!"))
+            return result
+
         self.next_char()  # Move to the next character in the input.
         self.current_state.activate()  # Activate the current state (if such behavior is defined).

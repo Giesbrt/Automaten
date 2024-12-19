@@ -44,10 +44,10 @@ class TMAutomaton(BaseAutomaton):
         set_mode(mode: str):
             Sets the operational mode of the automaton (e.g., LBAutomaton).
 
-        set_word(new_word: str) -> None:
+        set_input(new_word: str) -> None:
             Loads a new input word onto the tape and resets the head position.
 
-        get_word() -> str:
+        get_input() -> str:
             Retrieves the input word from the tape.
 
         right() -> None:

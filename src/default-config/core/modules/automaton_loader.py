@@ -9,7 +9,6 @@ class _Backend:
     def run_infinite(self) -> None:
         """
         Used to actually start the backend. The gui will launch this in a seperate thread.
-        Note that JSONAppStorage is NOT thread-safe at the moment.
         """
         ...
 

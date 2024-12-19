@@ -145,7 +145,7 @@ class AutomatonBridge:
         self.automaton_impl.set_output_alphabet(alphabet)
 
     def get_input_alphabet(self) -> _ty.Any:
-           return self.automaton_impl.get_input_alphabet()
+        return self.automaton_impl.get_input_alphabet()
 
     def get_output_alphabet(self) -> _ty.Any:
-         return self.automaton_impl.get_output_alphabet()
+        return self.automaton_impl.get_output_alphabet()

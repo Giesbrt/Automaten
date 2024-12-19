@@ -42,7 +42,7 @@ def _configure() -> dict[str, str]:
     dir_structure = (
             ("config", ()),
             ("core", ("libs", "modules")),
-            ("data", (("assets", ("icons", "logo_cache")),
+            ("data", (("assets", ("app_icons", "icons",)),
                       "logs")),
             ("extensions", ()),
             ("themes", ())

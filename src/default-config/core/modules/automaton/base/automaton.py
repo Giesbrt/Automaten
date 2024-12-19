@@ -238,3 +238,21 @@ class Automaton(_abc.ABC):  # Todo: Maybe add end states to here (unused in Meal
     def get_input(self) -> _ty.Any:
         raise NotImplementedError("get_input must be implemented in a subclass.")
 
+    @_abc.abstractmethod
+    def set_input_alphabet(self, alphabet: _ty.Any) -> None:
+        raise NotImplementedError("set_input_alphabet must be implemented in a subclass.")
+
+    @_abc.abstractmethod
+    def set_output_alphabet(self, alphabet: _ty.Any) -> None:
+        raise NotImplementedError("set_output_alphabet must be implemented in a subclass.")
+
+    @_abc.abstractmethod
+    def get_input_alphabet(self) -> _ty.Any:
+        raise NotImplementedError("get_input_alphabet must be implemented in a subclass.")
+
+    @_abc.abstractmethod
+    def get_output_alphabet(self) -> _ty.Any:
+        raise NotImplementedError("get_output_alphabet must be implemented in a subclass.")
+
+
+

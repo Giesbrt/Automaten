@@ -113,7 +113,7 @@ class TMAutomaton(BaseAutomaton):
         else:
             self.LBAutomaton = False
 
-    def set_word(self, new_word: str) -> None:
+    def set_input(self, new_word: str) -> None:
         """
         Loads a new input word onto the tape and resets the head position.
 
@@ -125,7 +125,7 @@ class TMAutomaton(BaseAutomaton):
         self.head = 0
         self.current_char = self.memoryTape[self.head]
 
-    def get_word(self) -> str:
+    def get_input(self) -> str:
         """
         Retrieves the input word from the memory tape.
 

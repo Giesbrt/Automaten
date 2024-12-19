@@ -1,7 +1,7 @@
 from aplustools.data.storage import SQLite3Storage as _SQLite3Storage  # User safe
 from aplustools.data.storage import SimpleJSONStorage as _SimpleJSONStorage
 
-from threading import Lock as _Lock
+from threading import RLock as _RLock
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -156,9 +156,8 @@ class JSONAppStorage:
     def __init__(self, path: str, default_settings: dict[str, str]) -> None:
         self._storage: _SimpleJSONStorage = _SimpleJSONStorage(path, beautify=True)
         self._default_settings: dict[str, str] = {}
+        self._lock: _RLock = _RLock()
         self.set_default_settings(default_settings)
-        self._lock: _Lock = _Lock()
-        self._acquired: bool = False
 
     def _check_if_defaulted(self, key: str) -> bool:
         """
@@ -187,21 +186,13 @@ class JSONAppStorage:
         Raises:
             ValueError: If the key does not have a default setting.
         """
-        if self._acquired:
+        with self._lock:
             if not self._check_if_defaulted(key):
                 raise ValueError(f"{key} does not have a default!")
             setting = self._storage.retrieve([key])[0]
             if convert_to:
                 return convert_to(setting)
             return setting
-        else:
-            with self._lock:
-                if not self._check_if_defaulted(key):
-                    raise ValueError(f"{key} does not have a default!")
-                setting = self._storage.retrieve([key])[0]
-                if convert_to:
-                    return convert_to(setting)
-                return setting
 
     def set_default_settings(self, default_settings: dict[str, str]) -> None:
         """
@@ -212,21 +203,13 @@ class JSONAppStorage:
 
         Stores any settings in the storage that do not already exist.
         """
-        if self._acquired:
+        with self._lock:
             self._default_settings = default_settings
             existing_keys: list[str | None] = self._storage.retrieve(list(default_settings.keys()))
             to_store = {k: v for i, (k, v) in enumerate(default_settings.items())
                         if existing_keys[i] is None}
             if to_store:
                 self._storage.store(to_store)
-        else:
-            with self._lock:
-                self._default_settings = default_settings
-                existing_keys: list[str | None] = self._storage.retrieve(list(default_settings.keys()))
-                to_store = {k: v for i, (k, v) in enumerate(default_settings.items())
-                            if existing_keys[i] is None}
-                if to_store:
-                    self._storage.store(to_store)
 
     def acquire(self, timeout: float = -1) -> None:
         """
@@ -235,13 +218,10 @@ class JSONAppStorage:
         :param timeout: Timeout before returning if lock cannot get acquired.
         """
         self._lock.acquire(timeout=timeout)
-        self._acquired = True
 
     def release(self) -> None:
         """
         Releases the lock acquired with acquire(timeout=...)
         :return:
         """
-        if self._acquired:
-            self._lock.release()
-            self._acquired = False
+        self._lock.release()

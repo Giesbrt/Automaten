@@ -351,9 +351,6 @@ if __name__ == "__main__":
         msg_box.exec()
         raise e
     finally:
-        #if side_thread is not None:
-        #    event.set()
-        #    side_thread.join(timeout=10)
         if dp_app is not None:
             dp_app.exit()
         if qgui is not None:

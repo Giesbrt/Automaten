@@ -92,6 +92,25 @@ class Automaton(_abc.ABC):  # Todo: Maybe add end states to here (unused in Meal
 
         self.current_state: State = None
         self.start_state: State = None
+        self.end_states: _ty.Set[State] = set()
+
+    def get_end_states(self) -> _ty.Set:
+        """
+        Returns the set of all end-states in the automaton.
+
+        Returns:
+            _ty.Set[State]: A set containing all end-states that are part of the automaton.
+        """
+        return self.end_states
+
+    def set_end_states(self, new_end_states: _ty.Set) -> None:
+        """
+        Sets a new set of end states for the automaton.
+
+        Args:
+            new_end_states (State): The states to be set as the end states.
+        """
+        self.end_states = new_end_states
 
     def get_states(self) -> _ty.Set:
         """

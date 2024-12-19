@@ -89,8 +89,6 @@ class DFAAutomaton(BaseAutomaton):
         self.char_index: int = 0
         self.current_char: str = ""
 
-        self.end_states: _ty.Set[DFAState] = set()
-
     def set_input(self, automaton_input: _ty.Any) -> None:
         """
         Sets a new input word for the DFA to process.
@@ -113,30 +111,6 @@ class DFAAutomaton(BaseAutomaton):
         """
         self.char_index += 1
         self.current_char = self.word[max(0, min(self.char_index, len(self.word) - 1))]
-
-    def set_end_states(self, new_end_states: _ty.Set[DFAState]) -> None:
-        """
-        Sets the accepting (end) states for the DFA.
-
-        If any of the new end states are not already part of the automaton's states, they are added.
-
-        Args:
-            new_end_states (_ty.Set[DFAState]): A set of states to mark as accepting states.
-        """
-        for state in new_end_states:
-            if state not in self.get_states():
-                self.states.add(state)
-
-        self.end_states = new_end_states
-
-    def get_end_states(self) -> _ty.Set[DFAState]:
-        """
-        Retrieves the set of accepting (end) states for the DFA.
-
-        Returns:
-            _ty.Set[DFAState]: A set containing all the DFA's accepting states.
-        """
-        return self.end_states
 
     def next_state(self) -> _result.Result:
         """
@@ -191,14 +165,14 @@ class DFAAutomaton(BaseAutomaton):
             if not isinstance(result, _result.Success):
                 ActLogger().error(result.value_or("Failed to cache error message!"))
                 return result
-            
+
             self.next_char()  # Move to the next character in the input.
             self.current_state.activate()  # Activate the current state (if such behavior is defined).
 
             if self.char_index >= len(self.word):
                 break  # Stop simulation when the end of the word is reached.
 
-        if self.current_state in self.end_states:
+        if self.current_state in self.get_end_states():
             return _result.Success("Automaton terminated in an end state!")
         return _result.Failure("Automaton failed to terminate in an end state!")
 
@@ -221,7 +195,7 @@ class DFAAutomaton(BaseAutomaton):
             an error is logged and the simulation returns a failure.
         """
         if self.char_index >= len(self.word):
-            if self.current_state in self.end_states:
+            if self.current_state in self.get_end_states():
                 return _result.Success("Automaton terminated in an end state!")
             return _result.Failure("Automaton failed to terminate in an end state!")
 

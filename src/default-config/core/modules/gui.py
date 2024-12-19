@@ -158,8 +158,12 @@ class DBMainWindowInterface(QMainWindow):
         raise NotImplementedError
 
 
-class RotatingLayout(QQuickBoxLayout):
-    ...  # Each sheet has one central widget that gets hidden plus any number of floating widgets.
+class UserView(QWidget):
+    ...
+
+
+class SettingsView(QWidget):
+    ...
 
 
 class DBMainWindow(DBMainWindowInterface):

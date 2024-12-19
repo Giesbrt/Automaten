@@ -15,7 +15,7 @@ import types as _ts
 
 # Docs generated with Chat-GPT
 
-class Automaton(_abc.ABC):  # Todo: Maybe add end states to here (unused in Mealy automatons)
+class Automaton(_abc.ABC):
     """
     Represents a generic automaton. This class serves as the foundation for different types of
     automata (such as DFAs, Mealy-automaton, Turing machines, etc.), and it manages the states and transitions

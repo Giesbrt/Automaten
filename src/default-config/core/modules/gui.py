@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout, QQuickMessageBox
+from aplustools.package.timid import TimidTimer
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -158,23 +159,16 @@ class DBMainWindowInterface(QMainWindow):
         raise NotImplementedError
 
 
-class UserView(QWidget):
-    ...
+class Panel(QWidget):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
 
 
-class SettingsView(QWidget):
-    ...
-
-
-class DBMainWindow(DBMainWindowInterface):
-    icons_dir: str
-
-    def setup_gui(self) -> None:
-        # Central Widget
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        self.window_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom, parent=central_widget)
-
+class UserPanel(Panel):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.content_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom)
+        self.setLayout(self.content_layout)
         # Define positions of fixed objects with their respective QGraphicsItems
         fixed_positions = [
             (10, 10, QGraphicsRectItem(0, 0, 100, 100)),  # A rectangle at (10, 10)
@@ -188,7 +182,7 @@ class DBMainWindow(DBMainWindowInterface):
             item.setBrush(Qt.GlobalColor.blue)  # Set the fill color to blue
             item.setPen(Qt.PenStyle.NoPen)  # Remove the border
         self.grid_view = GridView(grid_size=100, start_x=50, start_y=50, fixed_objects=fixed_positions)
-        self.window_layout.addWidget(self.grid_view)
+        self.content_layout.addWidget(self.grid_view)
 
         # Side Menu
         self.side_menu = QFrame(self)
@@ -205,21 +199,21 @@ class DBMainWindow(DBMainWindowInterface):
         self.side_menu.setLayout(side_menu_layout)
 
         # Menu Button
-        self.menu_button = QPushButton(QIcon(f"{self.icons_dir}/empty.png"), "", self.centralWidget())
+        self.menu_button = QPushButton(QIcon(), "", self)
         self.menu_button.setFixedSize(40, 40)
 
-        self.menu_button.setIcon(QIcon(f"{self.icons_dir}/menu_icon.png"))
+        self.menu_button.setIcon(QIcon())
 
         self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
 
-    def popup(self, title: str, text: str, description: str, icon: QMessageBox.Icon = QMessageBox.Icon.Information,
-              buttons: list[QMessageBox.StandardButton] | QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
-              default_button: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok) -> QMessageBox.StandardButton:
-        msg_box = QQuickMessageBox(self, icon, title, text, description,
-                                   standard_buttons=buttons,
-                                   default_button=default_button)
-        return msg_box.exec()
+    def update_menu_button_position(self, preset_value: int | None = None):
+        if not preset_value:
+            preset_value = self.side_menu.x()
+        self.menu_button.move(preset_value + self.side_menu.width(), 20)
+
+    def side_menu_animation_value_changed(self, value: QRect):
+        self.update_menu_button_position(value.x())
 
     def toggle_side_menu(self):
         width = max(200, int(self.width() / 4))
@@ -236,17 +230,6 @@ class DBMainWindow(DBMainWindowInterface):
         self.side_menu_animation.setEndValue(end_value)
         self.side_menu_animation.start()
 
-    def update_menu_button_position(self, preset_value: int | None = None):
-        if not preset_value:
-            preset_value = self.side_menu.x()
-        self.menu_button.move(preset_value + self.side_menu.width(), 20)
-
-    def side_menu_animation_value_changed(self, value: QRect):
-        self.update_menu_button_position(value.x())
-
-    def set_scroll_speed(self, value: float) -> None:
-        return
-
     # Window Methods
     def resizeEvent(self, event):
         height = self.height()
@@ -260,3 +243,78 @@ class DBMainWindow(DBMainWindowInterface):
         self.update_menu_button_position()
 
         super().resizeEvent(event)
+
+
+class SettingsPanel(Panel):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+
+
+class DBMainWindow(DBMainWindowInterface):
+    icons_dir: str
+
+    def setup_gui(self) -> None:
+        # Central Widget
+        central_widget = QWidget()
+        # self.setCentralWidget(central_widget)
+        # self.window_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, parent=central_widget)
+
+        self.user_panel = UserPanel(parent=self)
+        # self.window_layout.addWidget(self.user_panel)
+        self.user_panel.setGeometry(0, 0, self.width(), self.height())
+
+        # Animation for Side Menu
+        self.user_panel_animation = QPropertyAnimation(self.user_panel, b"geometry")
+        self.user_panel_animation.setDuration(500)
+
+        self.settings_panel = SettingsPanel(parent=self)
+        # self.window_layout.addWidget(self.settings_panel)
+        self.settings_panel.setGeometry(self.width(), 0, self.width(), self.height())
+
+        # Animation for Side Menu
+        self.settings_panel_animation = QPropertyAnimation(self.settings_panel, b"geometry")
+        self.settings_panel_animation.setDuration(500)
+        self.timer = TimidTimer()
+        self.timer.interval(1, count="inf", callback=self.switch_panel)
+
+    def switch_panel(self):
+        print("Switching ...")
+        # self.user_panel.setGeometry(-self.width(), 0, self.width(), self.height())
+        # self.settings_panel.setGeometry(0, 0, self.width(), self.height())
+        # return
+        width = self.width()
+        height = self.height()
+
+        user_panel_hidden_value = QRect(-width, 0, width, height)
+        shown_panel_end_value = QRect(0, 0, width, height)
+        settings_panel_hidden_value = QRect(width, 0, width, height)
+
+        if self.settings_panel.x() == 0:
+            print("To user")
+            # self.user_panel_animation.setStartValue(user_panel_hidden_value)
+            # self.user_panel_animation.setEndValue(shown_panel_end_value)
+            # self.settings_panel_animation.setStartValue(shown_panel_end_value)
+            # self.settings_panel_animation.setEndValue(settings_panel_hidden_value)
+            self.user_panel.setGeometry(shown_panel_end_value)
+            self.settings_panel.setGeometry(settings_panel_hidden_value)
+        else:
+            print("To sett")
+            # self.user_panel_animation.setStartValue(shown_panel_end_value)
+            # self.user_panel_animation.setEndValue(user_panel_hidden_value)
+            # self.settings_panel_animation.setStartValue(settings_panel_hidden_value)
+            # self.settings_panel_animation.setEndValue(shown_panel_end_value)
+            self.user_panel.setGeometry(user_panel_hidden_value)
+            self.settings_panel.setGeometry(shown_panel_end_value)
+        # self.user_panel_animation.start()
+        # self.settings_panel_animation.start()
+
+    def popup(self, title: str, text: str, description: str, icon: QMessageBox.Icon = QMessageBox.Icon.Information,
+              buttons: list[QMessageBox.StandardButton] | QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
+              default_button: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok) -> QMessageBox.StandardButton:
+        msg_box = QQuickMessageBox(self, icon, title, text, description,
+                                   standard_buttons=buttons,
+                                   default_button=default_button)
+        return msg_box.exec()
+
+    def set_scroll_speed(self, value: float) -> None:
+        return

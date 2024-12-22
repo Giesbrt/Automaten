@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem,
                                QComboBox, QSlider, QGraphicsTextItem)
 from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation, QPoint, Signal, QParallelAnimationGroup
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon, QPen, QColor, QDrag, QFont
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout, QQuickMessageBox
 from aplustools.package.timid import TimidTimer
@@ -122,6 +123,8 @@ class GridView(QGraphicsView):
     def __init__(self, parent: QWidget | None = None, grid_size: int = 100, start_x: int = 50, start_y: int = 50,
                  fixed_objects: list[tuple[float, float, QGraphicsItem]] | None = None) -> None:
         super().__init__(parent=parent)
+        # self.setViewport(QOpenGLWidget())  # Use OpenGL for rendering?
+        self.setCacheMode(QGraphicsView.CacheModeFlag.CacheBackground)
         self.setScene(QGraphicsScene(self))
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
@@ -240,6 +243,7 @@ class GridView(QGraphicsView):
             event.accept()
         else:
             super().mouseMoveEvent(event)
+        self.resetCachedContent()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Stop panning on mouse button release."""

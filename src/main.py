@@ -66,7 +66,7 @@ class DBMainWindowInterface(QMainWindow):
 
 class DudPyApp:  # The main logic and gui are separated
     """TBA"""
-    version, version_add = 10, "a0"
+    version, version_add = 100, ""
     gui: DBMainWindowInterface | None = None
 
     def __init__(self) -> None:
@@ -106,7 +106,7 @@ class DudPyApp:  # The main logic and gui are separated
             "geometry": "(100, 100, 1050, 640)",
             "provider_type": "direct",
             "chapter_rate": "0.5",
-            "no_update_info": "True",
+            "no_update_info": "False",
             "update_info": "True",
             "last_scroll_positions": "(0, 0)",
             "scrolling_sensitivity": "4.0",
@@ -225,6 +225,7 @@ class DudPyApp:  # The main logic and gui are separated
         checkbox, checkbox_setting = None, ("", "")
         standard_buttons, default_button = QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok
         retval_func = lambda button: None
+        do_popup: bool = True
 
         try:
             response = requests.get("https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
@@ -284,6 +285,7 @@ class DudPyApp:  # The main logic and gui are separated
                 checkbox, checkbox_setting = QCheckBox("Do not show again"), ("configs", "no_update_info")
             else:
                 title, text, description = "Update Info", "There was a logic-error when checking for updates.", ""
+                do_popup = False
         except (requests.exceptions.JSONDecodeError, InvalidVersion):
             icon = QMessageBox.Icon.Information  # Reset everything to default, we don't know when the error happened
             title, text, description = "Update Info", "There was an error when checking for updates.", format_exc()
@@ -296,13 +298,14 @@ class DudPyApp:  # The main logic and gui are separated
         finally:
             print("MSGBox exec start time: ", timer.tock())
             print("Total:", timer.end())
-            msg_box = QQuickMessageBox(self.gui, icon, title, text, description, checkbox,
-                                       standard_buttons=standard_buttons,
-                                       default_button=default_button)
-            retval = msg_box.exec()  # Keep ref to msg_box so checkbox doesn't get deleted prematurely
-            retval_func(retval)
-            if checkbox is not None and checkbox.isChecked():
-                self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
+            if do_popup:
+                msg_box = QQuickMessageBox(self.gui, icon, title, text, description, checkbox,
+                                           standard_buttons=standard_buttons,
+                                           default_button=default_button)
+                retval = msg_box.exec()  # Keep ref to msg_box so checkbox doesn't get deleted prematurely
+                retval_func(retval)
+                if checkbox is not None and checkbox.isChecked():
+                    self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
 
     def timer_tick(self):
         # print("Tick")

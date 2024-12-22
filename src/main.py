@@ -128,7 +128,8 @@ class DudPyApp:  # The main logic and gui are separated
             "titlebox_rotation_reset_delay_seconds": "5",
             "titlebox_rotation_rate": "1",
             "window_icon_abs_path": "#/data/assets/logo-nobg.png",
-            "window_title_template": "DudPy {version}{version_add} {title} "
+            "window_title_template": "DudPy {version}{version_add} {title} ",
+            "simulation_loader_max_restart_counter": "5"
         })
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 

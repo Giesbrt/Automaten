@@ -23,6 +23,9 @@ class AutomatonBridge:
     def set_implementation(self, automaton_impl: Automaton) -> None:
         self.automaton_impl = automaton_impl
 
+    def get_implementation(self) -> Automaton:
+        return self.automaton_impl
+
     def get_implementation_name(self) -> str:
         class_type: type = type(self.automaton_impl)
         class_name: str = class_type.__name__

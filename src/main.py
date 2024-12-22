@@ -66,7 +66,7 @@ class DBMainWindowInterface(QMainWindow):
 
 class DudPyApp:  # The main logic and gui are separated
     """TBA"""
-    version, version_add = 10, "a0"
+    version, version_add = 100, ""
     gui: DBMainWindowInterface | None = None
 
     def __init__(self) -> None:
@@ -106,7 +106,7 @@ class DudPyApp:  # The main logic and gui are separated
             "geometry": "(100, 100, 1050, 640)",
             "provider_type": "direct",
             "chapter_rate": "0.5",
-            "no_update_info": "True",
+            "no_update_info": "False",
             "update_info": "True",
             "last_scroll_positions": "(0, 0)",
             "scrolling_sensitivity": "4.0",

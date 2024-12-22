@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem,
                                QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget, QPushButton,
                                QStyleOptionGraphicsItem, QMainWindow, QStackedLayout, QMessageBox, QSpinBox, QLineEdit,
                                QComboBox, QSlider, QGraphicsTextItem)
-from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation, QPoint, Signal, QEvent
+from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation, QPoint, Signal, QParallelAnimationGroup
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon, QPen, QColor, QDrag, QFont
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout, QQuickMessageBox
@@ -444,6 +444,7 @@ class ConditionEditMenu(QFrame):
 class SettingsPanel(Panel):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setStyleSheet("background-color: lightblue;")
 
 
 class DBMainWindow(DBMainWindowInterface):
@@ -470,14 +471,12 @@ class DBMainWindow(DBMainWindowInterface):
         # Animation for Side Menu
         self.settings_panel_animation = QPropertyAnimation(self.settings_panel, b"geometry")
         self.settings_panel_animation.setDuration(500)
-        # self.timer = TimidTimer()
-        # self.timer.interval(1, count="inf", callback=self.switch_panel)
+        self.animation_group = QParallelAnimationGroup()
+        self.timer = TimidTimer()
+        self.timer.interval(3, count=2, callback=self.switch_panel)
 
     def switch_panel(self):
         print("Switching ...")
-        # self.user_panel.setGeometry(-self.width(), 0, self.width(), self.height())
-        # self.settings_panel.setGeometry(0, 0, self.width(), self.height())
-        # return
         width = self.width()
         height = self.height()
 

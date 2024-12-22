@@ -4,6 +4,8 @@ import returns.result as _result
 from aplustools.io import ActLogger
 import pickle
 
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
@@ -12,11 +14,13 @@ import types as _ts
 
 
 class Serializer:
-    def serialise(self, file_path: str) -> _result.Result:
+    @staticmethod
+    def serialise(self, automaton: BaseAutomaton, file_path: str) -> _result.Result:
         """
         Placeholder for saving the automaton configuration to a file.
 
         Args:
+            automaton (BaseAutomaton): The automaton that should be saved
             file_path (str): The path where the automaton configuration will be saved.
 
         Returns:
@@ -25,7 +29,7 @@ class Serializer:
         """
         try:
             with open(file_path, 'wb') as file:
-                pickle.dump(self, file)
+                pickle.dump(automaton, file)
             return _result.Success("Stored automaton in file!")
         except Exception as e:
             log_message: str = f"An error occurred whilst serialising automaton! {e}"

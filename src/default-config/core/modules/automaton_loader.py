@@ -10,7 +10,7 @@ extended_storage: MultiUserDBStorage or None = None
 class _Backend:
     def run_infinite(self) -> None:
         """
-        Used to actually start the backend. The gui will launch this in a seperate thread.
+        Used to actually start the backend. The gui will launch this in a separate thread.
         """
         ...
 

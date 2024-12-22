@@ -4,10 +4,6 @@ import returns.result as _result
 from aplustools.io import ActLogger
 import pickle
 
-# Abstract Machine related imports
-from core.modules.automaton.base.state import State
-from core.modules.automaton.base.transition import Transition
-
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc

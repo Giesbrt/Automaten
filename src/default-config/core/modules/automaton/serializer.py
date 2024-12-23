@@ -15,7 +15,7 @@ import types as _ts
 
 class Serializer:
     @staticmethod
-    def serialise(self, automaton: BaseAutomaton, file_path: str) -> _result.Result:
+    def serialise(automaton: BaseAutomaton, file_path: str) -> _result.Result:
         """
         Placeholder for saving the automaton configuration to a file.
 

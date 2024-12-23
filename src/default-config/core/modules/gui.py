@@ -4,8 +4,8 @@ from tkinter.constants import HORIZONTAL
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget, QFormLayout, QFrame,
                                QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget, QPushButton,
                                QStyleOptionGraphicsItem, QMainWindow, QStackedLayout, QMessageBox, QSpinBox, QLineEdit,
-                               QComboBox, QSlider, QGraphicsTextItem)
-from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation, QPoint, Signal, QParallelAnimationGroup
+                               QComboBox, QSlider, QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem)
+from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation, QPoint, Signal, QParallelAnimationGroup, QEvent, QSize
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon, QPen, QColor, QDrag, QFont
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
@@ -41,52 +41,77 @@ class MyItem(QGraphicsWidget):
 
 
 class Label(QGraphicsTextItem):
-    def __init__(self, parent=None):
+    def __init__(self, text: str, parent=None) -> None:
         super().__init__(parent)
 
-    def mousePressEvent(self, event):
-        if isinstance(self.parentItem(), Condition):
-            self.parentItem().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event):
-        if isinstance(self.parentItem(), Condition):
-            self.parentItem().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        if isinstance(self.parentItem(), Condition):
-            self.parentItem().mouseReleaseEvent(event)
+        self.setPlainText(text)
+        self.setDefaultTextColor(Qt.GlobalColor.black)
+        self.setFont(QFont('Arial', 24, QFont.Bold))
 
 
 class Condition(QGraphicsEllipseItem):
 
-    def __init__(self, x: float, y: float, width: int, height: int, color: Qt.GlobalColor, parent: QWidget | None = None):
-        super().__init__(QRectF(x, y, width, height), parent=parent)
+    def __init__(self, x: float, y: float, width: int, height: int, color: Qt.GlobalColor, parent = None) -> None:
+        super().__init__(QRectF(x, y, width, height), parent)
         self.x = x
         self.y = y
         self.width = width
         self.height = height
 
+        self.connected_lines = []
+
         self.setBrush(color)
         self.setPen(Qt.PenStyle.NoPen)
 
-        self.label = Label(self)
-        self.label.setPlainText('q1')
-        self.label.setFont(QFont('Arial', 24, QFont.Bold))
-        self.label.setDefaultTextColor(Qt.GlobalColor.black)
+        self.setSelected(False)
+
+    def add_line(self, line):
+        self.connected_lines.append(line)
+
+
+class ConnectionLine(QGraphicsLineItem):
+    def __init__(self, start_item, end_item, parent = None):
+        super().__init__(parent)
+
+        self.start_item = start_item
+        self.end_item = end_item
+
+        self.setPen(QPen(QColor('black'), 2))
+
+        self.start_item.add_line(self)
+        self.end_item.add_line(self)
+
+        self.update_line()
+
+    def update_line(self):
+        start_pos = self.start_item.sceneBoundingRect().center()
+        end_pos = self.end_item.sceneBoundingRect().center()
+        self.setLine(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
+
+
+class ConditionGroup(QGraphicsItemGroup):
+    def __init__(self, x: float, y: float, width: int, height: int, number: int, color: Qt.GlobalColor, parent: QWidget | None = None):
+        super().__init__(parent)
+
+        self.setFlags(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable | QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable)
+
+        self.condition = Condition(x, y, width, height, color, self)
+        self.label = Label(f'q{number}', self)
         self.update_label_position()
 
-        self.setSelected(False)
+        self.addToGroup(self.condition)
+        self.addToGroup(self.label)
 
-    def activate(self):
-        self.setPen(QPen(QColor('red'), 3))
-        self.setSelected(True)
+    def activate(self) -> None:
+        self.condition.setPen(QPen(Qt.GlobalColor.red, 3, Qt.PenStyle.DotLine))
+        self.condition.setSelected(True)
 
-    def deactivate(self):
-        self.setPen(Qt.PenStyle.NoPen)
-        self.setSelected(False)
+    def deactivate(self) -> None:
+        self.condition.setPen(Qt.PenStyle.NoPen)
+        self.condition.setSelected(False)
 
-    def update_label_position(self):
-        rect = self.rect()
+    def update_label_position(self) -> None:
+        rect = self.condition.rect()
         label_width = self.label.boundingRect().width()
         label_height = self.label.boundingRect().height()
         label_x = rect.x() + (rect.width() - label_width) / 2
@@ -98,25 +123,19 @@ class Condition(QGraphicsEllipseItem):
         self.update_label_position()
 
     def set_size(self, size) -> None:
-        self.setRect(QRectF(self.rect().x(), self.rect().y(), size, size))
+        old_rect = self.condition.rect()
+
+        center_x = old_rect.x() + old_rect.width() / 2
+        center_y = old_rect.y() + old_rect.height() / 2
+
+        new_x = center_x - size / 2
+        new_y  = center_y - size / 2
+        new_rect = QRectF(new_x, new_y, size, size)
+        self.condition.setRect(new_rect)
         self.update_label_position()
 
-    def set_color(self, color: Qt.GlobalColor):
-        self.setBrush(color)
-        self.setPen(Qt.PenStyle.NoPen)
-
-    def mousePressEvent(self, event):
-        self.setCursor(Qt.ClosedHandCursor)
-        self.old_pos = event.scenePos()
-
-    def mouseMoveEvent(self, event):
-        delta = event.scenePos() - self.old_pos
-        self.moveBy(delta.x(), delta.y())
-        self.old_pos = event.scenePos()
-
-    def mouseReleaseEvent(self, event):
-        self.setCursor(Qt.ArrowCursor)
-
+    def set_color(self, color: Qt.GlobalColor) -> None:
+        self.condition.setBrush(color)
 
 class GridView(QGraphicsView):
     """TBA"""
@@ -124,13 +143,15 @@ class GridView(QGraphicsView):
                  fixed_objects: list[tuple[float, float, QGraphicsItem]] | None = None) -> None:
         super().__init__(parent=parent)
         # self.setViewport(QOpenGLWidget())  # Use OpenGL for rendering?
-        self.setCacheMode(QGraphicsView.CacheModeFlag.CacheBackground)
+        # self.setCacheMode(QGraphicsView.CacheModeFlag.CacheBackground)
         self.setScene(QGraphicsScene(self))
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
 
+        self._counter = 0
         self._grid_size: int = grid_size
         self._offset: QPointF = QPointF(start_x * grid_size, start_y * grid_size)
+        self._last_active = None
 
         self.scene().setSceneRect(-10000, -10000, 20000, 20000)
         self._objects: list[QGraphicsRectItem] = []
@@ -158,9 +179,10 @@ class GridView(QGraphicsView):
         self._pan_start: QPointF = QPointF(0, 0)
 
     def newCondition(self, pos):
-        new_condition = Condition(pos.x() - self._grid_size / 2, pos.y() - self._grid_size / 2,
-                                  self._grid_size, self._grid_size, Qt.GlobalColor.lightGray)
+        new_condition = ConditionGroup(pos.x() - self._grid_size / 2, pos.y() - self._grid_size / 2,
+                                  self._grid_size, self._grid_size, self._counter, Qt.GlobalColor.lightGray)
         self.scene().addItem(new_condition)
+        self._counter += 1
 
     def drawBackground(self, painter: QPainter, rect: QRect | QRectF) -> None:  # Overwrite
         """Draw an infinite grid."""
@@ -203,20 +225,27 @@ class GridView(QGraphicsView):
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
         if event.button() == Qt.MouseButton.LeftButton:
             item = self.is_item_at(event.pos())
-            if isinstance(item, Condition):
+            if isinstance(item, Condition | Label):
                 if hasattr(self.parent(), 'toggle_condition_edit_menu'):
-                    self.parent().toggle_condition_edit_menu()
+                    self.parent().toggle_condition_edit_menu(True)
                     self.parent().condition_edit_menu.set_condition(item)
-                    self.parent().condition_edit_menu.name_changed.connect(item.set_name)
-                    self.parent().condition_edit_menu.color_changed.connect(item.set_color)
-                    self.parent().condition_edit_menu.size_changed.connect(item.set_size)
-                item.activate()
-            """if item:
-                if not item.isSelected():
-                    item.activate()
-                else:
-                    item.deactivate()
-                print(item.isSelected())"""
+                    try:
+                        self.parent().condition_edit_menu.name_changed.disconnect()
+                        self.parent().condition_edit_menu.color_changed.disconnect()
+                        self.parent().condition_edit_menu.size_changed.disconnect()
+                        self._last_active.parentItem().deactivate()
+                    except:
+                        pass
+                    finally:
+                        self.parent().condition_edit_menu.name_changed.connect(item.parentItem().set_name)
+                        self.parent().condition_edit_menu.color_changed.connect(item.parentItem().set_color)
+                        self.parent().condition_edit_menu.size_changed.connect(item.parentItem().set_size)
+                item.parentItem().activate()
+            else:
+                if self.parent().condition_edit_menu.x() < self.parent().width():
+                    self.parent().toggle_condition_edit_menu(False)
+                    self._last_active.parentItem().deactivate()
+            self._last_active = item
         super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
@@ -311,7 +340,7 @@ class UserPanel(Panel):
 
         # Condition Edit Menu
         self.condition_edit_menu = ConditionEditMenu(self)
-        self.condition_edit_menu.setGeometry(200, 0, 300, self.height())
+        self.condition_edit_menu.setGeometry(self.parent().width(), 0, 300, self.height())
 
         # Animation for Side Menu
         self.side_menu_animation = QPropertyAnimation(self.side_menu, b"geometry")
@@ -357,20 +386,23 @@ class UserPanel(Panel):
         self.side_menu_animation.setEndValue(end_value)
         self.side_menu_animation.start()
 
-    def toggle_condition_edit_menu(self):
+    def toggle_condition_edit_menu(self, to_state: bool):
+        """True: opened Sidepanel, False: closed Sidepanel"""
         width = max(200, int(self.width() / 4))
         height = self.height()
 
-        if self.condition_edit_menu.x() >= self.width():
+        if to_state:
             start_value = QRect(self.width(), 0, width, height)
             end_value = QRect(self.width() - width, 0, width, height)
         else:
             start_value = QRect(self.width() - width, 0, width, height)
             end_value = QRect(self.width(), 0, width, height)
 
-        self.condition_edit_menu_animation.setStartValue(start_value)
-        self.condition_edit_menu_animation.setEndValue(end_value)
-        self.condition_edit_menu_animation.start()
+        if (self.condition_edit_menu.x() >= self.width() and to_state
+                or self.condition_edit_menu.x() < self.width() and not to_state):
+            self.condition_edit_menu_animation.setStartValue(start_value)
+            self.condition_edit_menu_animation.setEndValue(end_value)
+            self.condition_edit_menu_animation.start()
 
     # Window Methods
     def resizeEvent(self, event):
@@ -401,8 +433,10 @@ class ConditionEditMenu(QFrame):
         # Layout für das Menü
         self.layout = QFormLayout(self)
 
+        self.close_button = QPushButton('Close', self)
+
         self.name_input = QLineEdit(self)
-        self.name_input.setText('Placeholder')
+        self.name_input.setText('q0')
         self.name_input.textEdited.connect(self.on_name_changed)
 
         # Beispiel: Eingabefelder für Einstellungen
@@ -411,11 +445,12 @@ class ConditionEditMenu(QFrame):
         self.color_input.currentTextChanged.connect(self.on_color_changed)
 
         self.size_input = QSlider(Qt.Horizontal, self)
-        self.size_input.setRange(150, 450)
-        self.size_input.setValue(150)
+        self.size_input.setRange(100, 450)
+        self.size_input.setValue(100)
         self.size_input.valueChanged.connect(self.on_size_changed)
 
         # Füge Widgets zum Layout hinzu
+        self.layout.addRow(self.close_button)
         self.layout.addRow('Name:', self.name_input)
         self.layout.addRow('Color:', self.color_input)
         self.layout.addRow('Size:', self.size_input)
@@ -432,7 +467,7 @@ class ConditionEditMenu(QFrame):
             "Cyan": Qt.GlobalColor.cyan
         }
 
-    def set_condition(self, condition: Condition) -> None:
+    def set_condition(self, condition: ConditionGroup) -> None:
         self.condition = condition
 
     def on_name_changed(self, name: str) -> None:
@@ -448,7 +483,6 @@ class ConditionEditMenu(QFrame):
 class SettingsPanel(Panel):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet("background-color: lightblue;")
 
 
 class DBMainWindow(DBMainWindowInterface):
@@ -476,8 +510,8 @@ class DBMainWindow(DBMainWindowInterface):
         self.settings_panel_animation = QPropertyAnimation(self.settings_panel, b"geometry")
         self.settings_panel_animation.setDuration(500)
         self.animation_group = QParallelAnimationGroup()
-        self.timer = TimidTimer()
-        self.timer.interval(3, count=2, callback=self.switch_panel)
+        # self.timer = TimidTimer()
+        # self.timer.interval(3, count=2, callback=self.switch_panel)
 
     def switch_panel(self):
         print("Switching ...")

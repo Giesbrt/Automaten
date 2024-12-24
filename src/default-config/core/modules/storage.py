@@ -153,11 +153,12 @@ class JSONAppStorage:
         _storage (SimpleJSONStorage): The internal JSON storage handler.
         _default_settings (dict[str, str]): Default settings for the storage.
     """
-    def __init__(self, path: str, default_settings: dict[str, str]) -> None:
+    def __init__(self, path: str, default_settings: dict[str, str] | None = None) -> None:
         self._storage: _SimpleJSONStorage = _SimpleJSONStorage(path, beautify=True)
         self._default_settings: dict[str, str] = {}
         self._lock: _RLock = _RLock()
-        self.set_default_settings(default_settings)
+        if default_settings is not None:
+            self.set_default_settings(default_settings)
 
     def _check_if_defaulted(self, key: str) -> bool:
         """

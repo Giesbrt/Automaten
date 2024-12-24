@@ -1,11 +1,10 @@
 """TBA"""
-from tkinter.constants import HORIZONTAL
-
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsRectItem, QWidget, QFormLayout, QFrame,
                                QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget, QPushButton,
                                QStyleOptionGraphicsItem, QMainWindow, QStackedLayout, QMessageBox, QSpinBox, QLineEdit,
                                QComboBox, QSlider, QGraphicsTextItem)
-from PySide6.QtCore import Qt, QPointF, QRect, QRectF, QPropertyAnimation, QPoint, Signal, QParallelAnimationGroup
+from PySide6.QtCore import (Qt, QPointF, QRect, QRectF, QPropertyAnimation, QPoint, Signal, QParallelAnimationGroup,
+                            Property, QVariantAnimation, QEasingCurve, QTimer)
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QCursor, QIcon, QPen, QColor, QDrag, QFont
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
@@ -253,31 +252,6 @@ class GridView(QGraphicsView):
         super().mouseReleaseEvent(event)
 
 
-class DBMainWindowInterface(QMainWindow):
-    """TBA"""
-    icons_dir: str
-
-    def __init__(self) -> None:
-        super().__init__(parent=None)
-
-    def setup_gui(self) -> None:
-        """
-        Configure the main graphical user interface (GUI) elements of the MV application.
-
-        This method sets up various widgets, layouts, and configurations required for the
-        main window interface. It is called after initialization and prepares the interface
-        for user interaction.
-
-        Note:
-            This method is intended to be overridden by subclasses with application-specific
-            GUI components.
-        """
-        raise NotImplementedError
-
-    def set_scroll_speed(self, value: float) -> None:
-        raise NotImplementedError
-
-
 class Panel(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -448,72 +422,4 @@ class ConditionEditMenu(QFrame):
 class SettingsPanel(Panel):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet("background-color: lightblue;")
-
-
-class DBMainWindow(DBMainWindowInterface):
-    icons_dir: str
-
-    def setup_gui(self) -> None:
-        # Central Widget
-        central_widget = QWidget()
-        # self.setCentralWidget(central_widget)
-        # self.window_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, parent=central_widget)
-
-        self.user_panel = UserPanel(parent=self)
-        # self.window_layout.addWidget(self.user_panel)
-        self.user_panel.setGeometry(0, 0, self.width(), self.height())
-
-        # Animation for Side Menu
-        self.user_panel_animation = QPropertyAnimation(self.user_panel, b"geometry")
-        self.user_panel_animation.setDuration(500)
-
-        self.settings_panel = SettingsPanel(parent=self)
-        # self.window_layout.addWidget(self.settings_panel)
-        self.settings_panel.setGeometry(self.width(), 0, self.width(), self.height())
-
-        # Animation for Side Menu
-        self.settings_panel_animation = QPropertyAnimation(self.settings_panel, b"geometry")
-        self.settings_panel_animation.setDuration(500)
-        self.animation_group = QParallelAnimationGroup()
-        self.timer = TimidTimer()
-        self.timer.interval(3, count=2, callback=self.switch_panel)
-
-    def switch_panel(self):
-        print("Switching ...")
-        width = self.width()
-        height = self.height()
-
-        user_panel_hidden_value = QRect(-width, 0, width, height)
-        shown_panel_end_value = QRect(0, 0, width, height)
-        settings_panel_hidden_value = QRect(width, 0, width, height)
-
-        if self.settings_panel.x() == 0:
-            print("To user")
-            # self.user_panel_animation.setStartValue(user_panel_hidden_value)
-            # self.user_panel_animation.setEndValue(shown_panel_end_value)
-            # self.settings_panel_animation.setStartValue(shown_panel_end_value)
-            # self.settings_panel_animation.setEndValue(settings_panel_hidden_value)
-            self.user_panel.setGeometry(shown_panel_end_value)
-            self.settings_panel.setGeometry(settings_panel_hidden_value)
-        else:
-            print("To sett")
-            # self.user_panel_animation.setStartValue(shown_panel_end_value)
-            # self.user_panel_animation.setEndValue(user_panel_hidden_value)
-            # self.settings_panel_animation.setStartValue(settings_panel_hidden_value)
-            # self.settings_panel_animation.setEndValue(shown_panel_end_value)
-            self.user_panel.setGeometry(user_panel_hidden_value)
-            self.settings_panel.setGeometry(shown_panel_end_value)
-        # self.user_panel_animation.start()
-        # self.settings_panel_animation.start()
-
-    def popup(self, title: str, text: str, description: str, icon: QMessageBox.Icon = QMessageBox.Icon.Information,
-              buttons: list[QMessageBox.StandardButton] | QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
-              default_button: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok) -> QMessageBox.StandardButton:
-        msg_box = QQuickMessageBox(self, icon, title, text, description,
-                                   standard_buttons=buttons,
-                                   default_button=default_button)
-        return msg_box.exec()
-
-    def set_scroll_speed(self, value: float) -> None:
-        return
+        self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33);")

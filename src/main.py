@@ -7,6 +7,7 @@ import config
 from pathlib import Path as PLPath
 from traceback import format_exc
 import multiprocessing
+from string import Template
 import logging
 import sys
 import os
@@ -16,19 +17,26 @@ import re
 from PySide6.QtWidgets import QApplication, QMainWindow, QCheckBox, QMessageBox
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtGui import (QCloseEvent, QResizeEvent, QMoveEvent, QFocusEvent, QKeyEvent, QMouseEvent,
+                           QEnterEvent, QPaintEvent, QDragEnterEvent, QDragMoveEvent, QDropEvent,
+                           QDragLeaveEvent, QShowEvent, QHideEvent, QContextMenuEvent,
+                           QWheelEvent, QTabletEvent)
+from PySide6.QtCore import QTimer, QEvent, QTimerEvent
+
 from packaging.version import Version, InvalidVersion
 import stdlib_list
 import requests
 
 # Aplustools imports (2.0.0.0a1 stable, not feature complete release.)
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType
-from aplustools.package.timid import TimidTimer
 from aplustools.io import ActLogger
-from aplustools.io.qtquick import QQuickMessageBox
+from aplustools.package.timid import TimidTimer
+from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
-from core.modules.gui import DBMainWindow
+from core.modules.gui import MainWindow
+from core.modules.abstract import MainWindowInterface
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -39,35 +47,11 @@ hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
 
 
-class DBMainWindowInterface(QMainWindow):
-    """TBA"""
-    icons_folder: str = ""
-
-    def __init__(self) -> None:
-        super().__init__(parent=None)
-
-    def setup_gui(self) -> None:
-        """
-        Configure the main graphical user interface (GUI) elements of the MV application.
-
-        This method sets up various widgets, layouts, and configurations required for the
-        main window interface. It is called after initialization and prepares the interface
-        for user interaction.
-
-        Note:
-            This method is intended to be overridden by subclasses with application-specific
-            GUI components.
-        """
-        raise NotImplementedError
-
-    def set_scroll_speed(self, value: float) -> None:
-        raise NotImplementedError
-
-
-class DudPyApp:  # The main logic and gui are separated
+class App:  # The main logic and gui are separated
     """TBA"""
     version, version_add = 100, ""
-    gui: DBMainWindowInterface | None = None
+    window: MainWindowInterface | None = None
+    linked: bool = False
 
     def __init__(self) -> None:
         # Setting up the base directory in AppData\Local? For now it's in ./localconfig
@@ -76,7 +60,7 @@ class DudPyApp:  # The main logic and gui are separated
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
-        self.gui.icons_dir = os.path.join(self.data_folder, "icons")
+        self.window.icons_dir = os.path.join(self.data_folder, "icons")
 
         # Setup logger
         self._order_logs(f"{self.data_folder}/logs")
@@ -88,72 +72,41 @@ class DudPyApp:  # The main logic and gui are separated
 
         # Load settings
         self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
-                                                                    ("configs", "advanced_configs"))
-        self.user_settings.set_default_settings("configs", {
-            "provider": "ManhwaClan",
-            "title": "Thanks for using ManhwaViewer!",
-            "chapter": "1",
-            "downscaling": "True",
-            "upscaling": "False",
-            "manual_content_width": "1200",
-            "borderless": "True",
-            "hide_titlebar": "False",
-            "hover_effect_all": "True",
-            "acrylic_menus": "True",
-            "acrylic_background": "False",
-            "hide_scrollbar": "True",
-            "stay_on_top": "False",
-            "geometry": "(100, 100, 1050, 640)",
-            "provider_type": "direct",
-            "chapter_rate": "0.5",
-            "no_update_info": "False",
-            "update_info": "True",
-            "last_scroll_positions": "(0, 0)",
-            "scrolling_sensitivity": "4.0",
-            "save_last_titles": "True"  # Also save chapters
-        })
-        self.user_settings.set_default_settings("advanced_configs", {
-            "recent_titles": "()",
-            "light_theme": "light_light",
-            "dark_theme": "dark",
-            "font": "Segoe UI",
-            "settings_backup_file_path": "",
-            "settings_backup_file_mode": "overwrite",
-            "settings_backup_auto_export": "False",
-            "range_web_workers": "(2, 10, 5)",
-            "web_workers_check_interval": "5.0"
-        })
-        self.app_settings: JSONAppStorage = JSONAppStorage(f"{self.config_folder}/app_settings.json", {
-            "update_check_request_timeout": "2.0",
-            "titlebox_rotation_reset_delay_seconds": "5",
-            "titlebox_rotation_rate": "1",
-            "window_icon_abs_path": "#/data/assets/logo-nobg.png",
-            "window_title_template": "DudPy {version}{version_add} {title} ",
-            "simulation_loader_max_restart_counter": "5"
-        })
+                                                                    ("auto_configs", "user_configs_design",
+                                                                     "user_configs_advanced"))
+        self.app_settings: JSONAppStorage = JSONAppStorage(f"{self.config_folder}/app_settings.json")
+        self.configure_settings()
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 
         # Setup window
         if self.abs_window_icon_path.startswith("#"):
             self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
-        self.gui.setWindowIcon(QIcon(self.abs_window_icon_path))
+        self.window.set_window_icon(self.abs_window_icon_path)
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
-        # TODO: self.update_theme()
-        x, y, height, width = self.user_settings.retrieve("configs", "geometry", "tuple")
-        self.gui.setWindowTitle(self.app_settings.retrieve("window_title_template").format(version=self.version, version_add=self.version_add, title=".."))
-        self.gui.setGeometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
-        self.gui.setup_gui()  # I guess windows does some weird shit with the title bar
+
+        self.update_title()
+        x, y, height, width = self.user_settings.retrieve("auto_configs", "geometry", "tuple")
+        if not self.user_settings.retrieve("user_configs_advanced", "save_window_dimensions", "bool"):
+            height = 640
+            width = 1050
+        if self.user_settings.retrieve("user_configs_advanced", "save_window_position", "bool"):
+            self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
+        else:
+            self.window.set_window_dimensions(height, width)
+        self.window.setup_gui()  # I guess windows does some weird shit with the title bar
+        self.link_gui()
 
         # Setup values, signals, ...
-        self.gui.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
+        # TODO: self.window.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
 
         # Show gui
-        self.gui.show()
-        self.gui.raise_()
+        self.window.start()
 
-        self.timer: TimidTimer = TimidTimer(start_now=False)
-        self.timer.fire_ms(500, self.timer_tick, daemon=True)
+        self.timer: QtTimidTimer = QtTimidTimer()
+        self.timer.timeout.connect(self.timer_tick)
+        self.timer.start(500, 0)
+        # self.timer.start(1500, 1)  # 1.5 second timer
         self.check_for_update()
 
     @staticmethod
@@ -209,7 +162,7 @@ class DudPyApp:  # The main logic and gui are separated
         """Gets the os theme based on a number of parameters, like environment variables."""
         base = self.system.get_system_theme()
         if not base:
-            raw_fallback = str(os.environ.get("MV_THEME")).lower()  # Can return None
+            raw_fallback = str(os.environ.get("APP_THEME")).lower()  # Can return None
             fallback = {"light": SystemTheme.LIGHT, "dark": SystemTheme.DARK}.get(raw_fallback)
             if fallback is None:
                 return SystemTheme.LIGHT
@@ -271,13 +224,13 @@ class DudPyApp:  # The main logic and gui are separated
                         else:
                             link = url
                         QDesktopServices.openUrl(QUrl(link))
-            elif self.user_settings.retrieve("configs", "no_update_info", "bool") and found_version == current_version:
+            elif self.user_settings.retrieve("auto_configs", "no_update_info", "bool") and found_version == current_version:
                 title = "Update Info"
                 text = (f"No new updates available.\nChecklist last updated "
                         f"{update_json['metadata']['lastUpdated'].replace('-', '.')}.")
                 description = f" --- v{found_version} --- \n{found_release.get('description')}"
                 checkbox, checkbox_setting = QCheckBox("Do not show again"), ("configs", "no_update_info")
-            elif self.user_settings.retrieve("configs", "no_update_info", "bool") and found_push:
+            elif self.user_settings.retrieve("auto_configs", "no_update_info", "bool") and found_push:
                 title = "Info"
                 text = (f"New version available, but not recommended {found_version}.\n"
                         f"Checklist last updated {update_json['metadata']['lastUpdated'].replace('-', '.')}.")
@@ -296,10 +249,10 @@ class DudPyApp:  # The main logic and gui are separated
             title, text, description = "Update Info", "The request timed out.\nPlease check your internet connection and try again.", format_exc()
             standard_buttons, default_button = QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok
         finally:
-            print("MSGBox exec start time: ", timer.tock())
+            print("Popup time: ", timer.tock())
             print("Total:", timer.end())
             if do_popup:
-                msg_box = QQuickMessageBox(self.gui, icon, title, text, description, checkbox,
+                msg_box = QQuickMessageBox(self.window, icon, title, text, description, checkbox,
                                            standard_buttons=standard_buttons,
                                            default_button=default_button)
                 retval = msg_box.exec()  # Keep ref to msg_box so checkbox doesn't get deleted prematurely
@@ -307,15 +260,146 @@ class DudPyApp:  # The main logic and gui are separated
                 if checkbox is not None and checkbox.isChecked():
                     self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
 
-    def timer_tick(self):
-        # print("Tick")
+    def configure_settings(self) -> None:
+        self.user_settings.set_default_settings("auto_configs", {
+            "hide_titlebar": "False",
+            "hide_scrollbar": "True",
+            "stay_on_top": "False",
+            "geometry": "(100, 100, 1050, 640)",
+            "no_update_info": "False",
+            "update_info": "True",
+            "last_scroll_positions": "(0, 0, 0, 0)",
+            "scrolling_sensitivity": "4.0",
+            "ask_to_reopen_last_opened_file": "True",
+            "recent_files": "()"
+        })
+        self.user_settings.set_default_settings("user_configs_design", {
+            "light_theme": "light_light",
+            "dark_theme": "dark",
+            "font": "Segoe UI",
+            "range_web_workers": "(2, 10, 5)",
+            "web_workers_check_interval": "5.0"
+        })
+        self.user_settings.set_default_settings("user_configs_advanced", {
+            "settings_backup_file_path": "",
+            "settings_backup_file_mode": "overwrite",
+            "settings_backup_auto_export": "False",
+            "save_window_dimensions": "True",
+            "save_window_position": "False"
+        })
+        self.app_settings.set_default_settings({
+            "update_check_request_timeout": "2.0",
+            "titlebox_rotation_reset_delay_seconds": "5",
+            "titlebox_rotation_rate": "1",
+            "window_icon_abs_path": "#/data/assets/logo-nobg.png",
+            "window_title_template": "DudPy $version$version_add $title",
+            "simulation_loader_max_restart_counter": "5"
+        })
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        ...
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self.window.reload_panels()
+
+    def moveEvent(self, event: QMoveEvent) -> None:
+        ...
+
+    def focusInEvent(self, event: QFocusEvent) -> None:
+        ...
+
+    def focusOutEvent(self, event: QFocusEvent) -> None:
+        ...
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        ...
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        ...
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def enterEvent(self, event: QEnterEvent) -> None:
+        ...
+
+    def leaveEvent(self, event: QEvent) -> None:
+        ...
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        ...
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        ...
+
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        ...
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        ...
+
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        ...
+
+    def showEvent(self, event: QShowEvent) -> None:
+        ...
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        ...
+
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
+        ...
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        ...
+
+    def tabletEvent(self, event: QTabletEvent) -> None:
+        ...
+
+    def timerEvent(self, event: QTimerEvent) -> None:
+        ...
+
+    def _create_link_event(self, event_handler, eventFunc) -> _a.Callable:
+        return lambda e: (event_handler(e), getattr(self, eventFunc)(e))
+
+    def link_gui(self):
+        """Links the gui events to this class."""
+        if not self.linked:
+            self.linked = True
+            for eventFunc in ("closeEvent", "resizeEvent", "moveEvent", "focusInEvent", "focusOutEvent",
+                              "keyPressEvent", "keyReleaseEvent", "mousePressEvent", "mouseReleaseEvent",
+                              "mouseDoubleClickEvent", "mouseMoveEvent", "enterEvent", "leaveEvent", "paintEvent",
+                              "dragEnterEvent", "dragMoveEvent", "dropEvent", "dragLeaveEvent", "showEvent",
+                              "hideEvent", "contextMenuEvent", "wheelEvent", "tabletEvent", "timerEvent"):
+                event_handler = getattr(self.window, eventFunc)
+                setattr(self.window, eventFunc, self._create_link_event(event_handler, eventFunc))
+
+    def update_title(self) -> None:
+        raw_title = Template(self.app_settings.retrieve("window_title_template"))
+        formatted_title = raw_title.safe_substitute(version=self.version, version_add=self.version_add)
+        self.window.set_window_title(formatted_title)
+
+    def timer_tick(self, index: int) -> None:
+        if index == 0:  # Default 500ms timer
+            self.update_title()
+        else:
+            print("Tock")
         # if not self.threading:
         #     self.update_content()
         ...
 
     def exit(self) -> None:
         if hasattr(self, "timer"):
-            self.timer.stop_fires(0, not_exists_okay=True)
+            self.timer.stop_all()
 
     def __del__(self) -> None:
         self.exit()
@@ -326,16 +410,16 @@ if __name__ == "__main__":
         1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)
     }
     qapp: QApplication | None = None
-    qgui: DBMainWindowInterface | None = None
-    dp_app: DudPyApp | None = None
+    qgui: MainWindowInterface | None = None
+    dp_app: App | None = None
     current_exit_code: int = -1
 
     try:
         qapp = QApplication(sys.argv)
-        qgui = DBMainWindow()
-        DudPyApp.gui = qgui
+        qgui = MainWindow()
+        App.window = qgui
         side_thread = threading.Thread()
-        dp_app = DudPyApp()  # Shows gui
+        dp_app = App()  # Shows gui
         side_thread.start()
         current_exit_code = qapp.exec()
     except Exception as e:
@@ -353,7 +437,12 @@ if __name__ == "__main__":
             icon_path = dp_app.abs_window_icon_path
         msg_box.setWindowIcon(QIcon(icon_path))
         msg_box.exec()
-        raise e
+        logger: logging.Logger = logging.getLogger("ActLogger")
+        if not logger.hasHandlers():
+            print(description.strip())  # We print, in case the logger is not initialized yet
+        else:
+            for line in description.strip().split("\n"):
+                logger.error(line)
     finally:
         if dp_app is not None:
             dp_app.exit()

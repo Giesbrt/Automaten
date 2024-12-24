@@ -21,7 +21,7 @@ class UiBridge:
     def get_ui_task(self) -> _ty.Dict[str, str] or None:
         return self._ui_queue.get_nowait()
 
-    def add_ui_current_item(self, item: _ty.Dict[str, str]) -> None:
+    def add_ui_item(self, item: _ty.Dict[str, str]) -> None:
         self._ui_queue.put(item)
 
     def complete_ui_task(self) -> None:

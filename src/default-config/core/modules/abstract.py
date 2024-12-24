@@ -30,6 +30,18 @@ class MainWindowInterface:
         """
         raise NotImplementedError
 
+    def set_window_icon(self, absolute_path_to_icon: str) -> None:
+        raise NotImplementedError
+
+    def set_window_title(self, title: str) -> None:
+        raise NotImplementedError
+
+    def set_window_geometry(self, x: int, y: int, height: int, width: int) -> None:
+        raise NotImplementedError
+
+    def set_window_dimensions(self, height: int, width: int) -> None:
+        raise NotImplementedError
+
     def create_popup(self, of_what: QWidget, window_flags: Qt.WindowType) -> int:  # Return the popup-index
         raise NotImplementedError
 

@@ -1,3 +1,8 @@
 base/mode
 ... (QSS)
-ph: dark_color~=#111111;background_color~=#291292;black==#000000;white==#ffffff
+ph:
+dark_color~=#111111;
+background_color~=#291292;
+black==#000000;
+white==#ffffff;
+see_trough==rgba(0, 0, 0, 0);

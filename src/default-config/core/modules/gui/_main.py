@@ -1,5 +1,7 @@
 """TBA"""
 from PySide6.QtWidgets import QWidget, QMainWindow, QMessageBox
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import QRect, QSize
 
 from aplustools.io.qtquick import QQuickMessageBox
 
@@ -52,6 +54,18 @@ class MainWindow(MainWindowInterface, QMainWindow):
         # self.current_x = 0
         # self.target_x = -self.width()
         ...
+
+    def set_window_icon(self, absolute_path_to_icon: str) -> None:
+        self.setWindowIcon(QIcon(absolute_path_to_icon))
+
+    def set_window_title(self, title: str) -> None:
+        self.setWindowTitle(title)
+
+    def set_window_geometry(self, x: int, y: int, height: int, width: int) -> None:
+        self.setGeometry(QRect(x, y, height, width))
+
+    def set_window_dimensions(self, height: int, width: int) -> None:
+        self.resize(QSize(height, width))
 
     def switch_panel_simple(self):
         print("Switching ...")

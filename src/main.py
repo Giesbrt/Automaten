@@ -7,6 +7,7 @@ import config
 from pathlib import Path as PLPath
 from traceback import format_exc
 import multiprocessing
+from string import Template
 import logging
 import sys
 import os
@@ -28,9 +29,9 @@ import requests
 
 # Aplustools imports (2.0.0.0a1 stable, not feature complete release.)
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType
-from aplustools.package.timid import TimidTimer
 from aplustools.io import ActLogger
-from aplustools.io.qtquick import QQuickMessageBox
+from aplustools.package.timid import TimidTimer
+from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
@@ -80,14 +81,19 @@ class App:  # The main logic and gui are separated
         # Setup window
         if self.abs_window_icon_path.startswith("#"):
             self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
-        #TODO: self.window.setWindowIcon(QIcon(self.abs_window_icon_path))
+        self.window.set_window_icon(self.abs_window_icon_path)
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
 
-        if self.user_settings.retrieve("user_configs_advanced", "save_window_dimensions", "bool"):
-            x, y, height, width = self.user_settings.retrieve("auto_configs", "geometry", "tuple")
-            # TODO: self.window.setWindowTitle(self.app_settings.retrieve("window_title_template").format(version=self.version, version_add=self.version_add, title=".."))
-            # TODO: self.window.setGeometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
+        self.update_title()
+        x, y, height, width = self.user_settings.retrieve("auto_configs", "geometry", "tuple")
+        if not self.user_settings.retrieve("user_configs_advanced", "save_window_dimensions", "bool"):
+            height = 640
+            width = 1050
+        if self.user_settings.retrieve("user_configs_advanced", "save_window_position", "bool"):
+            self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
+        else:
+            self.window.set_window_dimensions(height, width)
         self.window.setup_gui()  # I guess windows does some weird shit with the title bar
         self.link_gui()
 
@@ -97,9 +103,9 @@ class App:  # The main logic and gui are separated
         # Show gui
         self.window.start()
 
-        # TODO: AHHHH OTHER THREAD TIMER :((((((
-        self.timer: TimidTimer = TimidTimer(start_now=False)
-        self.timer.fire_ms(500, self.timer_tick, daemon=True)
+        self.timer: QtTimidTimer = QtTimidTimer()
+        self.timer.timeout.connect(self.timer_tick)
+        self.timer.start(500, 0)
         self.check_for_update()
 
     @staticmethod
@@ -277,14 +283,15 @@ class App:  # The main logic and gui are separated
             "settings_backup_file_path": "",
             "settings_backup_file_mode": "overwrite",
             "settings_backup_auto_export": "False",
-            "save_window_dimensions": "False"
+            "save_window_dimensions": "True",
+            "save_window_position": "False"
         })
         self.app_settings.set_default_settings({
             "update_check_request_timeout": "2.0",
             "titlebox_rotation_reset_delay_seconds": "5",
             "titlebox_rotation_rate": "1",
             "window_icon_abs_path": "#/data/assets/logo-nobg.png",
-            "window_title_template": "DudPy {version}{version_add} {title} ",
+            "window_title_template": "DudPy $version$version_add $title",
             "simulation_loader_max_restart_counter": "5"
         })
 
@@ -375,15 +382,23 @@ class App:  # The main logic and gui are separated
                 event_handler = getattr(self.window, eventFunc)
                 setattr(self.window, eventFunc, self._create_link_event(event_handler, eventFunc))
 
-    def timer_tick(self):
-        # print("Tick")
+    def update_title(self) -> None:
+        raw_title = Template(self.app_settings.retrieve("window_title_template"))
+        formatted_title = raw_title.safe_substitute(version=self.version, version_add=self.version_add)
+        self.window.set_window_title(formatted_title)
+
+    def timer_tick(self, index: int) -> None:
+        if index == 0:  # Default 500ms timer
+            self.update_title()
+        else:
+            print("Tock")
         # if not self.threading:
         #     self.update_content()
         ...
 
     def exit(self) -> None:
         if hasattr(self, "timer"):
-            self.timer.stop_fires(0, not_exists_okay=True)
+            self.timer.stop_all()
 
     def __del__(self) -> None:
         self.exit()

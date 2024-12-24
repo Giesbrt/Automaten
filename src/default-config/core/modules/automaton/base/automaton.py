@@ -1,5 +1,3 @@
-"""TBA"""
-
 import returns.result as _result
 import json
 
@@ -19,7 +17,7 @@ import types as _ts
 class Automaton(_abc.ABC):
     """
     Represents a generic automaton. This class serves as the foundation for different types of
-    automata (such as DFAs, Mealy-automaton, Turing machines, etc.), and it manages the states and transitions
+    automata (such as DFAs, Mealy automaton, Turing machines, etc.), and it manages the states and transitions
     that define the automaton's behavior.
 
     Note:
@@ -44,11 +42,21 @@ class Automaton(_abc.ABC):
         __init__() -> None:
             Initializes an automaton with no states, transitions, or current state.
 
+        get_end_states() -> _ty.Set[State]:
+            Returns the set of all end states in the automaton.
+
+        set_end_states(new_end_states: _ty.Set) -> None:
+            Sets a new set of end states for the automaton.
+
         get_states() -> _ty.Set[State]:
             Returns the set of all states in the automaton.
 
-        get_transitions() -> _ty.Set[Transition]:
-            Returns the set of all transitions in the automaton.
+        get_transitions(scrape_transitions: bool = True) -> _ty.Set[Transition]:
+            Returns the set of all transitions in the automaton. If `scrape_transitions` is True, transitions are
+            scraped from the states.
+
+        __scrape_all_transitions() -> None:
+            Scrapes all transitions from the states and stores them in the automaton's transitions set.
 
         get_current_state() -> State:
             Returns the current state of the automaton.
@@ -66,27 +74,40 @@ class Automaton(_abc.ABC):
             Sets a new set of transitions for the automaton.
 
         simulate() -> _result.Result:
-            Abstract method that must be implemented in subclasses to simulate the automaton's behavior
-            based on its transitions and input. The simulation logic differs based on the type of automaton.
+            Abstract method that must be implemented in subclasses to simulate the automaton's behavior.
 
         simulate_one_step() -> _result.Result:
-            Abstract method that must be implemented in subclasses to simulate one step of the automaton's behavior
-            based on its transitions and input. The simulation logic differs based on the type of automaton.
+            Abstract method that must be implemented in subclasses to simulate one step of the automaton's behavior.
+
+        set_input(automaton_input: _ty.Any) -> None:
+            Abstract method to set the input for the automaton.
+
+        get_input() -> _ty.Any:
+            Abstract method to get the current input for the automaton.
+
+        set_input_alphabet(alphabet: _ty.Any) -> None:
+            Abstract method to set the input alphabet for the automaton.
+
+        set_output_alphabet(alphabet: _ty.Any) -> None:
+            Abstract method to set the output alphabet for the automaton.
+
+        get_input_alphabet() -> _ty.Any:
+            Abstract method to get the input alphabet for the automaton.
+
+        get_output_alphabet() -> _ty.Any:
+            Abstract method to get the output alphabet for the automaton.
+
+        serialise_to_json() -> _ty.Dict[str, _ty.Any]:
+            Serializes the automaton to a JSON-compatible format, including states and transitions.
     """
 
     def __init__(self) -> None:
         """
         Initializes an automaton with no states, transitions, or current state.
 
-        This constructor initializes an empty set of states and transitions, as well as setting the
-        current and start states to `None`. These will need to be populated through methods like
-        `set_states`, `set_transitions`, and `set_start_state` before the automaton can be executed.
-
-        Attributes after initialization:
-            states (set): An empty set of states.
-            transitions (set): An empty set of transitions.
-            current_state (None): The automaton's current state is not defined yet.
-            start_state (None): The automaton's start state is not defined yet.
+        This constructor initializes an empty set of states and transitions, and sets the current and start
+        states to `None`. These will need to be populated through methods like `set_states`, `set_transitions`,
+        and `set_start_state` before the automaton can be executed.
         """
         self.states: _ty.Set[State] = set()
         self.transitions: _ty.Set = set()
@@ -109,7 +130,7 @@ class Automaton(_abc.ABC):
         Sets a new set of end states for the automaton.
 
         Args:
-            new_end_states (State): The states to be set as the end states.
+            new_end_states (_ty.Set[State]): A set of states to be set as the end states.
         """
         self.end_states = new_end_states
 
@@ -123,11 +144,24 @@ class Automaton(_abc.ABC):
         return self.states
 
     def get_transitions(self, scrape_transitions: bool = True) -> _ty.Set:
+        """
+        Returns the set of all transitions in the automaton. If `scrape_transitions` is set to True, it will
+        scrape transitions from the states.
+
+        Args:
+            scrape_transitions (bool): If True, transitions will be scraped from the states.
+
+        Returns:
+            _ty.Set[Transition]: A set containing all transitions in the automaton.
+        """
         if scrape_transitions:
             self.__scrape_all_transitions()
         return self.transitions
 
     def __scrape_all_transitions(self) -> None:
+        """
+        Scrapes all transitions from the states and stores them in the automaton's transitions set.
+        """
         transition_set: _ty.Set[Transition] = set()
 
         for state in self.get_states():
@@ -139,8 +173,6 @@ class Automaton(_abc.ABC):
         """
         Returns the current state of the automaton.
 
-        The current state reflects the automaton's position in its execution.
-
         Returns:
             State: The state the automaton is currently in.
         """
@@ -149,8 +181,6 @@ class Automaton(_abc.ABC):
     def get_start_state(self) -> State:
         """
         Returns the start state of the automaton.
-
-        The start state is where the automaton begins its execution.
 
         Returns:
             State: The state where the automaton begins execution.
@@ -161,9 +191,6 @@ class Automaton(_abc.ABC):
         """
         Sets a new start state for the automaton.
 
-        This method assigns a specific state as the starting point for the automaton's execution.
-        This is typically called before the automaton starts processing any input.
-
         Args:
             new_start_state (State): The state to be set as the start state.
         """
@@ -173,9 +200,6 @@ class Automaton(_abc.ABC):
         """
         Sets a new set of states for the automaton.
 
-        This method allows the user to define the complete set of states that the automaton can be in.
-        It is typically called during the initial configuration of the automaton.
-
         Args:
             new_states (_ty.Set[State]): A set of all states to be used in the automaton.
         """
@@ -184,9 +208,6 @@ class Automaton(_abc.ABC):
     def set_transitions(self, new_transitions: _ty.Set) -> None:
         """
         Sets a new set of transitions for the automaton.
-
-        This method defines all the state-to-state transitions the automaton can take. These transitions
-        are used by the automaton to determine how it moves from one state to another during execution.
 
         Args:
             new_transitions (_ty.Set[Transition]): A set of all transitions that define how the automaton
@@ -207,7 +228,7 @@ class Automaton(_abc.ABC):
         - In a Mealy machine, the simulation might produce outputs while transitioning between states.
 
         Returns:
-            _result.Result: The _result of the simulation. This could indicate whether the automaton successfully
+            _result.Result: The result of the simulation. This could indicate whether the automaton successfully
             accepted or rejected an input, or it could represent some other outcome specific to the type of automaton.
 
         Raises:
@@ -228,41 +249,75 @@ class Automaton(_abc.ABC):
         - In a Mealy machine, the simulation might produce outputs while transitioning between states.
 
         Returns:
-            _result.Result: The _result of the simulation. This could indicate whether the automaton successfully
-            accepted or rejected an input, or it could represent some other outcome specific to the type of automaton.
-
-        Raises:
-            NotImplementedError:
-                If this method is not implemented in a subclass.
+            _result.Result: The result of the simulation for the step.
         """
-        raise NotImplementedError("simulate must be implemented in a subclass.")
+        raise NotImplementedError("simulate_one_step must be implemented in a subclass.")
 
     @_abc.abstractmethod
     def set_input(self, automaton_input: _ty.Any) -> None:
+        """
+        Abstract method to set the input for the automaton.
+
+        Args:
+            automaton_input (_ty.Any): The input to be set for the automaton.
+        """
         raise NotImplementedError("set_input must be implemented in a subclass.")
 
     def get_input(self) -> _ty.Any:
+        """
+        Abstract method to get the current input for the automaton.
+
+        Returns:
+            _ty.Any: The current input for the automaton.
+        """
         raise NotImplementedError("get_input must be implemented in a subclass.")
 
     @_abc.abstractmethod
     def set_input_alphabet(self, alphabet: _ty.Any) -> None:
+        """
+        Abstract method to set the input alphabet for the automaton.
+
+        Args:
+            alphabet (_ty.Any): The input alphabet to be set for the automaton.
+        """
         raise NotImplementedError("set_input_alphabet must be implemented in a subclass.")
 
     @_abc.abstractmethod
     def set_output_alphabet(self, alphabet: _ty.Any) -> None:
+        """
+        Abstract method to set the output alphabet for the automaton.
+
+        Args:
+            alphabet (_ty.Any): The output alphabet to be set for the automaton.
+        """
         raise NotImplementedError("set_output_alphabet must be implemented in a subclass.")
 
     @_abc.abstractmethod
     def get_input_alphabet(self) -> _ty.Any:
+        """
+        Abstract method to get the input alphabet for the automaton.
+
+        Returns:
+            _ty.Any: The input alphabet for the automaton.
+        """
         raise NotImplementedError("get_input_alphabet must be implemented in a subclass.")
 
     @_abc.abstractmethod
     def get_output_alphabet(self) -> _ty.Any:
+        """
+        Abstract method to get the output alphabet for the automaton.
+
+        Returns:
+            _ty.Any: The output alphabet for the automaton.
+        """
         raise NotImplementedError("get_output_alphabet must be implemented in a subclass.")
 
     def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
         """
-        Serialises the automaton into json format to send via the bridge
+        Serializes the automaton to a JSON-compatible format, including states and transitions.
+
+        Returns:
+            _ty.Dict[str, _ty.Any]: A dictionary representing the serialized automaton.
         """
         serialised: _ty.Dict[str, _ty.Any] = {}
 

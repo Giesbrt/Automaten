@@ -110,3 +110,10 @@ class Transition(_abc.ABC, DisplayManager):
         """
         if self.activation_callback:
             self.activation_callback()
+
+    def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
+        """
+        Serialises the Transition into json format to send via the bridge
+        """
+        raise NotImplementedError("serialise_to_json must be implemented in a subclass.")
+

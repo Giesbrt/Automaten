@@ -1,6 +1,7 @@
 """TBA"""
 
 import returns.result as _result
+import json
 
 # Abstract Machine related imports
 from core.modules.automaton.base.state import State
@@ -73,7 +74,7 @@ class Automaton(_abc.ABC):
             based on its transitions and input. The simulation logic differs based on the type of automaton.
     """
 
-    def __init__(self) -> None:  # TODO input alphabet?
+    def __init__(self) -> None:
         """
         Initializes an automaton with no states, transitions, or current state.
 
@@ -121,14 +122,18 @@ class Automaton(_abc.ABC):
         """
         return self.states
 
-    def get_transitions(self) -> _ty.Set:
-        """
-        Returns the set of all transitions in the automaton.
-
-        Returns:
-            _ty.Set[Transition]: A set containing all transitions between states in the automaton.
-        """
+    def get_transitions(self, scrape_transitions: bool = True) -> _ty.Set:
+        if scrape_transitions:
+            self.__scrape_all_transitions()
         return self.transitions
+
+    def __scrape_all_transitions(self) -> None:
+        transition_set: _ty.Set[Transition] = set()
+
+        for state in self.get_states():
+            for transition in state.get_transitions():
+                transition_set.add(transition)
+        self.set_transitions(transition_set)
 
     def get_current_state(self) -> State:
         """
@@ -190,6 +195,7 @@ class Automaton(_abc.ABC):
         self.transitions = new_transitions
 
     @_abc.abstractmethod
+    @DeprecationWarning
     def simulate(self) -> _result.Result:
         """
         Abstract method that must be implemented in subclasses to simulate the automaton's behavior.
@@ -254,5 +260,37 @@ class Automaton(_abc.ABC):
     def get_output_alphabet(self) -> _ty.Any:
         raise NotImplementedError("get_output_alphabet must be implemented in a subclass.")
 
+    def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
+        """
+        Serialises the automaton into json format to send via the bridge
+        """
+        serialised: _ty.Dict[str, _ty.Any] = {}
 
+        # serialise states
+        serialised_states: _ty.List[_ty.Dict[str, _ty.Any]] = []
+        for state in self.get_states():
+            # special state
+            flag_list: _ty.List[str] = []
 
+            if state is self.start_state:
+                # start_state
+                flag_list.append("start_state")
+
+            if state in self.get_end_states():
+                # end_state
+                flag_list.append("end_state")
+
+            serialised_data: _ty.Dict[str, _ty.Any] = state.serialise_to_json(flag_list)
+            serialised_states.append(serialised_data)
+
+        # serialise transitions
+        serialised_transitions: _ty.List[_ty.Dict[str, _ty.Any]] = []
+        for transition in self.get_transitions():
+            # special state
+            flag_list: _ty.List[str] = []
+
+            serialised_data: _ty.Dict[str, _ty.Any] = transition.serialise_to_json(flag_list)
+            serialised_transitions.append(serialised_data)
+
+        serialised["object"] = serialised_states + serialised_transitions
+        return serialised

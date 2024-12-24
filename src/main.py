@@ -106,6 +106,7 @@ class App:  # The main logic and gui are separated
         self.timer: QtTimidTimer = QtTimidTimer()
         self.timer.timeout.connect(self.timer_tick)
         self.timer.start(500, 0)
+        # self.timer.start(1500, 1)  # 1.5 second timer
         self.check_for_update()
 
     @staticmethod
@@ -248,7 +249,7 @@ class App:  # The main logic and gui are separated
             title, text, description = "Update Info", "The request timed out.\nPlease check your internet connection and try again.", format_exc()
             standard_buttons, default_button = QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok
         finally:
-            print("MSGBox exec start time: ", timer.tock())
+            print("Popup time: ", timer.tock())
             print("Total:", timer.end())
             if do_popup:
                 msg_box = QQuickMessageBox(self.window, icon, title, text, description, checkbox,
@@ -299,7 +300,7 @@ class App:  # The main logic and gui are separated
         ...
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        ...
+        self.window.reload_panels()
 
     def moveEvent(self, event: QMoveEvent) -> None:
         ...
@@ -438,9 +439,9 @@ if __name__ == "__main__":
         msg_box.exec()
         logger: logging.Logger = logging.getLogger("ActLogger")
         if not logger.hasHandlers():
-            print(description)  # We print, in case the logger is not initialized yet
+            print(description.strip())  # We print, in case the logger is not initialized yet
         else:
-            for line in description.split("\n"):
+            for line in description.strip().split("\n"):
                 logger.error(line)
     finally:
         if dp_app is not None:

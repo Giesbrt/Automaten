@@ -422,6 +422,4 @@ class ConditionEditMenu(QFrame):
 class SettingsPanel(Panel):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet("background-color: lightblue;")
-
-
+        self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33);")

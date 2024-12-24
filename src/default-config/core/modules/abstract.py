@@ -42,6 +42,9 @@ class MainWindowInterface:
     def set_window_dimensions(self, height: int, width: int) -> None:
         raise NotImplementedError
 
+    def reload_panels(self) -> None:
+        raise NotImplementedError
+
     def create_popup(self, of_what: QWidget, window_flags: Qt.WindowType) -> int:  # Return the popup-index
         raise NotImplementedError
 

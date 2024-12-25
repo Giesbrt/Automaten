@@ -1,12 +1,13 @@
 """Panels of the gui"""
-from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel, QFormLayout, QLineEdit, QComboBox,
+from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
+                               QFormLayout, QLineEdit, QComboBox,
                                QSlider, QPushButton)
 from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QRect
 from PySide6.QtGui import QColor, QIcon
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
-from ._grid_items import Condition
+from ._grid_items import ConditionGroup
 from ._grids import AutomatonInteractiveGridView
 
 # Standard typing imports for aps
@@ -35,8 +36,10 @@ class ConditionEditMenu(QFrame):
         # Layout für das Menü
         self.layout = QFormLayout(self)
 
+        self.close_button = QPushButton('Close', self)
+
         self.name_input = QLineEdit(self)
-        self.name_input.setText('Placeholder')
+        self.name_input.setText('q0')
         self.name_input.textEdited.connect(self.on_name_changed)
 
         # Beispiel: Eingabefelder für Einstellungen
@@ -45,11 +48,12 @@ class ConditionEditMenu(QFrame):
         self.color_input.currentTextChanged.connect(self.on_color_changed)
 
         self.size_input = QSlider(Qt.Orientation.Horizontal, self)
-        self.size_input.setRange(150, 450)
-        self.size_input.setValue(150)
+        self.size_input.setRange(100, 450)
+        self.size_input.setValue(100)
         self.size_input.valueChanged.connect(self.on_size_changed)
 
         # Füge Widgets zum Layout hinzu
+        self.layout.addRow(self.close_button)
         self.layout.addRow('Name:', self.name_input)
         self.layout.addRow('Color:', self.color_input)
         self.layout.addRow('Size:', self.size_input)
@@ -66,7 +70,7 @@ class ConditionEditMenu(QFrame):
             "Cyan": Qt.GlobalColor.cyan
         }
 
-    def set_condition(self, condition: Condition) -> None:
+    def set_condition(self, condition: ConditionGroup) -> None:
         self.condition = condition
 
     def on_name_changed(self, name: str) -> None:
@@ -98,7 +102,7 @@ class UserPanel(Panel):
 
         # Condition Edit Menu
         self.condition_edit_menu = ConditionEditMenu(self)
-        self.condition_edit_menu.setGeometry(200, 0, 300, self.height())
+        self.condition_edit_menu.setGeometry(self.parent().width(), 0, 300, self.height())
         # Animation for Condition Edit Menu
         self.condition_edit_menu_animation = QPropertyAnimation(self.condition_edit_menu, b'geometry')
         self.condition_edit_menu_animation.setDuration(500)
@@ -134,20 +138,23 @@ class UserPanel(Panel):
         self.side_menu_animation.setEndValue(end_value)
         self.side_menu_animation.start()
 
-    def toggle_condition_edit_menu(self):
+    def toggle_condition_edit_menu(self, to_state: bool) -> None:
+        """True: opened Sidepanel, False: closed Sidepanel"""
         width = max(200, int(self.width() / 4))
         height = self.height()
 
-        if self.condition_edit_menu.x() >= self.width():
+        if to_state:
             start_value = QRect(self.width(), 0, width, height)
             end_value = QRect(self.width() - width, 0, width, height)
         else:
             start_value = QRect(self.width() - width, 0, width, height)
             end_value = QRect(self.width(), 0, width, height)
 
-        self.condition_edit_menu_animation.setStartValue(start_value)
-        self.condition_edit_menu_animation.setEndValue(end_value)
-        self.condition_edit_menu_animation.start()
+        if (self.condition_edit_menu.x() >= self.width() and to_state
+                or self.condition_edit_menu.x() < self.width() and not to_state):
+            self.condition_edit_menu_animation.setStartValue(start_value)
+            self.condition_edit_menu_animation.setEndValue(end_value)
+            self.condition_edit_menu_animation.start()
 
     # Window Methods
     def resizeEvent(self, event):

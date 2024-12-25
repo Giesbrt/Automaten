@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWid
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint
 
-from ._grid_items import Condition
+from ._grid_items import Condition, ConditionGroup, Label
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -120,19 +120,26 @@ class InteractiveGridView(StaticGridView):
         super().mouseReleaseEvent(event)
 
 
-"""
-Please remember to type hint :)
-"""
 class AutomatonInteractiveGridView(InteractiveGridView):
-    def newCondition(self, pos):
-        new_condition = Condition(pos.x() - self.grid_size / 2, pos.y() - self.grid_size / 2,
-                                  self.grid_size, self.grid_size, Qt.GlobalColor.lightGray)
+    """TBA"""
+    def __init__(self) -> None:  # TODO: Please remember to type hint :)
+        super().__init__()
+        self._counter: int = 0
+        self._last_active: None = None
+
+    def newCondition(self, pos: QPointF) -> None:
+        """TBA"""
+        new_condition = ConditionGroup(pos.x() - self.grid_size / 2,
+                                       pos.y() - self.grid_size / 2,
+                                       self.grid_size, self.grid_size,
+                                       self._counter, Qt.GlobalColor.lightGray)
         self.scene().addItem(new_condition)
+        self._counter += 1
 
     def is_item_at(self, pos: QPoint) -> QGraphicsItem:
-        scene_pos = self.mapToScene(pos)
-        item = self.scene().itemAt(scene_pos, self.transform())
-        return item
+        """TBA"""  # Maybe change name to get item at?
+        scene_pos: QPointF = self.mapToScene(pos)
+        return self.scene().itemAt(scene_pos, self.transform())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Start panning on right or middle mouse button click."""
@@ -140,28 +147,36 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self._is_panning = True
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        if event.button() == Qt.MouseButton.LeftButton:
+        elif event.button() == Qt.MouseButton.LeftButton:
             item = self.is_item_at(event.pos())
-            if isinstance(item, Condition):
+            if isinstance(item, Condition | Label):
                 if hasattr(self.parent(), 'toggle_condition_edit_menu'):
-                    self.parent().toggle_condition_edit_menu()
-                    self.parent().condition_edit_menu.set_condition(item)
-                    self.parent().condition_edit_menu.name_changed.connect(item.set_name)
-                    self.parent().condition_edit_menu.color_changed.connect(item.set_color)
-                    self.parent().condition_edit_menu.size_changed.connect(item.set_size)
-                item.activate()
-            """if item:
-                if not item.isSelected():
-                    item.activate()
+                    self.parent().toggle_condition_edit_menu(True)  # TODO: Please get typed reference to parent and use
+                    self.parent().condition_edit_menu.set_condition(item)  # TODO: that
+                    try:
+                        self.parent().condition_edit_menu.name_changed.disconnect()
+                        self.parent().condition_edit_menu.color_changed.disconnect()
+                        self.parent().condition_edit_menu.size_changed.disconnect()
+                        self._last_active.parentItem().deactivate()
+                    except:  # TODO: Please explicitly catch errors
+                        pass
+                    finally:
+                        self.parent().condition_edit_menu.name_changed.connect(item.parentItem().set_name)
+                        self.parent().condition_edit_menu.color_changed.connect(item.parentItem().set_color)
+                        self.parent().condition_edit_menu.size_changed.connect(item.parentItem().set_size)
+                    item.parentItem().activate()  # TODO: As said please type all this
                 else:
-                    item.deactivate()
-                print(item.isSelected())"""
-        super().mousePressEvent(event)
+                    if self.parent().condition_edit_menu.x() < self.parent().width():
+                        self.parent().toggle_condition_edit_menu(False)
+                        self._last_active.parentItem().deactivate()
+                self._last_active = item
+        super().mousePressEvent(event)  # TODO: If you handle the event yourself just use event.accept()
 
-    def mouseDoubleClickEvent(self, event):
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        """TBA"""
         if event.button() == Qt.MouseButton.LeftButton:
             if not self.is_item_at(event.pos()):
-                global_pos = event.pos()
-                scene_pos = self.mapToScene(global_pos)
+                global_pos: QPoint = event.pos()
+                scene_pos: QPointF = self.mapToScene(global_pos)
                 self.newCondition(scene_pos)
         super().mouseDoubleClickEvent(event)

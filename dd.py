@@ -22,7 +22,8 @@ def list_global_colors():
 
     for name in Qt.GlobalColor:
         color = QColor(name)
-        print(f"{name:<12}: {color.name()} ({color.red()}, {color.green()}, {color.blue()})")
+        # print(f"{name:<12}: {color.name()} ({color.red()}, {color.green()}, {color.blue()})")
+        print(f"{name}: rgba{(color.red(), color.green(), color.blue(), color.alpha())};")
 
 
 def main():

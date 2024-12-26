@@ -2,31 +2,29 @@ for *::{
     *::light
 };
 QPalette[
-    Window: rgb(243, 243, 243);
-    WindowText: rgb(0, 0, 0);
-    Base: rgb(255, 255, 255);
-    AlternateBase: rgb(0, 0, 0);
-    ToolTipBase: rgb(243, 243, 243);
-    ToolTipText: rgb(0, 0, 0);
-    Text: rgb(0, 0, 0);
-    Button: rgb(255, 255, 255);
-    ButtonText: rgb(0, 0, 0);
-    BrightText: rgb(255, 255, 255);
-    Highlight: rgb(0, 120, 212);
-    HighlightedText: rgb(255, 255, 255);
-
-    WindowT: rgba(243, 243, 243;
-    WindowTextT: rgba(0, 0, 0;
-    BaseT: rgba(255, 255, 255;
-    AlternateBaseT: rgba(0, 0, 0;
-    ToolTipBaseT: rgba(243, 243, 243;
-    ToolTipTextT: rgba(0, 0, 0;
-    TextT: rgba(0, 0, 0;
-    ButtonT: rgba(255, 255, 255;
-    ButtonTextT: rgba(0, 0, 0;
-    BrightTextT: rgba(255, 255, 255;
-    HighlightT: rgba(0, 120, 212;
-    HighlightedTextT: rgba(255, 255, 255;
+    WindowText: rgba(0, 0, 0, 228);
+    Button: rgba(255, 255, 255, 179);
+    Light: rgba(255, 255, 255, 255);
+    Midlight: rgba(255, 255, 255, 255);
+    Dark: rgba(120, 120, 120, 255);
+    Mid: rgba(160, 160, 160, 255);
+    Text: rgba(0, 0, 0, 228);
+    BrightText: rgba(255, 255, 255, 255);
+    ButtonText: rgba(0, 0, 0, 228);
+    Base: rgba(255, 255, 255, 179);
+    Window: rgba(243, 243, 243, 255);
+    Shadow: rgba(0, 0, 0, 255);
+    Highlight: rgba(0, 120, 212, 255);
+    HighlightedText: rgba(255, 255, 255, 255);
+    Link: rgba(0, 120, 212, 255);
+    LinkVisited: rgba(0, 26, 104, 255);
+    AlternateBase: rgba(0, 0, 0, 9);
+    NoRole: rgba(0, 0, 0, 255);
+    ToolTipBase: rgba(243, 243, 243, 255);
+    ToolTipText: rgba(0, 0, 0, 228);
+    PlaceholderText: rgba(0, 0, 0, 128);
+    Accent: rgba(0, 120, 212, 255);
+    NColorRoles: rgba(0, 0, 0, 228);
 ]
 color0: rgb(255, 255, 255);
 color1: rgb(0, 0, 0);

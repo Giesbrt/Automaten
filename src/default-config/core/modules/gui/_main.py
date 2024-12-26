@@ -1,7 +1,7 @@
 """TBA"""
-from PySide6.QtWidgets import QWidget, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QWidget, QMainWindow, QMessageBox, QApplication
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import QRect, QSize, QTimer, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
+from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
 
 from aplustools.io.qtquick import QQuickMessageBox
 
@@ -15,7 +15,6 @@ import types as _ts
 
 
 class MainWindow(MainWindowInterface, QMainWindow):
-    icons_dir: str
     linked: bool = False
 
     def __new__(cls, *args, **kwargs):
@@ -88,6 +87,11 @@ class MainWindow(MainWindowInterface, QMainWindow):
         else:
             self.user_panel.setGeometry(shown_panel_end_value)
             self.settings_panel.setGeometry(settings_panel_hidden_value)
+
+    def set_global_theme(self, theme_str: str, base: str | None = None) -> None:
+        self.setStyleSheet(theme_str)
+        if base is not None:
+            self.app.setStyle(base)
 
     def switch_panel(self):
         width = self.width()

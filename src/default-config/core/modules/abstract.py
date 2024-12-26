@@ -1,5 +1,5 @@
 """Abstract api interfaces for everything"""
-from PySide6.QtWidgets import QWidget, QMainWindow
+from PySide6.QtWidgets import QWidget, QMainWindow, QApplication
 from PySide6.QtCore import Qt
 
 # Standard typing imports for aps
@@ -12,6 +12,14 @@ class MainWindowInterface:
     """TBA"""
     icons_folder: str = ""
     popups: list[_ty.Any] = []  # Basically anything that isn't the main window, but a window
+    app: QApplication | None = None
+
+    class AppStyle:
+        """QApp Styles"""
+        WindowsVista = 'windowsvista'
+        Windows = 'Windows'
+        Fusion = 'Fusion'
+        Default = None
 
     def __new__(cls, *args, **kwargs):
         raise Exception("This class can't be initialized; it is just an Interface.")
@@ -55,7 +63,7 @@ class MainWindowInterface:
         """Applies a theme string to a singular object"""
         raise NotImplementedError
 
-    def set_global_theme(self, theme_str: str, base: str) -> None:
+    def set_global_theme(self, theme_str: str, base: str | None = None) -> None:
         raise NotImplementedError
 
     def start(self) -> None:

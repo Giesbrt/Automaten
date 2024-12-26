@@ -50,6 +50,7 @@ multiprocessing.freeze_support()
 class App:  # The main logic and gui are separated
     """TBA"""
     window: MainWindowInterface | None = None
+    qapp: QApplication | None = None
     linked: bool = False
 
     def __init__(self) -> None:
@@ -60,6 +61,7 @@ class App:  # The main logic and gui are separated
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
         self.window.icons_dir = os.path.join(self.data_folder, "icons")
+        self.window.app = self.qapp
 
         # Setup logger
         self._order_logs(f"{self.data_folder}/logs")
@@ -96,11 +98,11 @@ class App:  # The main logic and gui are separated
             self.window.set_window_dimensions(height, width)
         self.window.setup_gui()  # I guess windows does some weird shit with the title bar
         assign_object_names_iterative(self.window)  # Set object names for theming
-        self.window.setStyleSheet("""
+        self.window.set_global_theme("""
             QPushButton#user_panel-settings_button {
                 background-color: lightblue;
             }
-        """)
+        """, self.window.AppStyle.Default)
         self.link_gui()
 
         # Setup values, signals, ...
@@ -426,6 +428,7 @@ if __name__ == "__main__":
         qapp = QApplication(sys.argv)
         qgui = MainWindow()
         App.window = qgui
+        App.qapp = qapp
         side_thread = threading.Thread()
         dp_app = App()  # Shows gui
         side_thread.start()

@@ -35,7 +35,7 @@ from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
-from core.modules.gui import MainWindow
+from core.modules.gui import MainWindow, assign_object_names_iterative
 from core.modules.abstract import MainWindowInterface
 
 # Standard typing imports for aps
@@ -95,6 +95,12 @@ class App:  # The main logic and gui are separated
         else:
             self.window.set_window_dimensions(height, width)
         self.window.setup_gui()  # I guess windows does some weird shit with the title bar
+        assign_object_names_iterative(self.window)  # Set object names for theming
+        self.window.setStyleSheet("""
+            QPushButton#user_panel-settings_button {
+                background-color: lightblue;
+            }
+        """)
         self.link_gui()
 
         # Setup values, signals, ...

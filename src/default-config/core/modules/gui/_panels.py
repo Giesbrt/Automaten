@@ -93,7 +93,6 @@ class UserPanel(Panel):
 
         # Side Menu
         self.side_menu = QFrame(self)
-        self.side_menu.setObjectName("sideMenu")
         self.side_menu.setFrameShape(QFrame.Shape.StyledPanel)
         self.side_menu.setAutoFillBackground(True)
         # Animation for Side Menu
@@ -112,7 +111,7 @@ class UserPanel(Panel):
         self.menu_button.setFixedSize(40, 40)
 
         # Settings button
-        self.settings_button = QPushButton(QIcon(), "", self)
+        self.settings_button = QPushButton(parent=self)
         self.settings_button.setFixedSize(40, 40)
 
         # Connect signals

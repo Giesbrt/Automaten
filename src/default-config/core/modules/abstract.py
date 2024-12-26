@@ -16,6 +16,7 @@ class MainWindowInterface:
 
     class AppStyle:
         """QApp Styles"""
+        Windows11 = 'windows11'
         WindowsVista = 'windowsvista'
         Windows = 'Windows'
         Fusion = 'Fusion'

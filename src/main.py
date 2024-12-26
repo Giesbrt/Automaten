@@ -49,7 +49,6 @@ multiprocessing.freeze_support()
 
 class App:  # The main logic and gui are separated
     """TBA"""
-    version, version_add = 100, ""
     window: MainWindowInterface | None = None
     linked: bool = False
 
@@ -68,7 +67,8 @@ class App:  # The main logic and gui are separated
         self.logger.logger.setLevel(logging.DEBUG if config.INDEV else logging.INFO)
         self.logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
         self.logger.monitor_pipe(sys.stderr, level=logging.ERROR)
-        self.logger.debug(config.exported_logs)  # Flush config prints
+        for exported_line in config.exported_logs.split("\n"):
+            self.logger.debug(exported_line)  # Flush config prints
 
         # Load settings
         self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
@@ -189,7 +189,7 @@ class App:  # The main logic and gui are separated
 
             # Find a version bigger than the current version and prioritize versions with push
             # Version(".".join(list(str(self.version))) + self.version_add)
-            current_version = Version(f"{self.version}{self.version_add}")
+            current_version = Version(f"{config.VERSION}{config.VERSION_ADD}")
             found_version: Version | None = None
             found_release: dict | None = None
             found_push: bool = False
@@ -207,8 +207,10 @@ class App:  # The main logic and gui are separated
                         found_release = release
                         found_push = push
             print("VLoop End time: ", timer.tock())
+            show_update_info: bool = self.user_settings.retrieve("auto_configs", "show_update_info", "bool")
+            show_no_update_info: bool = self.user_settings.retrieve("auto_configs", "show_no_update_info", "bool")
 
-            if found_version != current_version and self.user_settings.retrieve("configs", "update_info", "bool") and found_push:
+            if found_version != current_version and show_update_info and found_push:
                 title = "There is an update available"
                 text = (f"There is a newer version ({found_version}) "
                         f"available.\nDo you want to open the link to the update?")
@@ -224,13 +226,13 @@ class App:  # The main logic and gui are separated
                         else:
                             link = url
                         QDesktopServices.openUrl(QUrl(link))
-            elif self.user_settings.retrieve("auto_configs", "no_update_info", "bool") and found_version == current_version:
+            elif show_no_update_info and found_version == current_version:
                 title = "Update Info"
                 text = (f"No new updates available.\nChecklist last updated "
                         f"{update_json['metadata']['lastUpdated'].replace('-', '.')}.")
                 description = f" --- v{found_version} --- \n{found_release.get('description')}"
                 checkbox, checkbox_setting = QCheckBox("Do not show again"), ("configs", "no_update_info")
-            elif self.user_settings.retrieve("auto_configs", "no_update_info", "bool") and found_push:
+            elif show_no_update_info and found_push:
                 title = "Info"
                 text = (f"New version available, but not recommended {found_version}.\n"
                         f"Checklist last updated {update_json['metadata']['lastUpdated'].replace('-', '.')}.")
@@ -262,12 +264,9 @@ class App:  # The main logic and gui are separated
 
     def configure_settings(self) -> None:
         self.user_settings.set_default_settings("auto_configs", {
-            "hide_titlebar": "False",
-            "hide_scrollbar": "True",
-            "stay_on_top": "False",
             "geometry": "(100, 100, 1050, 640)",
-            "no_update_info": "False",
-            "update_info": "True",
+            "show_no_update_info": "False",
+            "show_update_info": "True",
             "last_scroll_positions": "(0, 0, 0, 0)",
             "scrolling_sensitivity": "4.0",
             "ask_to_reopen_last_opened_file": "True",
@@ -281,6 +280,9 @@ class App:  # The main logic and gui are separated
             "web_workers_check_interval": "5.0"
         })
         self.user_settings.set_default_settings("user_configs_advanced", {
+            "hide_titlebar": "False",
+            "hide_scrollbar": "True",
+            "stay_on_top": "False",
             "settings_backup_file_path": "",
             "settings_backup_file_mode": "overwrite",
             "settings_backup_auto_export": "False",
@@ -292,7 +294,7 @@ class App:  # The main logic and gui are separated
             "titlebox_rotation_reset_delay_seconds": "5",
             "titlebox_rotation_rate": "1",
             "window_icon_abs_path": "#/data/assets/logo-nobg.png",
-            "window_title_template": "DudPy $version$version_add $title",
+            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title",
             "simulation_loader_max_restart_counter": "5"
         })
 
@@ -385,7 +387,7 @@ class App:  # The main logic and gui are separated
 
     def update_title(self) -> None:
         raw_title = Template(self.app_settings.retrieve("window_title_template"))
-        formatted_title = raw_title.safe_substitute(version=self.version, version_add=self.version_add)
+        formatted_title = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
         self.window.set_window_title(formatted_title)
 
     def timer_tick(self, index: int) -> None:
@@ -426,7 +428,7 @@ if __name__ == "__main__":
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         title = "Info"
-        text = ("There was an error while running the app E.F.S' Simulator.\n"
+        text = (f"There was an error while running the app {config.PROGRAM_NAME}.\n"
                 "This error is unrecoverable.\nPlease submit the details to our GitHub issues page.")
         description = format_exc()
         msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning, title, text, description,

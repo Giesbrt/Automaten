@@ -7,8 +7,9 @@ import platform as _platform
 
 INDEV = 1
 OLD_CWD = _os.getcwd()
-PROGRAM_NAME = "efs_simulator"
-VERSION, VERSION_ADD = "0.1.0.0", "a1"
+PROGRAM_NAME = "E.F.S Simulator"
+PROGRAM_NAME_NORMALIZED = "efs_simulator"
+VERSION, VERSION_ADD = 1000, "a3"
 OS_LIST = ["Windows"]
 OS_VERSIONS_LIST = [("any",)]
 MAJOR_OS_VERSIONS_LIST = [("10", "11")]
@@ -32,7 +33,7 @@ def _configure() -> dict[str, str]:
     accumulated_logs = "Starting cloning of defaults ...\n"
     old_cwd = _os.getcwd()
     install_dir = _os.path.join(old_cwd, "default-config")
-    base_app_dir = _os.path.join(_os.environ.get("LOCALAPPDATA", "."), "dudpy")
+    base_app_dir = _os.path.join(_os.environ.get("LOCALAPPDATA", "."), PROGRAM_NAME_NORMALIZED)
 
     if INDEV and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
         _shutil.rmtree(base_app_dir)
@@ -105,7 +106,7 @@ elif _sys.version_info[:2] not in PY_VERSIONS:
 if exit_code:
     raise RuntimeError(exit_message)
 
-print(f"Starting {PROGRAM_NAME} {VERSION + VERSION_ADD} with py{'.'.join([str(x) for x in _sys.version_info])} ...")
+print(f"Starting {PROGRAM_NAME} {str(VERSION) + VERSION_ADD} with py{'.'.join([str(x) for x in _sys.version_info])} ...")
 
 
 exported_vars = _configure()

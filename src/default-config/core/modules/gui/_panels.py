@@ -111,6 +111,10 @@ class UserPanel(Panel):
         self.menu_button = QPushButton(QIcon(), "", self)
         self.menu_button.setFixedSize(40, 40)
 
+        # Settings button
+        self.settings_button = QPushButton(QIcon(), "", self)
+        self.settings_button.setFixedSize(40, 40)
+
         # Connect signals
         self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
@@ -167,6 +171,7 @@ class UserPanel(Panel):
             self.side_menu.setGeometry(0, 0, width, height)
             self.menu_button.move(40, 20)  # Update the position of the menu button
         self.update_menu_button_position()
+        self.settings_button.move(self.width() - 60, 20)
 
         super().resizeEvent(event)
 

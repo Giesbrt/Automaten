@@ -30,6 +30,8 @@ Next up we have the Actual QSS with placeholders for **all** colors.
 
 All GUI elements within our app have their object names set to their location within the class hierarchy so a QPushButton in the var settings_button within the user panel would be named ``user_panel-settings_button`` and could be accessed by using ``QPushButton#user_panel-settings_button { ... }``
 
+Placeholders can be inserted using the $ symbol, here an example: ``background: $black;``.
+
 Lastly we have "ph:", which stands for placeholder
 
 Here you specify what placeholders you've used and if they're changeable. For example:
@@ -44,7 +46,7 @@ see_trough==rgba(0, 0, 0, 0);
 
 If you define a placeholder using ~= it means it can be changed. If you define it with == it will always be the same. Though it is important to know that some placeholers are globally defined:
 - all Qt.Globalcolors
-- all QPalette colors like QPalette.WindowText
+- all QPalette colors like QPalette.WindowText (in rgb) and their transparent version like QPalette.WindowTextT which are rgba with an open bracket so you can add you own alpha value.
 
 If we put that together we get something like this:
 

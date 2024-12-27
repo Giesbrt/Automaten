@@ -1,4 +1,4 @@
-inheriting adalfarus::thin;
+extending adalfarus::thin;
 Default/os/nocolor
 
 /* Start of QSS */

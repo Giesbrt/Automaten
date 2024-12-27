@@ -1,2 +1,2 @@
-inheriting adalfarus::base;
+extending adalfarus::base;
 Fusion/os/color

@@ -1,4 +1,4 @@
-inheriting adalfarus::thick;
+extending adalfarus::thick;
 Fusion/os/nocolor
 
 /* Start of QSS */

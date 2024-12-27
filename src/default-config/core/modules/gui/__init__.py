@@ -109,6 +109,10 @@ class Theme:
             return s
         return s[0].lower() + s[1:]
 
+    def get_applicable_styles(self) -> list["Style"]:
+        # TODO: Filter from Style.loaded_styles
+        raise NotImplementedError
+
     def apply_style(self, style: "Style", palette: QPalette,
                     transparency_mode: _ty.Literal["none", "author", "direct", "indirect"] = "none") -> str:
         # TODO: Make transparency mode, make everything better and check if theme is applicable (for self._load_styles_for)

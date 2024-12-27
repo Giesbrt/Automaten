@@ -1,4 +1,5 @@
-Default/os
+inheriting adalfarus::base;
+Default/os/color
 
 /* Start of QSS */
 QWidget {

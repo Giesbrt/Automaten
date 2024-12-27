@@ -1,0 +1,8 @@
+inheriting adalfarus::thin;
+Default/os/nocolor
+
+/* Start of QSS */
+/* STYLING OF INDIVIDUAL BUTTONS, ... TO INCLUDE ICONS */
+/* End of QSS */
+
+ph:

@@ -1,1 +1,2 @@
-Default/os
+inheriting adalfarus::base;
+Default/os/color

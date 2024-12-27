@@ -10,7 +10,15 @@ For example:
 
 is the theme Cool Theme by adalfarus. This is done so we have less name conflicts when dealing with .st files later.
 
-The first line in the file is composed of "{base_app_style}/{compatible_styling}"
+At the start we have the inheriting line. It defines from which style it will be inheriting, if you don't want to inherit from anything use:
+
+````
+inheriting adalfarus::base;  // You can't inherit from more than one style
+````
+
+This functionality can be used to make smaller changes to themes like rounding this, ... or adding icons without losing all the styles or simply extending another theme, even if it means losing compatibility.
+
+The first line after that in the file is composed of "{base_app_style}/{compatible_styling}/{style_precautions}"
 
 Firstly we can look at what a base_app_style is. A base app style is one of the styles Qt6 provides by default. They include:
 
@@ -25,6 +33,11 @@ Secondly we can come to the compatible_styling attribute. There are 4 possible o
 - dark (Only supports dark theming)
 - \* (Support both light and dark theming)
 - os (Support both light and dark theming and is build so that it works with only QPalette and base colors, meaning it can be set by OS-specific theming)
+- (Doesn't support anything, leave blank)
+
+Lastly are the style_precautions. They are just here so that we know if an extended style introduces new colors. Because if not, we can reuse style files made for the base style. The values are:
+- color
+- nocolor
 
 Next up we have the Actual QSS with placeholders for **all** colors.
 
@@ -53,10 +66,10 @@ If we put that together we get something like this:
 ````commandline
 adalfarus_modern_theme.th
 
-Fusion/os
+inheriting adalfarus::base;
+Fusion/os/color
 
 /* Start of QSS (not needed) */
-
 QWidget {
     background-color: {background_color};
     color: {text_color};
@@ -81,7 +94,6 @@ QLineEdit {
     border-radius: 3px;
     padding: 2px;
 }
-
 /* End of QSS (not needed) */
 
 ph:
@@ -109,6 +121,10 @@ for adalfarus::{
     thick::*, thin::*
 }; // Remember the ;
 ````
+
+If you use a ::default after the theme::color_type, you define your style as the default for theme::color_type. There can only be one default per color type so be careful with this.
+
+``for adalfarus::thick::dark::default``
 
 Moving on we now just define the placeholders. QPalette is an "object" with multiple color attributes so it's defined a bit differently, here's an example:
 

@@ -1,1 +1,2 @@
-Fusion/os
+inheriting adalfarus::base;
+Fusion/os/color

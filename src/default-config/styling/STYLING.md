@@ -122,4 +122,67 @@ white: #ffffff;
 black: #000000;
 ... // Other Qt.Globalcolors you wish to overwrite
 ````
-  
+
+Transparency can be archived through 3 different ways. Either the style author implements it themselves and adds a T variant of all colors they want to be affected. Like this:
+
+````
+background_secondaryT: rgba(255, 222, 111, 129);
+... // Other transparent colors
+````
+
+Or the program dynamically adds transparency to all colors like this:
+
+````
+Example 1:
+background_secondary: rgb(255, 222, 111);
+-->
+background_secondaryT: rgba(255, 222, 111, 200); // 200 or anything else depending on what transparency we want. This doesn't affect colors that already have an alpha value.'
+
+Example 2:
+border: #222222;
+-->
+borderT: #22222200; // 0 or any other transparency
+````
+
+Lastly, we can add transparency to the already generated stylesheets.
+
+To make that happen we just append a * style to the end of the style sheet like this:
+
+````python
+from PySide6.QtWidgets import QPushButton
+from PySide6.QtGui import QColor
+
+def deepen_color(self, color, darken_factor=100, saturation_factor=1.3):
+    # Increase saturation and darken the color
+    # Convert to HSL for control over lightness and saturation
+    color = color.toHsl()
+
+    deepened_color = color.darker(darken_factor)  # 100 is original, higher values are darker
+
+    # Optionally adjust saturation using HSV
+    deepened_color = deepened_color.toHsv()
+    deepened_color.setHsv(deepened_color.hue(),
+                          min(255, int(deepened_color.saturation() * saturation_factor)),
+                          deepened_color.value())
+
+    return deepened_color
+
+menu_button = QPushButton()  # Should have the theme already applied.
+
+styles_sheet = "\nQPushButton:hover,\nQComboBox:hover"
+bg_color = menu_button.palette().color(menu_button.backgroundRole())
+bg_color.setAlpha(30)
+deep_bg_color = deepen_color(bg_color)
+stylesheet = f"""
+* {{
+    background-color: {bg_color.name(QColor.NameFormat.HexArgb)};
+}}
+""" + styles_sheet + f"""
+ {{
+    background-color: {deep_bg_color.name(QColor.NameFormat.HexArgb)};
+}}"""
+centralWidget().setStyleSheet(stylesheet)
+
+# If we want to remove this, we just use this:
+centralWidget().setStyleSheet("")
+````

@@ -1,57 +1,37 @@
-"""TBA"""
-
-import json
-from core.modules.utils.singleton import singleton
-
-# Standard typing imports for aps
-import collections.abc as _a
-import abc as _abc
-import typing as _ty
-import types as _ts
-
-
-@singleton
-class UiBridge:
-    def __init__(self) -> None:
-        self.ui_queue: _ty.List[_ty.Dict[str, str]] = []
-        self.backend_queue: _ty.List[_ty.Dict[str, str]] = []
-
-    # Ui
-    def get_ui_queue(self) -> _ty.List[_ty.Dict[str, str]]:
-        return self.ui_queue
-
-    def get_ui_current_queue_item(self) -> _ty.Dict[str, str] or None:
-        if not self.ui_queue:
-            return None
-        return self.ui_queue[0]
-
-    def add_ui_queue_item(self, item: _ty.Dict[str, str]) -> None:
-        self.ui_queue.append(item)
-
-    def remove_ui_current_queue_item(self) -> None:
-        if not self.ui_queue:
-            return
-        self.ui_queue.pop(0)
-
-    def has_ui_items(self) -> bool:
-        return len(self.ui_queue) > 0
-
-    # Backend
-    def get_backend_queue(self) -> _ty.List[_ty.Dict[str, str]]:
-        return self.backend_queue
-
-    def get_backend_current_queue_item(self) -> _ty.Dict[str, str] or None:
-        if not self.backend_queue:
-            return None
-        return self.backend_queue[0]
-
-    def add_backend_queue_item(self, item: _ty.Dict[str, str]) -> None:
-        self.backend_queue.append(item)
-
-    def remove_backend_current_queue_item(self) -> None:
-        if not self.backend_queue:
-            return
-        self.backend_queue.pop(0)
-
-    def has_backend_items(self) -> bool:
-        return len(self.backend_queue) > 0
+class SettingsPanel(Panel):
+    """The settings panel"""
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33);")
+        self.setLayout(QQuickBoxLayout(QBoxDirection.TopToBottom))
+        # Top bar with back button
+        top_bar = QQuickBoxLayout(QBoxDirection.LeftToRight)
+        self.back_button = QPushButton("Back")
+        self.back_button.setFixedSize(80, 30)  # Example size
+        top_bar.addWidget(self.back_button)
+        top_bar.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.layout().addLayout(top_bar)
+        # Main content layout
+        main_content = QQuickBoxLayout(QBoxDirection.LeftToRight)
+        self.list_widget = QListWidget()
+        self.list_widget.setFixedWidth(200)  # Example width, ~1/5 of the width
+        self.list_widget.addItems(["General", "Display", "Network", "Privacy", "About"])
+        main_content.addWidget(self.list_widget)
+        # Stacked layout for settings pages
+        self.stacked_layout = QStackedLayout()
+        # Example settings panels
+        self.general_panel = QLabel("General Settings Panel")
+        self.display_panel = QLabel("Display Settings Panel")
+        self.network_panel = QLabel("Network Settings Panel")
+        self.privacy_panel = QLabel("Privacy Settings Panel")
+        self.about_panel = QLabel("About Panel")
+        # Add panels to the stacked layout
+        self.stacked_layout.addWidget(self.general_panel)
+        self.stacked_layout.addWidget(self.display_panel)
+        self.stacked_layout.addWidget(self.network_panel)
+        self.stacked_layout.addWidget(self.privacy_panel)
+        self.stacked_layout.addWidget(self.about_panel)
+        main_content.addLayout(self.stacked_layout)
+        self.layout().addLayout(main_content)
+        self.list_widget.currentRowChanged.connect(self.stacked_layout.setCurrentIndex)
+        self.list_widget.setCurrentRow(0)  # So an item is selected by default

@@ -128,7 +128,8 @@ class Theme:
 class Style:
     loaded_styles: list[_ty.Self] = []
 
-    def __init__(self, for_paths: list[str], parameters: list[str]) -> None:
+    def __init__(self, style_name: str, for_paths: list[str], parameters: list[str]) -> None:
+        self._style_name: str = style_name
         self._for_paths: list[str] = for_paths
         self._parameters: list[str] = parameters
 
@@ -196,7 +197,7 @@ class Style:
 
         parameters: list[str] = [x.strip() for x in other_content.split(";")]
 
-        return cls(for_paths, parameters)
+        return cls(style_name, for_paths, parameters)
 
     def __repr__(self) -> str:
-        return f"Style(for_paths={self._for_paths}, parameters={self._parameters})"
+        return f"Style(style_name={self._style_name}, for_paths={self._for_paths}, parameters={self._parameters})"

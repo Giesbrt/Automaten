@@ -1,8 +1,11 @@
 """Here we can expose what we want to be used outside"""
+from string import Template, ascii_letters, digits
 import os
 import re
 
 from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QPalette, QColor
+from PySide6.QtCore import Qt
 
 from aplustools.io.fileio import os_open
 
@@ -58,6 +61,88 @@ class Theme:
         self._compatible_styling: str | None = compatible_styling
         self._load_styles_for: str = load_styles_for
         self._inherit_extend_from: tuple[str, str] = inherit_extend_from
+        self.loaded_themes.append(self)
+
+    def get_theme_uid(self) -> str:
+        return self._author + "::" + self._theme_name
+
+    def get_base(self) -> str:
+        return self._base
+
+    @staticmethod
+    def _find_special_sequence(s: str) -> tuple[str, str, str]:
+        """
+        Finds the first non-alphanumeric or non-underscore character in a string,
+        collects it and all contiguous characters of the same type immediately following it,
+        and returns the resulting substring.
+
+        :param s: The input string to search.
+        :return: The substring of contiguous special characters or an empty string if none found.
+        """
+        allowed_chars = ascii_letters + digits + '_'
+        front = ""
+        back = ""
+        for i, char in enumerate(s):
+            if char not in allowed_chars:
+                special_sequence = char
+
+                for j in range(i + 1, len(s)):
+                    if s[j] not in allowed_chars:
+                        special_sequence += s[j]
+                    else:
+                        back = s[j:]
+                        break
+                return front, special_sequence, back
+            else:
+                front += char
+        return s, "", ""  # Return empty string if no special characters found
+
+    @staticmethod
+    def _to_camel_case(s: str) -> str:
+        """
+        Converts PascalCase or TitleCase to camelCase.
+
+        :param s: The input string to convert.
+        :return: The camel case version of the string.
+        """
+        if not s:
+            return s
+        return s[0].lower() + s[1:]
+
+    def apply_style(self, style: "Style", palette: QPalette,
+                    transparency_mode: _ty.Literal["none", "author", "direct", "indirect"] = "none") -> str:
+        raw_qss = Template(self._theme_str)
+
+        final_placeholder: dict[str, str] = {}
+        formatted_placeholder: dict[str, str] = {}
+        for placeholder in self._placeholders:
+            front, assignment_type, end = self._find_special_sequence(placeholder)
+            if assignment_type == "~=":
+                if end.startswith("QPalette."):
+                    color = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
+                elif end.startswith("#") and end[1:].isalnum():
+                    color = end
+                elif (end.startswith("rba(") or end.startswith("rgba(")) and end.endswith(")"):
+                    color = end
+                else:
+                    color = QColor(getattr(Qt.GlobalColor, self._to_camel_case(end)))
+                if not isinstance(color, str):
+                    color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
+                formatted_placeholder[front] = color
+            elif assignment_type == "==":
+                raise NotImplementedError
+            else:
+                raise RuntimeError("Malformed placeholder")
+        print(formatted_placeholder)
+
+        for style_placeholder in style.get_parameters():  # Move style placeholders and QPalette conversion up
+            if style_placeholder.strip() == "":
+                continue  # Fix this
+            front, back = [c.strip() for c in style_placeholder.split(":")]
+            if front in formatted_placeholder:
+                formatted_placeholder[front] = back
+        formatted_qss = raw_qss.safe_substitute(**final_placeholder, **formatted_placeholder)
+        return formatted_qss
 
     @classmethod
     def load_from_file(cls, filepath: str) -> _ty.Self:
@@ -102,6 +187,7 @@ class Theme:
             if line.startswith("ph:"):
                 raw_placeholders.extend(line.removeprefix("ph:").split(";"))
                 raw_placeholders.extend(''.join(lines[i+1:]).split(";"))
+                break
             else:
                 qss += line
 
@@ -132,6 +218,13 @@ class Style:
         self._style_name: str = style_name
         self._for_paths: list[str] = for_paths
         self._parameters: list[str] = parameters
+        self.loaded_styles.append(self)
+
+    def get_style_name(self) -> str:
+        return self._style_name
+
+    def get_parameters(self) -> list[str]:
+        return self._parameters
 
     @classmethod
     def load_from_file(cls, filepath: str) -> _ty.Self:

@@ -104,11 +104,11 @@ class App:  # The main logic and gui are separated
             self.window.set_window_dimensions(height, width)
         self.window.setup_gui()  # I guess windows does some weird shit with the title bar
         assign_object_names_iterative(self.window)  # Set object names for theming
-        self.window.set_global_theme("""
-            QPushButton#user_panel-settings_button {
-                background-color: lightblue;
-            }
-        """, self.window.AppStyle.Default)  # getattr(self.window.AppStyle, "Fusion")
+        #self.window.set_global_theme("""
+        #    QPushButton#user_panel-settings_button {
+        #        background-color: lightblue;
+        #    }
+        #""", self.window.AppStyle.Default)  # getattr(self.window.AppStyle, "Fusion")
         self.link_gui()
 
         # Setup values, signals, ...
@@ -406,19 +406,120 @@ class App:  # The main logic and gui are separated
                 if path not in paths:
                     paths.append(path)
 
-        themes: list[Theme] = []
         for path in paths:
-            themes.append(Theme.load_from_file(path))
-        print(themes)
+            Theme.load_from_file(path)
+        print(Theme.loaded_themes)
 
     def load_styles(self, style_folder: str) -> None:
-        styles: list[Style] = []
-
+        gotten = None
         for file in os.listdir(style_folder):
             if file.endswith(".st"):
                 path = os.path.join(style_folder, file)
-                styles.append(Style.load_from_file(path))
-        print(styles)
+                Style.load_from_file(path)
+                if Style.loaded_styles[-1].get_style_name() == "Thin Dark":
+                    gotten = Style.loaded_styles[-1]
+        print(Style.loaded_styles)
+
+        for theme in Theme.loaded_themes:
+            if theme.get_theme_uid() == "adalfarus::thin":
+                theme_str = theme.apply_style(gotten, self.qapp.palette(), )
+                break
+        print("TS", theme_str)
+        self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base()))
+        # print(self.window.styleSheet())
+        return
+        self.window.set_global_theme("""
+            QWidget {
+                color: rgb(255, 255, 255);
+                background-color: #333333;
+            }
+            QWidget:disabled {
+                color: rgb(127, 127, 127);
+                background-color: #444444;
+            }
+            QCheckBox{
+                /*background-color: #444444;*/
+                border-radius: 5px;           
+            }
+            QRadioButton{
+                /*background-color: #444444;*/
+                border-radius: 5px;           
+            }
+            QLabel {
+                border-radius: 5px;
+                padding: 5px;
+                background-color: #4f4f4f; /*Before #555555, made it 6 darker*/
+            }
+            QPushButton {
+                border: 1px solid #aaaaaa;
+                border-radius: 5px;
+                padding: 5px;
+                background-color: #444444;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+            QToolButton {
+                border: 1px solid #aaaaaa;
+                border-radius: 5px;
+                background-color: #444444;
+            }
+            QToolButton:hover {
+                background-color: #555555;
+            }
+            /*QCheckBox::indicator:hover {
+                background-color: rgba(85, 85, 85, 50);
+            }*/
+            QScrollBar:horizontal {
+                border: none;
+                background: transparent;  /* Ensure the background is transparent */
+                height: 15px;
+                border-radius: 7px;
+            }
+            QScrollBar::handle:horizontal {
+                background-color: #666666;
+                min-height: 15px;
+                min-width: 40px;
+                border-radius: 7px;
+            }
+            QScrollBar::handle:hover {
+                background-color: #555555;
+            }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                border: none;
+                background: none;
+            }
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+                background: none;
+            }
+
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 15px;
+                border-radius: 7px;
+                /*border-top-right-radius: 10px;
+                border-bottom-right-radius: 10px;*/
+            }
+            QScrollBar::handle:vertical {
+                background: #666666;
+                min-height: 20px;
+                border-radius: 7px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                border: none;
+                background: none;
+            }
+
+            QScrollBar::corner {
+                background: #f0f0f0;
+                border: none;
+            }
+            QPushButton#user_panel-settings_button {
+                background-color: lightblue;
+            }
+        """, "Fusion")
 
     def update_title(self) -> None:
         raw_title = Template(self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))

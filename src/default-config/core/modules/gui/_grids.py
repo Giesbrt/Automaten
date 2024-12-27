@@ -79,6 +79,9 @@ class InteractiveGridView(StaticGridView):
         self._is_panning: bool = False
         self._pan_start: QPointF = QPointF(0.0, 0.0)
 
+        self.horizontalScrollBar().valueChanged.connect(self.resetCachedContent)
+        self.verticalScrollBar().valueChanged.connect(self.resetCachedContent)
+
     def setSceneRect(self, rect: tuple[int, int, int, int]):
         self.scene().setSceneRect(QRect(*rect))
 

@@ -416,7 +416,7 @@ class App:  # The main logic and gui are separated
             if file.endswith(".st"):
                 path = os.path.join(style_folder, file)
                 Style.load_from_file(path)
-                if Style.loaded_styles[-1].get_style_name() == "Thin Dark":
+                if Style.loaded_styles[-1].get_style_name() == "Colored Cherry Blossom":  # "Colored Evening Sky"
                     gotten = Style.loaded_styles[-1]
         print(Style.loaded_styles)
 

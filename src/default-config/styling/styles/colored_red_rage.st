@@ -1,0 +1,12 @@
+for adalfarus::{
+    thin::dark
+};
+color_primary: #FFFFFF;
+background_primary: #440000;
+color_disabled: #AA6666;
+background_disabled: #550000;
+border_primary: #AA3333;
+background_secondary: #550000;
+selection_background: #660000;
+background_tertiary: #660000;
+background_scrollbar: transparent; // Stays

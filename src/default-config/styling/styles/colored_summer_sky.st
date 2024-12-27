@@ -1,9 +1,12 @@
 for adalfarus::{
-    thick::light, thin::light
+    thin::light
 };
-QPalette[
-    background: 1293912;
-    foreground: 120902;
-]
-white: #ffffff;
-black: #000000;
+color_primary: #28527A;  // Deep blue for text
+background_primary: #FFFAE3;  // Soft sunshine yellow
+color_disabled: #A9C4D5;  // Muted blue for disabled text
+background_disabled: #FFEAC9;  // Pale cream
+border_primary: #FFD369;  // Bright sunshine yellow
+background_secondary: #FFDAA5;  // Light orange for buttons
+selection_background: #FFF5D1;  // Light sunny cream
+background_tertiary: #FFF5D1;  // Light sunny cream
+background_scrollbar: transparent; // Stays

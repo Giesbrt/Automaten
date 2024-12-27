@@ -10,14 +10,13 @@ import typing as _ty
 import types as _ts
 
 # Abstract Machine related imports
-from core.modules.automaton.base._displayManager import DisplayManager
 if _ty.TYPE_CHECKING:
     from core.modules.automaton.base.transition import Transition
 
 
 # Docs generated with Chat-GPT
 
-class State(_abc.ABC, DisplayManager):
+class State(_abc.ABC):
     """
     Represents a state within an automaton.
 
@@ -25,14 +24,14 @@ class State(_abc.ABC, DisplayManager):
     transitioning to other states and optionally performing actions upon activation.
 
     Attributes:
-        transitions (_ty.Set[Transition]):
+        _transitions (_ty.Set[Transition]):
             A set of transitions associated with this state. These define how the
             automaton moves to other states based on input.
 
-        state_name (str):
+        _state_name (str):
             The name of the state. This is typically used for identification.
 
-        activation_callback (_ty.Callable or None):
+        _activation_callback (_ty.Callable or None):
             An optional callable function that is executed when the state is activated.
             This can be used to trigger specific actions or side effects during state
             transitions.
@@ -61,26 +60,24 @@ class State(_abc.ABC, DisplayManager):
             Executes the activation callback function, if it exists.
     """
 
-    def __init__(self, name: str, display_name: str = "", position: _ty.Tuple[float, float] = (0, 0),
-                 colour: _ty.Tuple[int, int, int] = (0, 0, 0),
-                 accent_colour: _ty.Tuple[int, int, int] = (255, 0, 0)) -> None:
+    def __init__(self, name: str) -> None:
         """
-        Initializes a state with a name and an empty set of transitions.
+        Initializes a state with a name and an empty set of _transitions.
 
         Args:
             name (str): The name of the state, typically used for identification.
 
         Attributes after initialization:
-            - `transitions`: An empty set of transitions.
+            - `_transitions`: An empty set of _transitions.
             - `state_name`: The provided name for the state.
             - `activation_callback`: Set to `None` initially.
         """
-        super().__init__(display_name, position, colour, accent_colour)
-        self.transitions: _ty.Set[Transition] = set()
-        self.state_name: str = name
-        self.activation_callback: _ty.Callable or None = None
+        super().__init__()
+        self._transitions: _ty.Set[Transition] = set()
+        self._state_name: str = name
+        self._activation_callback: _ty.Callable or None = None
 
-        self.set_display_name(name)
+        self._is_active: bool = False  # If the State is currently in use
 
     def set_name(self, new_name: str) -> None:
         """
@@ -89,8 +86,7 @@ class State(_abc.ABC, DisplayManager):
         Args:
             new_name (str): The new name for the state
         """
-        self.state_name = new_name
-        self.set_display_name(new_name)
+        self._state_name = new_name
 
     def get_name(self) -> str:
         """
@@ -99,16 +95,19 @@ class State(_abc.ABC, DisplayManager):
         Returns:
             str: The name of the state.
         """
-        return self.state_name
+        return self._state_name
 
     def get_transitions(self) -> _ty.Set["Transition"]:  # Use forward reference
         """
-        Returns the set of transitions associated with this state.
+        Returns the set of _transitions associated with this state.
 
         Returns:
-            _ty.Set[Transition]: A set of transitions for this state.
+            _ty.Set[Transition]: A set of _transitions for this state.
         """
-        return self.transitions
+        return self._transitions
+
+    def add_transition(self, new_transition: "Transition") -> None:
+        self._transitions.add(new_transition)
 
     @_abc.abstractmethod
     def find_transition(self, current_input_char: str) -> _result.Result:
@@ -138,7 +137,7 @@ class State(_abc.ABC, DisplayManager):
         Args:
             callback (_ty.Callable): A callable function to set as the activation callback.
         """
-        self.activation_callback = callback
+        self._activation_callback = callback
 
     def get_activation_callback(self) -> _ty.Callable or None:
         """
@@ -148,7 +147,7 @@ class State(_abc.ABC, DisplayManager):
             _ty.Callable or None: The activation callback function, or `None` if no callback
             is set.
         """
-        return self.activation_callback
+        return self._activation_callback
 
     def activate(self) -> None:
         """
@@ -157,13 +156,19 @@ class State(_abc.ABC, DisplayManager):
         This method is called when the state is activated as part of the automaton's
         execution. If no callback is set, the method does nothing.
         """
-        if self.activation_callback:
-            self.activation_callback()
+        if self._activation_callback:
+            self._activation_callback()
+
+        self._is_active = True
+
+    def deactivate(self) -> None:
+        self._is_active = False
+
+    def is_active(self) -> bool:
+        return self._is_active
 
     def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
         """
         Serialises the State into json format to send via the bridge
         """
         raise NotImplementedError("serialise_to_json must be implemented in a subclass.")
-
-

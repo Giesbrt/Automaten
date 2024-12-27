@@ -111,6 +111,7 @@ class Theme:
 
     def apply_style(self, style: "Style", palette: QPalette,
                     transparency_mode: _ty.Literal["none", "author", "direct", "indirect"] = "none") -> str:
+        # TODO: Make transparency mode, make everything better and check if theme is applicable (for self._load_styles_for)
         raw_qss = Template(self._theme_str)
 
         final_placeholder: dict[str, str] = {}

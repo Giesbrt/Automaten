@@ -50,7 +50,7 @@ class MultiUserDBStorage:
                 return eval(value, {"__builtins__": {}})
             except (SyntaxError, NameError):
                 raise ValueError("Stored tuple is malformed")
-        elif value_type == "str":
+        elif value_type == "string":
             return value
         else:
             raise ValueError("Unsupported data type for retrieval")

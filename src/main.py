@@ -108,7 +108,7 @@ class App:  # The main logic and gui are separated
             QPushButton#user_panel-settings_button {
                 background-color: lightblue;
             }
-        """, self.window.AppStyle.Default)
+        """, self.window.AppStyle.Default)  # getattr(self.window.AppStyle, "Fusion")
         self.link_gui()
 
         # Setup values, signals, ...
@@ -287,11 +287,10 @@ class App:  # The main logic and gui are separated
             "recent_files": "()"
         })
         self.user_settings.set_default_settings("user_configs_design", {
-            "light_theme": "light_light",
-            "dark_theme": "dark",
+            "light_theme": "adalfarus::thin::light_icons",
+            "dark_theme": "adalfarus::thin::dark_icons",
             "font": "Segoe UI",
-            "range_web_workers": "(2, 10, 5)",
-            "web_workers_check_interval": "5.0"
+            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + " [INDEV]" if config.INDEV else ""
         })
         self.user_settings.set_default_settings("user_configs_advanced", {
             "hide_titlebar": "False",
@@ -308,7 +307,6 @@ class App:  # The main logic and gui are separated
             "titlebox_rotation_reset_delay_seconds": "5",
             "titlebox_rotation_rate": "1",
             "window_icon_abs_path": "#/data/assets/logo-nobg.png",
-            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title",
             "simulation_loader_max_restart_counter": "5"
         })
 
@@ -423,7 +421,7 @@ class App:  # The main logic and gui are separated
         print(styles)
 
     def update_title(self) -> None:
-        raw_title = Template(self.app_settings.retrieve("window_title_template"))
+        raw_title = Template(self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))
         formatted_title = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
         self.window.set_window_title(formatted_title)
 

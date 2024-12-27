@@ -140,12 +140,13 @@ class Theme:
                 raise RuntimeError("Malformed placeholder")
         print(formatted_placeholder)
 
-        for style_placeholder in style.get_parameters():  # Move style placeholders and QPalette conversion up
-            if style_placeholder.strip() == "":
-                continue  # Fix this
-            front, back = [c.strip() for c in style_placeholder.split(":")]
-            if front in formatted_placeholder:
-                formatted_placeholder[front] = back
+        if style is not None:
+            for style_placeholder in style.get_parameters():  # Move style placeholders and QPalette conversion up
+                if style_placeholder.strip() == "":
+                    continue  # Fix this
+                front, back = [c.strip() for c in style_placeholder.split(":")]
+                if front in formatted_placeholder:
+                    formatted_placeholder[front] = back
         formatted_qss = raw_qss.safe_substitute(**final_placeholder, **formatted_placeholder)
         return formatted_qss
 

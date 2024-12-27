@@ -1,6 +1,4 @@
 """TBA"""
-import threading
-
 import config
 
 # Standard imports
@@ -8,20 +6,21 @@ from pathlib import Path as PLPath
 from traceback import format_exc
 import multiprocessing
 from string import Template
+import threading
 import logging
 import sys
 import os
 import re
 
 # Third party imports
-from PySide6.QtWidgets import QApplication, QMainWindow, QCheckBox, QMessageBox
+from PySide6.QtWidgets import QApplication, QCheckBox, QMessageBox
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QIcon, QDesktopServices
 from PySide6.QtGui import (QCloseEvent, QResizeEvent, QMoveEvent, QFocusEvent, QKeyEvent, QMouseEvent,
                            QEnterEvent, QPaintEvent, QDragEnterEvent, QDragMoveEvent, QDropEvent,
                            QDragLeaveEvent, QShowEvent, QHideEvent, QContextMenuEvent,
                            QWheelEvent, QTabletEvent)
-from PySide6.QtCore import QTimer, QEvent, QTimerEvent
+from PySide6.QtCore import QEvent, QTimerEvent
 
 from packaging.version import Version, InvalidVersion
 import stdlib_list
@@ -32,10 +31,11 @@ from aplustools.io.env import get_system, SystemTheme, BaseSystemType
 from aplustools.io import ActLogger
 from aplustools.package.timid import TimidTimer
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
+from aplustools.io.fileio import os_open
 
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
-from core.modules.gui import MainWindow, assign_object_names_iterative
+from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
 from core.modules.abstract import MainWindowInterface
 
 # Standard typing imports for aps
@@ -60,6 +60,9 @@ class App:  # The main logic and gui are separated
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
+        self.styling_folder: str = os.path.join(self.base_app_dir, "styling")  # App styling
+
+        # TODO: remove dependency on self.window.icons_dir
         self.window.icons_dir = os.path.join(self.data_folder, "icons")
         self.window.app = self.qapp
 
@@ -79,6 +82,9 @@ class App:  # The main logic and gui are separated
         self.app_settings: JSONAppStorage = JSONAppStorage(f"{self.config_folder}/app_settings.json")
         self.configure_settings()
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
+
+        self.load_themes(os.path.join(self.styling_folder, "themes"))
+        self.load_styles(os.path.join(self.styling_folder, "styles"))
 
         # Setup window
         if self.abs_window_icon_path.startswith("#"):
@@ -393,6 +399,29 @@ class App:  # The main logic and gui are separated
                 event_handler = getattr(self.window, eventFunc)
                 setattr(self.window, eventFunc, self._create_link_event(event_handler, eventFunc))
 
+    def load_themes(self, theme_folder: str) -> None:
+        paths: list[str] = [os.path.join(theme_folder, "adalfarus_base.th")]
+
+        for file in os.listdir(theme_folder):
+            if file.endswith(".th"):
+                path = os.path.join(theme_folder, file)
+                if path not in paths:
+                    paths.append(path)
+
+        themes: list[Theme] = []
+        for path in paths:
+            themes.append(Theme.load_from_file(path))
+        print(themes)
+
+    def load_styles(self, style_folder: str) -> None:
+        styles: list[Style] = []
+
+        for file in os.listdir(style_folder):
+            if file.endswith(".st"):
+                path = os.path.join(style_folder, file)
+                styles.append(Style.load_from_file(path))
+        print(styles)
+
     def update_title(self) -> None:
         raw_title = Template(self.app_settings.retrieve("window_title_template"))
         formatted_title = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
@@ -422,6 +451,7 @@ if __name__ == "__main__":
     qapp: QApplication | None = None
     qgui: MainWindowInterface | None = None
     dp_app: App | None = None
+    side_thread: threading.Thread | None = None
     current_exit_code: int = -1
 
     try:
@@ -461,4 +491,6 @@ if __name__ == "__main__":
             qgui.close()
         if qapp is not None:
             qapp.instance().quit()
+        if side_thread is not None and side_thread.is_alive():
+            side_thread.join()
         CODES.get(current_exit_code, lambda: sys.exit(current_exit_code))()

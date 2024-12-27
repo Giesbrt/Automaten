@@ -1,6 +1,6 @@
-## What are th and st files and how do they work?
+# What are th and st files and how do they work?
 
-### th files:
+## th files:
 
 The file name of th files is of importance. It encodes the name of the creator as the first word and the name of the theme as the rest.
 
@@ -10,15 +10,26 @@ For example:
 
 is the theme Cool Theme by adalfarus. This is done so we have less name conflicts when dealing with .st files later.
 
-At the start we have the inheriting line. It defines from which style it will be inheriting, if you don't want to inherit from anything use:
+### At the start we have the inheriting/extending line. It defines from which style it will be inheriting or which style it will be extending.
+If you are making a new theme use:
 
 ````
-inheriting adalfarus::base;  // You can't inherit from more than one style
+extending adalfarus::base;  // You can't inherit from/extend more than one style
 ````
+
+Extending basically means: "Hey I'm just adding new stuff, not overwriting", the themes will be applied in reverse order. So at the start is yours then we have adalfarus base.
+
+Inheriting on the other hand:
+
+````
+inheriting adalfarus::base;
+````
+
+means that you can also overwrite styles from the base theme you selected. That means we first apply the base theme then yours.
 
 This functionality can be used to make smaller changes to themes like rounding this, ... or adding icons without losing all the styles or simply extending another theme, even if it means losing compatibility.
 
-The first line after that in the file is composed of "{base_app_style}/{compatible_styling}/{style_precautions}"
+### The first line after that in the file is composed of "{base_app_style}/{compatible_styling}/{style_precautions}"
 
 Firstly we can look at what a base_app_style is. A base app style is one of the styles Qt6 provides by default. They include:
 
@@ -39,13 +50,13 @@ Lastly are the style_precautions. They are just here so that we know if an exten
 - color
 - nocolor
 
-Next up we have the Actual QSS with placeholders for **all** colors.
+### Next up we have the Actual QSS with placeholders for **all** colors.
 
 All GUI elements within our app have their object names set to their location within the class hierarchy so a QPushButton in the var settings_button within the user panel would be named ``user_panel-settings_button`` and could be accessed by using ``QPushButton#user_panel-settings_button { ... }``
 
 Placeholders can be inserted using the $ symbol, here an example: ``background: $black;``.
 
-Lastly we have "ph:", which stands for placeholder
+### Lastly we have "ph:", which stands for placeholder
 
 Here you specify what placeholders you've used and if they're changeable. For example:
 
@@ -108,9 +119,9 @@ input_text_color~=#495057;
 input_border_color~=#ced4da;
 ````
 
-### st files:
+## st files:
 
-At the start of each st file is the for command. It specifies for which themes this style can be applied. A * can be used to include everything from a (sub-)category.
+### At the start of each st file is the for command. It specifies for which themes this style can be applied. A * can be used to include everything from a (sub-)category.
 
 The base is the authors name, then the theme name and lastly what type of theme it is (light, dark, *).
 
@@ -126,7 +137,15 @@ If you use a ::default after the theme::color_type, you define your style as the
 
 ``for adalfarus::thick::dark::default``
 
-Moving on we now just define the placeholders. QPalette is an "object" with multiple color attributes so it's defined a bit differently, here's an example:
+Remember that this for is very powerful. For example:
+
+``for {adalfarus, max}::thin::{light, dark}::default``
+
+would be expanded into:
+
+["adalfarus::thin::light::default", "adalfarus::thin::dark::default", "max::thin::light::default", "max::thin::dark::default"]
+
+### Moving on we now just define the placeholders. QPalette is an "object" with multiple color attributes so it's defined a bit differently, here's an example:
 
 ````python
 QPalette[

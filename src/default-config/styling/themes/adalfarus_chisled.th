@@ -1,2 +1,2 @@
-inheriting adalfarus::base;
+extending adalfarus::base;
 Windows/os/color

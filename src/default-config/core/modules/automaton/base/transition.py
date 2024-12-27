@@ -17,7 +17,7 @@ from core.modules.automaton.base._displayManager import DisplayManager
 
 # Docs generated with Chat-GPT
 
-class Transition(_abc.ABC, DisplayManager):
+class Transition(_abc.ABC):
     """
     Represents a generic transition between states in an automaton. It is flexible to support
     various automata by allowing custom logic for transition conditions.
@@ -28,10 +28,7 @@ class Transition(_abc.ABC, DisplayManager):
         activation_callback (_ty.Callable or None): An optional callback triggered when the transition is activated.
     """
 
-    def __init__(self, start_state: State, transition_target_state: State, display_name: str = "",
-                 position: _ty.Tuple[float, float] = (0, 0),
-                 colour: _ty.Tuple[int, int, int] = (0, 0, 0),
-                 accent_colour: _ty.Tuple[int, int, int] = (255, 0, 0)) -> None:
+    def __init__(self, start_state: State, transition_target_state: State, condition: _ty.Any) -> None:
         """
         Initializes a transition with a starting and a target state.
 
@@ -39,13 +36,15 @@ class Transition(_abc.ABC, DisplayManager):
             start_state (State): The state from which this transition starts.
             transition_target_state (State): The state this transition leads to.
         """
-        super().__init__(display_name, position, colour, accent_colour)
         self.start_state: State = start_state
         self.transition_target_state: State = transition_target_state
         self.activation_callback: _ty.Callable or None = None
 
+        self._condition: _ty.Any = condition
+        self._is_active: bool = False
+
         # Automatically adds this transition to the start state's set of transitions.
-        self.start_state.transitions.add(self)
+        self.start_state.add_transition(self)
 
     @_abc.abstractmethod
     def canTransition(self, current_input: _ty.Any) -> _result.Result:
@@ -86,6 +85,12 @@ class Transition(_abc.ABC, DisplayManager):
         """
         return self.start_state
 
+    def get_condition(self) -> _ty.Any:
+        return self._condition
+
+    def set_condition(self, new_condition: _ty.Any) -> None:
+        self._condition = new_condition
+
     def set_activation_callback(self, callback: _ty.Callable) -> None:
         """
         Sets a callback function to be executed when the transition is activated.
@@ -110,6 +115,13 @@ class Transition(_abc.ABC, DisplayManager):
         """
         if self.activation_callback:
             self.activation_callback()
+        self._is_active = True
+
+    def deactivate(self) -> None:
+        self._is_active = False
+
+    def is_active(self) -> bool:
+        return self._is_active
 
     def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
         """

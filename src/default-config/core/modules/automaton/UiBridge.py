@@ -12,64 +12,116 @@ import types as _ts
 
 class UiBridge:
     """
-    UiBridge is a queue provider that acts as an interface between the UI and the backend.
+    UiBridge is a queue provider that acts as an interface between the Simulation and the backend.
     It facilitates the exchange of JSON-formatted data (represented as Python dictionaries) between these components.
 
     This class manages two separate queues:
-    1. UI Queue: Handles tasks sent from the backend to the UI.
-    2. Backend Queue: Handles tasks sent from the UI to the backend.
+    1. Simulation Queue: Handles tasks sent from the backend to the Simulation.
+    2. Backend Queue: Handles tasks sent from the Simulation to the backend.
 
     Methods are provided to interact with these queues, including adding items, retrieving items, and checking queue states.
     """
 
-    # Queues for UI and Backend communication
+    # Queues for Simulation and Backend communication
     _ui_queue: Queue[_ty.Dict[str, str]] = Queue()
     _backend_queue: Queue[_ty.Dict[str, str]] = Queue()
+    _simulation_queue: Queue[_ty.Dict[str, str]] = Queue()
 
-    # UI-related methods
+    # Simulation-related methods
     def get_ui_queue(self) -> Queue[_ty.Dict[str, str]]:
         """
-        Retrieve the UI queue.
+        Retrieve the Simulation queue.
 
         Returns:
-            Queue[_ty.Dict[str, str]]: The queue for UI tasks.
+            Queue[_ty.Dict[str, str]]: The queue for Simulation tasks.
         """
         return self._ui_queue
 
     def get_ui_task(self) -> _ty.Dict[str, str] or None:
         """
-        Retrieve the next task from the UI queue without blocking.
+        Retrieve the next task from the Simulation queue without blocking.
 
         Returns:
-            _ty.Dict[str, str] or None: The next task from the UI queue, or None if the queue is empty.
+            _ty.Dict[str, str] or None: The next task from the Simulation queue, or None if the queue is empty.
         """
         return self._ui_queue.get_nowait()
 
     def add_ui_item(self, item: _ty.Dict[str, str]) -> None:
         """
-        Add a new task to the UI queue.
+        Add a new task to the Simulation queue.
 
         Args:
-            item (_ty.Dict[str, str]): The task to be added to the UI queue.
+            item (_ty.Dict[str, str]): The task to be added to the Simulation queue.
         """
         self._ui_queue.put(item)
 
     def complete_ui_task(self) -> None:
         """
-        Mark the current task in the UI queue as complete.
+        Mark the current task in the Simulation queue as complete.
 
-        This method should be called after processing a task from the UI queue.
+        This method should be called after processing a task from the Simulation queue.
         """
         self._ui_queue.task_done()
 
     def has_ui_items(self) -> bool:
         """
-        Check if the UI queue has items.
+        Check if the Simulation queue has items.
 
         Returns:
-            bool: True if the UI queue is empty, False otherwise.
+            bool: True if the Simulation queue is empty, False otherwise.
         """
         return self._ui_queue.empty()
+
+    # Simulation-related methods
+    def get_simulation_queue(self) -> Queue[_ty.Dict[str, str]]:
+        """
+        Retrieve the Simulation queue.
+
+        Returns:
+            Queue[_ty.Dict[str, str]]: The queue for Simulation tasks.
+        """
+        return self._simulation_queue
+
+    def get_simulation_task(self) -> _ty.Dict[str, str] or None:
+        """
+        Retrieve the next task from the Simulation queue without blocking.
+
+        Returns:
+            _ty.Dict[str, str] or None: The next task from the Simulation queue, or None if the queue is empty.
+        """
+        return self._simulation_queue.get_nowait()
+
+    def add_simulation_item(self, item: _ty.Dict[str, str]) -> None:
+        """
+        Add a new task to the Simulation queue.
+
+        Args:
+            item (_ty.Dict[str, str]): The task to be added to the Simulation queue.
+        """
+        self._simulation_queue.put(item)
+
+    def complete_simulation_task(self) -> None:
+        """
+        Mark the current task in the Simulation queue as complete.
+
+        This method should be called after processing a task from the Simulation queue.
+        """
+        self._simulation_queue.task_done()
+
+    def has_simulation_items(self) -> bool:
+        """
+        Check if the Simulation queue has items.
+
+        Returns:
+            bool: True if the Simulation queue is empty, False otherwise.
+        """
+        return self._simulation_queue.empty()
+    
+    def clear_simulation_queue(self) -> None:
+        """
+        This method clears the simulation queue.
+        """
+        self._simulation_queue.empty()
 
     # Backend-related methods
     def get_backend_queue(self) -> Queue[_ty.Dict[str, str]]:

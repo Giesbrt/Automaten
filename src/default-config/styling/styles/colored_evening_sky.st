@@ -1,5 +1,5 @@
 for adalfarus::{
-    thin::dark
+    thin_basic::dark
 };
 color_primary: #F5F5F5;  // Soft white for text
 background_primary: #2C3E50;  // Deep twilight blue

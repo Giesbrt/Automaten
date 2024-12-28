@@ -411,20 +411,20 @@ class App:  # The main logic and gui are separated
         print(Theme.loaded_themes)
 
     def load_styles(self, style_folder: str) -> None:
-        gotten = None
         for file in os.listdir(style_folder):
             if file.endswith(".st"):
                 path = os.path.join(style_folder, file)
                 Style.load_from_file(path)
-                if Style.loaded_styles[-1].get_style_name() == "Thin Light Dark":  # "Colored Evening Sky"
-                    gotten = Style.loaded_styles[-1]
         print(Style.loaded_styles)
 
         for theme in Theme.loaded_themes:
             if theme.get_theme_uid() == "adalfarus::thin":
-                theme_str = theme.apply_style(gotten, self.qapp.palette(), )
+                style = theme.get_compatible_style("Thin Light Dark")  # "Colored Evening Sky"
+                theme_str, palette = theme.apply_style(style, self.qapp.palette(), )
+                self.qapp.setPalette(palette)
                 break
         print("TS", theme_str)
+        # exit()
         self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base()))
         # print(self.window.styleSheet())
         return

@@ -1,5 +1,5 @@
 for adalfarus::{
-    thick::dark::default
+    thick_basic::dark::default
 };
 color_text: rgb(255, 255, 255);
 color_background: #333333;

@@ -25,7 +25,7 @@ QPalette[
     PlaceholderText: rgba(0, 0, 0, 128);
     Accent: rgba(0, 120, 212, 255);
     NColorRoles: rgba(0, 0, 0, 228);
-]
+];
 color0: rgb(255, 255, 255);
 color1: rgb(0, 0, 0);
 black: rgb(0, 0, 0);

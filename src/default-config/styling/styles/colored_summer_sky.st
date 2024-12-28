@@ -1,5 +1,5 @@
 for adalfarus::{
-    thin::light
+    thin_basic::light
 };
 color_primary: #28527A;  // Deep blue for text
 background_primary: #FFFAE3;  // Soft sunshine yellow

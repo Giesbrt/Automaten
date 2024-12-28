@@ -47,8 +47,8 @@ Secondly we can come to the compatible_styling attribute. There are 4 possible o
 - (Doesn't support anything, leave blank)
 
 Lastly are the style_precautions. They are just here so that we know if an extended style introduces new colors. Because if not, we can reuse style files made for the base style. The values are:
-- color
-- nocolor
+- new_st
+- reuse_st
 
 ### Next up we have the Actual QSS with placeholders for **all** colors.
 
@@ -82,26 +82,26 @@ Fusion/os/color
 
 /* Start of QSS (not needed) */
 QWidget {
-    background-color: {background_color};
-    color: {text_color};
+    background-color: $background_color;
+    color: $text_color;
 }
 
 QPushButton {
-    background-color: {button_color};
-    color: {button_text_color};
-    border: 1px solid {button_border_color};
+    background-color: $button_color;
+    color: $button_text_color;
+    border: 1px solid $button_border_color;
     border-radius: 4px;
     padding: 5px;
 }
 
 QPushButton:hover {
-    background-color: {button_hover_color};
+    background-color: $button_hover_color;
 }
 
 QLineEdit {
-    background-color: {input_background_color};
-    color: {input_text_color};
-    border: 1px solid {input_border_color};
+    background-color: $input_background_color;
+    color: $input_text_color;
+    border: 1px solid $input_border_color;
     border-radius: 3px;
     padding: 2px;
 }
@@ -151,7 +151,7 @@ would be expanded into:
 QPalette[
     background: rgba(10, 22, 211, 0.1);
     foreground: #d3d3d3;
-]
+]; // Remember the ;
 // Qt global colors
 white: #ffffff;
 black: #000000;

@@ -1,5 +1,5 @@
 for adalfarus::{
-    thin::dark::default
+    thin_basic::dark::default
 };
 
 color_primary: rgb(255, 255, 255); // Already light, unchanged

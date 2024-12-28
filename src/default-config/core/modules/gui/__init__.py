@@ -47,6 +47,124 @@ def assign_object_names_iterative(parent: QWidget, prefix: str = "", exclude_pri
                 stack.append((child, object_name))
 
 
+class Style:
+    loaded_styles: list[_ty.Self] = []
+
+    def __init__(self, style_name: str, for_paths: list[str], parameters: list[str],
+                 palette_parameter: list[str]) -> None:
+        self._style_name: str = style_name
+        self._for_paths: list[str] = for_paths
+        self._parameters: list[str] = parameters
+        self._palette_parameter: list[str] = palette_parameter
+        self.loaded_styles.append(self)
+
+    def get_style_name(self) -> str:
+        return self._style_name
+
+    def get_parameters(self) -> list[str]:
+        return self._parameters
+
+    def get_palette_parameters(self) -> list[str]:
+        return self._palette_parameter
+
+    def get_for_paths(self) -> list[str]:
+        return self._for_paths.copy()
+
+    @classmethod
+    def load_from_file(cls, filepath: str) -> _ty.Self:
+        with os_open(filepath, "r") as f:
+            content = f.read()
+        filename = os.path.basename(filepath)
+        return cls.load_from_content(filename, content.decode("utf-8"))
+
+    @staticmethod
+    def _parse_paths(input_str: str) -> list[str]:
+        # Step 1: Extract the part after "for" and before the ";"
+        match = re.match(r'for\s?(.+);', input_str.strip())
+        if not match:
+            raise ValueError("Input must start with 'for' and end with ';'")
+
+        content = match.group(1).strip()
+
+        # Step 2: Recursive function to expand curly braces
+        def expand(segment):
+            if "{" not in segment:
+                return [segment]
+
+            # Find the first set of braces
+            start = segment.index("{")
+            end = segment.index("}", start)
+
+            # Before the braces, the braces content, and after the braces
+            prefix = segment[:start]
+            brace_content = segment[start + 1:end]
+            suffix = segment[end + 1:]
+
+            # Expand the content inside the braces
+            options = brace_content.split(",")
+
+            # Recursively expand the rest of the string
+            expanded_suffixes = expand(suffix)
+
+            # Combine each option with the expanded suffixes
+            result = []
+            for option in options:
+                for expanded_suffix in expanded_suffixes:
+                    result.append(f"{prefix}{option.strip()}{expanded_suffix}")
+            return result
+
+        # Step 3: Call the recursive function on the cleaned-up string
+        return expand(content)
+
+    @classmethod
+    def load_from_content(cls, filename: str, content: str) -> _ty.Self:
+        """TBA"""
+        if filename.endswith(".st"):
+            style_name: str = filename[:-3].replace("_", " ").title()
+        else:
+            raise ValueError(f"Invalid .st file name: {filename}")
+
+        translation_table = str.maketrans("", "", "\n\t ")
+        cleaned_content: str = re.sub(r"//.*?$|/\*.*?\*/", "", content, flags=re.DOTALL | re.MULTILINE)
+
+        if not cleaned_content.startswith("for "):
+            raise RuntimeError("Style does not include for directive")
+
+        trans_content: str = cleaned_content.translate(translation_table)
+        if trans_content == "":
+            raise ValueError("The .st file is empty.")
+
+        for_line: str
+        other_content: str
+        for_line, other_content = trans_content.split(";", maxsplit=1)
+        for_paths = cls._parse_paths(for_line + ";")
+
+        parameters: list[str] = []
+        palette_parameter: list[str] = []
+        palette_part = False
+        for part in other_content.split(";"):
+            if not part:
+                continue
+            if palette_part:
+                if part == "]":
+                    palette_part = False
+                    continue
+                palette_parameter.append(part)
+            elif part.startswith("QPalette["):
+                palette_part = True
+            else:
+                parameters.append(part)
+
+        if palette_part:
+            raise RuntimeError("Unterminated QPalette declaration")
+
+        return cls(style_name, for_paths, parameters, palette_parameter)
+
+    def __repr__(self) -> str:
+        return (f"Style(style_name={self._style_name}, for_paths={self._for_paths}, parameters={self._parameters}, "
+                f"palette_parameter={self._palette_parameter})")
+
+
 class Theme:
     loaded_themes: list[_ty.Self] = []
 
@@ -109,17 +227,86 @@ class Theme:
             return s
         return s[0].lower() + s[1:]
 
-    def get_applicable_styles(self) -> list["Style"]:
-        # TODO: Filter from Style.loaded_styles
-        raise NotImplementedError
+    def supports_styles(self) -> bool:
+        return self._compatible_styling in ("*", "os")
 
-    def apply_style(self, style: "Style", palette: QPalette,
-                    transparency_mode: _ty.Literal["none", "author", "direct", "indirect"] = "none") -> str:
-        # TODO: Make transparency mode, make everything better and check if theme is applicable (for self._load_styles_for)
-        raw_qss = Template(self._theme_str)
+    def is_compatible(self, style: Style) -> bool:
+        load_st_author, load_st_theme = self._load_styles_for.split("::")
+        for path in style.get_for_paths():  # TODO: Check for wildcards
+            author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]
+            if author == load_st_author and theme_name == load_st_theme:
+                return True
+        return False
 
-        final_placeholder: dict[str, str] = {}
+    def get_compatible_styles(self) -> list[Style]:
+        if not self.supports_styles():
+            raise RuntimeError(f"The theme '{self._theme_name}' doesn't support styles")
+        compatible_styles = []
+        load_st_author, load_st_theme = self._load_styles_for.split("::")
+        for style in Style.loaded_styles:
+            for path in style.get_for_paths():
+                author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]
+                if author == load_st_author and theme_name == load_st_theme:
+                    compatible_styles.append(style)
+        return compatible_styles
+
+    def get_compatible_style(self, name: str) -> Style | None:
+        if not self.supports_styles():
+            raise RuntimeError(f"The theme '{self._theme_name}' doesn't support styles")
+        load_st_author, load_st_theme = self._load_styles_for.split("::")
+        for style in Style.loaded_styles:
+            if style.get_style_name() != name:
+                continue
+            for path in style.get_for_paths():
+                author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]
+                if author == load_st_author and theme_name == load_st_theme:
+                    return style
+
+    def is_theme(self, theme_str: str) -> bool:
+        return f"{self._author}::{self._theme_name}" == theme_str
+
+    def assemble_qss_row(self) -> str:
+        mode, from_theme = self._inherit_extend_from
+        if mode == "inheriting":
+            theme = None
+            for theme in self.loaded_themes:
+                if theme.is_theme(from_theme):
+                    break
+            if theme is None:
+                raise RuntimeError(f"Unknown theme '{from_theme}'")
+            return theme.assemble_qss_row() + self._theme_str
+        elif mode == "extending":
+            theme = None
+            for theme in self.loaded_themes:
+                if theme.is_theme(from_theme):
+                    break
+            if theme is None:
+                raise RuntimeError(f"Unknown theme '{from_theme}'")
+            return self._theme_str + theme.assemble_qss_row()
+        elif mode is None:
+            return self._theme_str
+        else:
+            raise RuntimeError(f"Unsupported mode '{mode}'")
+
+    def apply_style(self, style: Style, palette: QPalette,
+                    transparency_mode: _ty.Literal["none", "author", "direct", "indirect"] = "none"
+                    ) -> tuple[str, QPalette]:
+        # TODO: Make transparency mode, make everything better
+        if transparency_mode != "none":
+            raise NotImplementedError("Transparency modes are not supported yet")
+        if not self.is_compatible(style):  # Remove ?
+            raise RuntimeError()
+        raw_qss = Template(self.assemble_qss_row())
+
         formatted_placeholder: dict[str, str] = {}
+        if style is not None:
+            for style_placeholder in style.get_parameters():  # Move style placeholders and QPalette conversion up
+                front, back = [c.strip() for c in style_placeholder.split(":")]
+                formatted_placeholder[front] = back
+            for qpalette_placeholder in style.get_palette_parameters():
+                key, val = qpalette_placeholder.split(":")
+                getattr(palette, f"set{key}")(val)
+
         for placeholder in self._placeholders:
             front, assignment_type, end = self._find_special_sequence(placeholder)
             if assignment_type == "~=":
@@ -133,22 +320,25 @@ class Theme:
                     color = QColor(getattr(Qt.GlobalColor, self._to_camel_case(end)))
                 if not isinstance(color, str):
                     color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
-                formatted_placeholder[front] = color
+                if front not in formatted_placeholder:
+                    formatted_placeholder[front] = color
             elif assignment_type == "==":
-                raise NotImplementedError
+                if end.startswith("QPalette."):
+                    color = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
+                elif end.startswith("#") and end[1:].isalnum():
+                    color = end
+                elif (end.startswith("rba(") or end.startswith("rgba(")) and end.endswith(")"):
+                    color = end
+                else:
+                    color = QColor(getattr(Qt.GlobalColor, self._to_camel_case(end)))
+                if not isinstance(color, str):
+                    color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
+                formatted_placeholder[front] = color
             else:
                 raise RuntimeError("Malformed placeholder")
-        print(formatted_placeholder)
 
-        if style is not None:
-            for style_placeholder in style.get_parameters():  # Move style placeholders and QPalette conversion up
-                if style_placeholder.strip() == "":
-                    continue  # Fix this
-                front, back = [c.strip() for c in style_placeholder.split(":")]
-                if front in formatted_placeholder:
-                    formatted_placeholder[front] = back
-        formatted_qss = raw_qss.safe_substitute(**final_placeholder, **formatted_placeholder)
-        return formatted_qss
+        formatted_qss = raw_qss.safe_substitute(**formatted_placeholder)
+        return formatted_qss, palette
 
     @classmethod
     def load_from_file(cls, filepath: str) -> _ty.Self:
@@ -164,7 +354,7 @@ class Theme:
             theme_name = theme_name_ext[:-3]  # Remove ".th"
         else:
             raise ValueError(f"Invalid .th file name: {filename}")
-
+        # TODO: Use string translation here
         cleaned_content = re.sub(r"//.*?$|/\*.*?\*/", "", content, flags=re.DOTALL | re.MULTILINE).strip() + "\n"
         if cleaned_content == "":
             raise ValueError("The .th file is empty.")
@@ -203,7 +393,7 @@ class Theme:
             if placeholder != "":
                 placeholders.append(placeholder)
         # TODO: add other attributes more clearly
-        load_styles_for = from_theme if style_precautions == "nocolor" and from_theme is not None else theme_name
+        load_styles_for = from_theme if style_precautions == "reuse_st" and from_theme is not None else theme_name
         inherit_extend = (mode, from_theme)
         return cls(author, theme_name, qss.strip(), base_app_style, placeholders, compatible_styling, load_styles_for,
                    inherit_extend)
@@ -215,88 +405,3 @@ class Theme:
         return (f"Theme(author={self._author}, theme_name={self._theme_name}, theme_str={self._theme_str[:10]}, "
                 f"base={self._base}, placeholder={self._placeholders}, compatible_styling={self._compatible_styling}, "
                 f"load_styles_for={self._load_styles_for}, inherit_extend_from={self._inherit_extend_from})")
-
-
-class Style:
-    loaded_styles: list[_ty.Self] = []
-
-    def __init__(self, style_name: str, for_paths: list[str], parameters: list[str]) -> None:
-        self._style_name: str = style_name
-        self._for_paths: list[str] = for_paths
-        self._parameters: list[str] = parameters
-        self.loaded_styles.append(self)
-
-    def get_style_name(self) -> str:
-        return self._style_name
-
-    def get_parameters(self) -> list[str]:
-        return self._parameters
-
-    @classmethod
-    def load_from_file(cls, filepath: str) -> _ty.Self:
-        with os_open(filepath, "r") as f:
-            content = f.read()
-        filename = os.path.basename(filepath)
-        return cls.load_from_content(filename, content.decode("utf-8"))
-
-    @staticmethod
-    def _parse_paths(input_str: str) -> list[str]:
-        # Step 1: Extract the part after "for" and before the ";"
-        match = re.match(r'for\s+(.+);', input_str.strip())
-        if not match:
-            raise ValueError("Input must start with 'for' and end with ';'")
-
-        content = match.group(1).strip()
-
-        # Step 2: Recursive function to expand curly braces
-        def expand(segment):
-            if "{" not in segment:
-                return [segment]
-
-            # Find the first set of braces
-            start = segment.index("{")
-            end = segment.index("}", start)
-
-            # Before the braces, the braces content, and after the braces
-            prefix = segment[:start]
-            brace_content = segment[start + 1:end]
-            suffix = segment[end + 1:]
-
-            # Expand the content inside the braces
-            options = brace_content.split(",")
-
-            # Recursively expand the rest of the string
-            expanded_suffixes = expand(suffix)
-
-            # Combine each option with the expanded suffixes
-            result = []
-            for option in options:
-                for expanded_suffix in expanded_suffixes:
-                    result.append(f"{prefix}{option.strip()}{expanded_suffix}")
-            return result
-
-        # Step 3: Call the recursive function on the cleaned-up string
-        return expand(content)
-
-    @classmethod
-    def load_from_content(cls, filename: str, content: str) -> _ty.Self:
-        if filename.endswith(".st"):
-            style_name = filename[:-3].replace("_", " ").title()
-        else:
-            raise ValueError(f"Invalid .st file name: {filename}")
-
-        translation_table = str.maketrans("", "", "\n\t")
-        cleaned_content = re.sub(r"//.*?$|/\*.*?\*/", "", content, flags=re.DOTALL | re.MULTILINE)
-        trans_content = cleaned_content.translate(translation_table)
-        if trans_content == "":
-            raise ValueError("The .st file is empty.")
-
-        for_line, other_content = trans_content.split(";", maxsplit=1)
-        for_paths = cls._parse_paths(for_line + ";")
-
-        parameters: list[str] = [x.strip() for x in other_content.split(";")]
-
-        return cls(style_name, for_paths, parameters)
-
-    def __repr__(self) -> str:
-        return f"Style(style_name={self._style_name}, for_paths={self._for_paths}, parameters={self._parameters})"

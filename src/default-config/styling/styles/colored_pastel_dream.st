@@ -1,5 +1,5 @@
 for adalfarus::{
-    thin::light
+    thin_basic::light
 };
 color_primary: #5A5A5A;  // Medium gray for text
 background_primary: #FFF7F1;  // Light peachy cream

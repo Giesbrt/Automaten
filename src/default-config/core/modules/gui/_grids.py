@@ -152,13 +152,11 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.button() == Qt.MouseButton.LeftButton:
-            # Map the click to scene coordinates
             clicked_point = self.mapToScene(event.pos())
 
             item = self.get_item_at(QPoint(int(clicked_point.x()), int(clicked_point.y())))
             if isinstance(item, Condition | Label):
-                if item.flags() & QGraphicsItem.ItemIsSelectable:
-                    # Toggle selection state
+                if item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable:
                     item.setSelected(not item.isSelected())
         elif event.button() == Qt.MouseButton.LeftButton:
             item = self.get_item_at(event.pos())

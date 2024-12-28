@@ -1,5 +1,5 @@
 for adalfarus::{
-    thin::light
+    thin_basic::light
 };
 color_primary: #4E2A2A;
 background_primary: #FFE0E6;

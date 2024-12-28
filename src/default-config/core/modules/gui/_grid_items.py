@@ -1,6 +1,6 @@
 """Everything regarding the infinite grids items"""
 from PySide6.QtWidgets import (QWidget, QStyleOptionGraphicsItem, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
-                               QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem)
+                               QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem, QStyle)
 from PySide6.QtGui import QPainter, QCursor, QFont, QPen, QColor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF
 
@@ -51,6 +51,8 @@ class Condition(QGraphicsEllipseItem):
     def __init__(self, x: float, y: float, width: int, height: int, color: Qt.GlobalColor,
                  parent: QGraphicsItem | None = None) -> None:
         super().__init__(QRectF(x, y, width, height), parent)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsWidget.GraphicsItemFlag.ItemIsMovable, True)
         self.x: float = x
         self.y: float = y
         self.width: int = width
@@ -66,6 +68,13 @@ class Condition(QGraphicsEllipseItem):
     def add_line(self, line: "ConnectionLine") -> None:
         """TBA"""
         self.connected_lines.append(line)
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
+        if self.isSelected():
+            self.setPen(QPen(Qt.GlobalColor.red, 3, Qt.PenStyle.DotLine))
+        else:
+            self.setPen(Qt.PenStyle.NoPen)
+        super().paint(painter, option, widget)
 
 
 class ConnectionLine(QGraphicsLineItem):
@@ -102,12 +111,10 @@ class ConditionGroup(QGraphicsItemGroup):
 
     def activate(self) -> None:
         """TBA"""
-        self.condition.setPen(QPen(Qt.GlobalColor.red, 3, Qt.PenStyle.DotLine))
         self.condition.setSelected(True)
 
     def deactivate(self) -> None:
         """TBA"""
-        self.condition.setPen(Qt.PenStyle.NoPen)
         self.condition.setSelected(False)
 
     def update_label_position(self) -> None:
@@ -140,3 +147,7 @@ class ConditionGroup(QGraphicsItemGroup):
     def set_color(self, color: Qt.GlobalColor) -> None:
         """TBA"""
         self.condition.setBrush(color)
+
+    def paint(self, painter, option, widget = ...):
+        option.state = option.state & ~QStyle.StateFlag.State_Selected
+        super().paint(painter, option, widget)

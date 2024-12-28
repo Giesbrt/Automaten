@@ -1,4 +1,4 @@
-
+import re
 @staticmethod
 def _parse_color(color_str: str, color_space: ColorSpace) -> QColor:
     """

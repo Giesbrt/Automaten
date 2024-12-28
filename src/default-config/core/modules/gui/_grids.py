@@ -20,11 +20,15 @@ class StaticGridView(QGraphicsView):
         self.setCacheMode(QGraphicsView.CacheModeFlag.CacheBackground)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.SmartViewportUpdate)
 
         if scene is not None:
             self.setScene(scene)
 
         self.grid_size: int = grid_size
+
+        self.horizontalScrollBar().valueChanged.connect(self.resetCachedContent)
+        self.verticalScrollBar().valueChanged.connect(self.resetCachedContent)
 
     def drawBackground(self, painter: QPainter, rect: QRect | QRectF) -> None:  # Overwrite
         """Draw an infinite grid."""
@@ -79,9 +83,6 @@ class InteractiveGridView(StaticGridView):
         # Panning attributes
         self._is_panning: bool = False
         self._pan_start: QPointF = QPointF(0.0, 0.0)
-
-        self.horizontalScrollBar().valueChanged.connect(self.resetCachedContent)
-        self.verticalScrollBar().valueChanged.connect(self.resetCachedContent)
 
     def setSceneRect(self, rect: tuple[int, int, int, int]):
         self.scene().setSceneRect(QRect(*rect))
@@ -155,8 +156,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             parent: QWidget = self.parent()
             if not isinstance(parent, UserPanel):
                 return
-            else:
-                parent: UserPanel = parent
+            parent: UserPanel = parent
             if isinstance(item, Condition | Label):
                 parent_item: ConditionGroup = item.parentItem()
                 parent.toggle_condition_edit_menu(True)  # TODO: Please get typed reference to parent and use that
@@ -166,7 +166,9 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                     parent.condition_edit_menu.name_changed.disconnect()
                     parent.condition_edit_menu.color_changed.disconnect()
                     parent.condition_edit_menu.size_changed.disconnect()
-                    self._last_active.parentItem().deactivate()
+                    item = self._last_active.parentItem()
+                    if item is not None:
+                        item.deactivate()
                 parent.condition_edit_menu.name_changed.connect(parent_item.set_name)
                 parent.condition_edit_menu.color_changed.connect(parent_item.set_color)
                 parent.condition_edit_menu.size_changed.connect(parent_item.set_size)
@@ -175,7 +177,9 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 if parent.condition_edit_menu.x() < parent.width():
                     parent.toggle_condition_edit_menu(False)
                     if self._last_active is not None:
-                        self._last_active.parentItem().deactivate()
+                        item = self._last_active.parentItem()
+                        if item is not None:
+                            item.deactivate()
             self._last_active = item
         super().mousePressEvent(event)
 

@@ -11,3 +11,4 @@ background_secondary: #5c5c5c; // Lighter than #444444
 selection_background: #666666; // Lighter than #555555
 background_tertiary: #666666; // Lighter than #555555
 background_scrollbar: transparent; // Stays transparent
+dropdown_image: url(data/assets/icons/arrow-down-light.png);

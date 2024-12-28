@@ -116,4 +116,4 @@ background_secondary~=QPalette.ToolTipBase;
 selection_background~=QPalette.Mid;
 background_tertiary~=QPalette.ToolTipBase;
 background_scrollbar~=transparent; // Stays
-dropdown_image~=url(data/assets/icons/arrow-down.png)
+dropdown_image~=url()

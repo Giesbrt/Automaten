@@ -10,3 +10,4 @@ background_secondary: #e0e0e0;
 selection_background: #c0c0c0;
 background_tertiary: #d6d6d6;
 background_scrollbar: transparent; // Stays
+dropdown_image: url(data/assets/icons/arrow-down-dark.png);

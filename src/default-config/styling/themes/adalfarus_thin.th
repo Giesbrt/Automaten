@@ -99,6 +99,9 @@ QScrollBar::corner {
     background: none;
     border: none;
 }
+QFrame#user_panel-side_menu, ConditionEditMenu {
+    background-color: $background_secondary;
+}
 /* End of QSS */
 
 ph:

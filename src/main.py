@@ -416,7 +416,7 @@ class App:  # The main logic and gui are separated
             if file.endswith(".st"):
                 path = os.path.join(style_folder, file)
                 Style.load_from_file(path)
-                if Style.loaded_styles[-1].get_style_name() == "Colored Cherry Blossom":  # "Colored Evening Sky"
+                if Style.loaded_styles[-1].get_style_name() == "Thin Light Dark":  # "Colored Evening Sky"
                     gotten = Style.loaded_styles[-1]
         print(Style.loaded_styles)
 
@@ -429,6 +429,9 @@ class App:  # The main logic and gui are separated
         # print(self.window.styleSheet())
         return
         self.window.set_global_theme("""
+            Transition {
+                color: rgb(2, 3, 4);
+            }
             QWidget {
                 color: rgb(255, 255, 255);
                 background-color: #333333;

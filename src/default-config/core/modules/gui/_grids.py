@@ -19,7 +19,7 @@ class StaticGridView(QGraphicsView):
         super().__init__(parent=parent)
         self.setCacheMode(QGraphicsView.CacheModeFlag.CacheBackground)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
 
         if scene is not None:
             self.setScene(scene)

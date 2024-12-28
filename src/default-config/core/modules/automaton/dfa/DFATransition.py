@@ -20,22 +20,21 @@ class DFATransition(BaseTransition):
     if the transition can occur based on the input.
 
     Attributes:
-        condition_char (str): The character that must match the input for the transition to occur.
+        condition (str): The character that must match the input for the transition to occur.
         start_state (BaseState): The state where the transition originates.
         transition_target_state (BaseState): The state where the transition leads.
     """
 
-    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition_char: str) -> None:
+    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: str) -> None:
         """
         Initializes a transition with the start state, target state, and the input character condition.
 
         Args:
             start_state (BaseState): The state where the transition originates.
             transition_target_state (BaseState): The state where the transition leads.
-            condition_char (str): The input character that triggers this transition.
+            condition (str): The input character that triggers this transition.
         """
-        super().__init__(start_state, transition_target_state)
-        self.condition_char: str = condition_char
+        super().__init__(start_state, transition_target_state, condition)
 
     def canTransition(self, current_input: _ty.Any) -> _result.Result:
         """
@@ -52,8 +51,13 @@ class DFATransition(BaseTransition):
                 - Success: If the transition can occur (the input matches the condition).
                 - Failure: If the transition cannot occur (the input does not match the condition).
         """
-        if self.condition_char == current_input:
+        if self.get_condition() == current_input:
             return _result.Success(None)  # Transition can occur
         return _result.Failure(f"Can not transition with input {str(current_input)}!")  # Invalid transition
+
+    def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
+        pass  # Todo: implement
+
+
 
 

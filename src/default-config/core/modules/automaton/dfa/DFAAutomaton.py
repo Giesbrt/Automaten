@@ -207,6 +207,13 @@ class DFAAutomaton(BaseAutomaton):
             ActLogger().error("Tried to start simulation of DFA-Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
 
+        # loop die alle states und transitions deaktiviert (state#deactivate())
+        for state in self.get_states():
+            state.deactivate()
+
+        for transition in self.get_transitions():
+            transition.deactivate()
+
         if self.current_state is None:
             self.current_state = self.start_state
             self.current_state.activate()

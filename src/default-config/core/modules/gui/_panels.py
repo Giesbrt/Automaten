@@ -8,7 +8,6 @@ from PySide6.QtGui import QColor, QIcon
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
 from ._grid_items import ConditionGroup
-from ._grids import AutomatonInteractiveGridView
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -87,6 +86,7 @@ class UserPanel(Panel):
     """The main panel to be shown"""
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        from ._grids import AutomatonInteractiveGridView
         self.setLayout(QNoSpacingBoxLayout(QBoxDirection.TopToBottom))
         self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
         self.layout().addWidget(self.grid_view)
@@ -169,6 +169,10 @@ class UserPanel(Panel):
         else:
             self.side_menu.setGeometry(0, 0, width, height)
             self.menu_button.move(40, 20)  # Update the position of the menu button
+        if self.condition_edit_menu.x() + width < self.width():
+            self.condition_edit_menu.setGeometry(self.width() - width, 0, width, height)
+        else:
+            self.condition_edit_menu.setGeometry(self.width() - width, 0, width, height)
         self.update_menu_button_position()
         self.settings_button.move(self.width() - 60, 20)
 

@@ -4,6 +4,7 @@ from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint
 
 from ._grid_items import Condition, ConditionGroup, Label
+from ._panels import UserPanel
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -128,7 +129,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     def __init__(self) -> None:  # TODO: Please remember to type hint :)
         super().__init__()
         self._counter: int = 0
-        self._last_active: None = None
+        self._last_active: Condition | None = None
 
     def newCondition(self, pos: QPointF) -> None:
         """TBA"""
@@ -139,8 +140,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self.scene().addItem(new_condition)
         self._counter += 1
 
-    def is_item_at(self, pos: QPoint) -> QGraphicsItem:
-        """TBA"""  # Maybe change name to get item at?
+    def get_item_at(self, pos: QPoint) -> QGraphicsItem:
         scene_pos: QPointF = self.mapToScene(pos)
         return self.scene().itemAt(scene_pos, self.transform())
 
@@ -151,34 +151,38 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
         elif event.button() == Qt.MouseButton.LeftButton:
-            item = self.is_item_at(event.pos())
+            item = self.get_item_at(event.pos())
+            parent: QWidget = self.parent()
+            if not isinstance(parent, UserPanel):
+                return
+            else:
+                parent: UserPanel = parent
             if isinstance(item, Condition | Label):
-                if hasattr(self.parent(), 'toggle_condition_edit_menu'):
-                    self.parent().toggle_condition_edit_menu(True)  # TODO: Please get typed reference to parent and use
-                    self.parent().condition_edit_menu.set_condition(item)  # TODO: that
-                    try:
-                        self.parent().condition_edit_menu.name_changed.disconnect()
-                        self.parent().condition_edit_menu.color_changed.disconnect()
-                        self.parent().condition_edit_menu.size_changed.disconnect()
+                parent_item: ConditionGroup = item.parentItem()
+                parent.toggle_condition_edit_menu(True)  # TODO: Please get typed reference to parent and use that
+                parent.condition_edit_menu.set_condition(item)
+                print(self._last_active)
+                if self._last_active:
+                    parent.condition_edit_menu.name_changed.disconnect()
+                    parent.condition_edit_menu.color_changed.disconnect()
+                    parent.condition_edit_menu.size_changed.disconnect()
+                    self._last_active.parentItem().deactivate()
+                parent.condition_edit_menu.name_changed.connect(parent_item.set_name)
+                parent.condition_edit_menu.color_changed.connect(parent_item.set_color)
+                parent.condition_edit_menu.size_changed.connect(parent_item.set_size)
+                parent_item.activate()  # TODO: As said please type all this
+            else:
+                if parent.condition_edit_menu.x() < parent.width():
+                    parent.toggle_condition_edit_menu(False)
+                    if self._last_active is not None:
                         self._last_active.parentItem().deactivate()
-                    except:  # TODO: Please explicitly catch errors
-                        pass
-                    finally:
-                        self.parent().condition_edit_menu.name_changed.connect(item.parentItem().set_name)
-                        self.parent().condition_edit_menu.color_changed.connect(item.parentItem().set_color)
-                        self.parent().condition_edit_menu.size_changed.connect(item.parentItem().set_size)
-                    item.parentItem().activate()  # TODO: As said please type all this
-                else:
-                    if self.parent().condition_edit_menu.x() < self.parent().width():
-                        self.parent().toggle_condition_edit_menu(False)
-                        self._last_active.parentItem().deactivate()
-                self._last_active = item
-        super().mousePressEvent(event)  # TODO: If you handle the event yourself just use event.accept()
+            self._last_active = item
+        super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         """TBA"""
         if event.button() == Qt.MouseButton.LeftButton:
-            if not self.is_item_at(event.pos()):
+            if not self.get_item_at(event.pos()):
                 global_pos: QPoint = event.pos()
                 scene_pos: QPointF = self.mapToScene(global_pos)
                 self.newCondition(scene_pos)

@@ -99,6 +99,11 @@ QScrollBar::corner {
     background: none;
     border: none;
 }
+QSlider {
+    border-radius: 5px;
+    background: $background_tertiary;
+    //background: none;
+}
 /* End of QSS */
 
 ph:

@@ -23,7 +23,7 @@ QComboBox::drop-down {
     background: transparent;
 }
 QComboBox::down-arrow {
-    image: url(data/assets/icons/arrow-down.png);  // Make placeholder
+    image: $dropdown_image;
 }
 QComboBox QAbstractItemView {
     border: 1px solid $border_primary;
@@ -111,3 +111,4 @@ background_secondary~=QPalette.ToolTipBase;
 selection_background~=QPalette.Mid;
 background_tertiary~=QPalette.ToolTipBase;
 background_scrollbar~=transparent; // Stays
+dropdown_image~=url(data/assets/icons/arrow-down.png)

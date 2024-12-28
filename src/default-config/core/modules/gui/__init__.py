@@ -265,7 +265,7 @@ class Theme:
     def is_theme(self, theme_str: str) -> bool:
         return f"{self._author}::{self._theme_name}" == theme_str
 
-    def assemble_qss_row(self) -> str:
+    def assemble_qss_placeholder_row(self, placeholders: list) -> str:
         mode, from_theme = self._inherit_extend_from
         if mode == "inheriting":
             theme = None
@@ -274,7 +274,8 @@ class Theme:
                     break
             if theme is None:
                 raise RuntimeError(f"Unknown theme '{from_theme}'")
-            return theme.assemble_qss_row() + self._theme_str
+            placeholders.extend(self._placeholders)
+            return theme.assemble_qss_placeholder_row(placeholders) + self._theme_str
         elif mode == "extending":
             theme = None
             for theme in self.loaded_themes:
@@ -282,8 +283,11 @@ class Theme:
                     break
             if theme is None:
                 raise RuntimeError(f"Unknown theme '{from_theme}'")
-            return self._theme_str + theme.assemble_qss_row()
+            result = self._theme_str + theme.assemble_qss_placeholder_row(placeholders)
+            placeholders.extend(self._placeholders)
+            return result
         elif mode is None:
+            placeholders.extend(self._placeholders)
             return self._theme_str
         else:
             raise RuntimeError(f"Unsupported mode '{mode}'")
@@ -296,7 +300,8 @@ class Theme:
             raise NotImplementedError("Transparency modes are not supported yet")
         if not self.is_compatible(style):  # Remove ?
             raise RuntimeError()
-        raw_qss = Template(self.assemble_qss_row())
+        placeholders: list[str] = []
+        raw_qss = Template(self.assemble_qss_placeholder_row(placeholders))
 
         formatted_placeholder: dict[str, str] = {}
         if style is not None:
@@ -307,33 +312,42 @@ class Theme:
                 key, val = qpalette_placeholder.split(":")
                 getattr(palette, f"set{key}")(val)
 
-        for placeholder in self._placeholders:
+        for placeholder in placeholders:
             front, assignment_type, end = self._find_special_sequence(placeholder)
             if assignment_type == "~=":
                 if end.startswith("QPalette."):
-                    color = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
+                    placeholder = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
                 elif end.startswith("#") and end[1:].isalnum():
-                    color = end
+                    placeholder = end
                 elif (end.startswith("rba(") or end.startswith("rgba(")) and end.endswith(")"):
-                    color = end
+                    placeholder = end
+                elif end.startswith("url(") and end.endswith(")"):
+                    placeholder = end
+                    if front not in formatted_placeholder:
+                        formatted_placeholder[front] = placeholder
+                    continue
                 else:
-                    color = QColor(getattr(Qt.GlobalColor, self._to_camel_case(end)))
-                if not isinstance(color, str):
-                    color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
+                    placeholder = QColor(getattr(Qt.GlobalColor, self._to_camel_case(end)))
+                if not isinstance(placeholder, str):
+                    placeholder = f"rgba({placeholder.red()}, {placeholder.green()}, {placeholder.blue()}, {placeholder.alpha()})"
                 if front not in formatted_placeholder:
-                    formatted_placeholder[front] = color
+                    formatted_placeholder[front] = placeholder
             elif assignment_type == "==":
                 if end.startswith("QPalette."):
-                    color = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
+                    placeholder = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
                 elif end.startswith("#") and end[1:].isalnum():
-                    color = end
+                    placeholder = end
                 elif (end.startswith("rba(") or end.startswith("rgba(")) and end.endswith(")"):
-                    color = end
+                    placeholder = end
+                elif end.startswith("url(") and end.endswith(")"):
+                    placeholder = end
+                    formatted_placeholder[front] = placeholder
+                    continue
                 else:
-                    color = QColor(getattr(Qt.GlobalColor, self._to_camel_case(end)))
-                if not isinstance(color, str):
-                    color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
-                formatted_placeholder[front] = color
+                    placeholder = QColor(getattr(Qt.GlobalColor, self._to_camel_case(end)))
+                if not isinstance(placeholder, str):
+                    placeholder = f"rgba({placeholder.red()}, {placeholder.green()}, {placeholder.blue()}, {placeholder.alpha()})"
+                formatted_placeholder[front] = placeholder
             else:
                 raise RuntimeError("Malformed placeholder")
 

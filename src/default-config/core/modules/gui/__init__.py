@@ -166,7 +166,7 @@ class Style:
 
 
 class Theme:
-    loaded_themes: list[_ty.Self] = []
+    _loaded_themes: dict[str, _ty.Self] = []  # TODO: Make a dictionary
 
     def __init__(self, author: str, theme_name: str, theme_str: str, base: str | None, placeholders: list[str],
                  compatible_styling: str | None, load_styles_for: str,
@@ -179,10 +179,19 @@ class Theme:
         self._compatible_styling: str | None = compatible_styling
         self._load_styles_for: str = load_styles_for
         self._inherit_extend_from: tuple[str, str] = inherit_extend_from
-        self.loaded_themes.append(self)
+        self._loaded_themes[self.get_theme_uid()] = self
 
     def get_theme_uid(self) -> str:
         return self._author + "::" + self._theme_name
+
+    def is_theme(self, theme_str: str) -> bool:
+        return f"{self._author}::{self._theme_name}" == theme_str
+
+    @classmethod
+    def get_loaded_theme(cls, theme_uid: str) -> _ty.Self | None:
+        if theme_uid not in cls._loaded_themes:
+            return None
+        return cls._loaded_themes[theme_uid]
 
     def get_base(self) -> str:
         return self._base
@@ -262,14 +271,11 @@ class Theme:
                 if author == load_st_author and theme_name == load_st_theme:
                     return style
 
-    def is_theme(self, theme_str: str) -> bool:
-        return f"{self._author}::{self._theme_name}" == theme_str
-
     def assemble_qss_placeholder_row(self, placeholders: list) -> str:
         mode, from_theme = self._inherit_extend_from
         if mode == "inheriting":
             theme = None
-            for theme in self.loaded_themes:
+            for theme in self._loaded_themes:
                 if theme.is_theme(from_theme):
                     break
             if theme is None:
@@ -278,7 +284,7 @@ class Theme:
             return theme.assemble_qss_placeholder_row(placeholders) + self._theme_str
         elif mode == "extending":
             theme = None
-            for theme in self.loaded_themes:
+            for theme in self._loaded_themes:
                 if theme.is_theme(from_theme):
                     break
             if theme is None:

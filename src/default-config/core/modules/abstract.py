@@ -1,5 +1,6 @@
 """Abstract api interfaces for everything"""
 import math
+import threading
 
 from PySide6.QtWidgets import QWidget, QApplication
 from PySide6.QtGui import QColor
@@ -75,6 +76,15 @@ class MainWindowInterface:
 
     def close(self) -> None:
         raise NotImplementedError
+
+
+class BackendInterface:
+    """The backend entry point"""
+    def run_infinite(self, backend_stop_event: threading.Event) -> None:
+        """
+        Used to actually start the backend. The gui will launch this in a separate thread.
+        """
+        ...
 
 
 PainterPointT = tuple[tuple[float, float], float]
@@ -177,7 +187,7 @@ class PainterToStr:
         Convert polar coordinates to Cartesian.
 
         :param angle_deg: Angle in degrees
-        :param radius_scalar: Relative radius (0 to 2)
+        :param radius_scalar: Relative radius (0 to 1)
         :return: tuple[float, float]
         """
         radius_scaled: float = self._radius * radius_scalar
@@ -238,5 +248,5 @@ class StrToPainter:
 
 if __name__ == "__main__":
     obj = PainterToStr()
-    obj.line(((102, 230), (0.3, 2)), color=PainterColor(245, 22, 1, 0))
+    obj.line(((102, 230), (0.3, 1)), color=PainterColor(245, 22, 1, 0))
     print(obj.clean_out_style_str())

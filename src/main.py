@@ -31,12 +31,12 @@ from aplustools.io.env import get_system, SystemTheme, BaseSystemType
 from aplustools.io import ActLogger
 from aplustools.package.timid import TimidTimer
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
-from aplustools.io.fileio import os_open
 
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
-from core.modules.abstract import MainWindowInterface
+from core.modules.abstract import MainWindowInterface, BackendInterface
+from core.modules.automaton_loader import start
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -82,6 +82,12 @@ class App:  # The main logic and gui are separated
         self.app_settings: JSONAppStorage = JSONAppStorage(f"{self.config_folder}/app_settings.json")
         self.configure_settings()
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
+
+        self.backend: BackendInterface = start(self.app_settings, self.user_settings)
+        self.backend_stop_event: threading.Event = threading.Event()
+        self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
+                                                                 args=(self.backend_stop_event,))
+        self.backend_thread.start()
 
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
@@ -408,7 +414,7 @@ class App:  # The main logic and gui are separated
 
         for path in paths:
             Theme.load_from_file(path)
-        print(Theme.loaded_themes)
+        print(Theme._loaded_themes)
 
     def load_styles(self, style_folder: str) -> None:
         for file in os.listdir(style_folder):
@@ -417,112 +423,14 @@ class App:  # The main logic and gui are separated
                 Style.load_from_file(path)
         print(Style.loaded_styles)
 
-        for theme in Theme.loaded_themes:
+        for theme in Theme._loaded_themes:
             if theme.get_theme_uid() == "adalfarus::thin":
                 style = theme.get_compatible_style("Thin Light Dark")  # "Colored Evening Sky"
                 theme_str, palette = theme.apply_style(style, self.qapp.palette(), )
                 self.qapp.setPalette(palette)
                 break
         print("TS", theme_str)
-        # exit()
         self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base()))
-        # print(self.window.styleSheet())
-        return
-        self.window.set_global_theme("""
-            Transition {
-                color: rgb(2, 3, 4);
-            }
-            QWidget {
-                color: rgb(255, 255, 255);
-                background-color: #333333;
-            }
-            QWidget:disabled {
-                color: rgb(127, 127, 127);
-                background-color: #444444;
-            }
-            QCheckBox{
-                /*background-color: #444444;*/
-                border-radius: 5px;           
-            }
-            QRadioButton{
-                /*background-color: #444444;*/
-                border-radius: 5px;           
-            }
-            QLabel {
-                border-radius: 5px;
-                padding: 5px;
-                background-color: #4f4f4f; /*Before #555555, made it 6 darker*/
-            }
-            QPushButton {
-                border: 1px solid #aaaaaa;
-                border-radius: 5px;
-                padding: 5px;
-                background-color: #444444;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-            QToolButton {
-                border: 1px solid #aaaaaa;
-                border-radius: 5px;
-                background-color: #444444;
-            }
-            QToolButton:hover {
-                background-color: #555555;
-            }
-            /*QCheckBox::indicator:hover {
-                background-color: rgba(85, 85, 85, 50);
-            }*/
-            QScrollBar:horizontal {
-                border: none;
-                background: transparent;  /* Ensure the background is transparent */
-                height: 15px;
-                border-radius: 7px;
-            }
-            QScrollBar::handle:horizontal {
-                background-color: #666666;
-                min-height: 15px;
-                min-width: 40px;
-                border-radius: 7px;
-            }
-            QScrollBar::handle:hover {
-                background-color: #555555;
-            }
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
-                border: none;
-                background: none;
-            }
-            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-                background: none;
-            }
-
-            QScrollBar:vertical {
-                border: none;
-                background: transparent;
-                width: 15px;
-                border-radius: 7px;
-                /*border-top-right-radius: 10px;
-                border-bottom-right-radius: 10px;*/
-            }
-            QScrollBar::handle:vertical {
-                background: #666666;
-                min-height: 20px;
-                border-radius: 7px;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                border: none;
-                background: none;
-            }
-
-            QScrollBar::corner {
-                background: #f0f0f0;
-                border: none;
-            }
-            QPushButton#user_panel-settings_button {
-                background-color: lightblue;
-            }
-        """, "Fusion")
 
     def update_title(self) -> None:
         raw_title = Template(self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))
@@ -541,6 +449,9 @@ class App:  # The main logic and gui are separated
     def exit(self) -> None:
         if hasattr(self, "timer"):
             self.timer.stop_all()
+        if hasattr(self, "backend_thread") and self.backend_thread.is_alive():
+            self.backend_stop_event.set()
+            self.backend_thread.join()
 
     def __del__(self) -> None:
         self.exit()
@@ -553,7 +464,6 @@ if __name__ == "__main__":
     qapp: QApplication | None = None
     qgui: MainWindowInterface | None = None
     dp_app: App | None = None
-    side_thread: threading.Thread | None = None
     current_exit_code: int = -1
 
     try:
@@ -561,9 +471,7 @@ if __name__ == "__main__":
         qgui = MainWindow()
         App.window = qgui
         App.qapp = qapp
-        side_thread = threading.Thread()
         dp_app = App()  # Shows gui
-        side_thread.start()
         current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -593,6 +501,4 @@ if __name__ == "__main__":
             qgui.close()
         if qapp is not None:
             qapp.instance().quit()
-        if side_thread is not None and side_thread.is_alive():
-            side_thread.join()
         CODES.get(current_exit_code, lambda: sys.exit(current_exit_code))()

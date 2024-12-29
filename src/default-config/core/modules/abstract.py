@@ -87,13 +87,6 @@ class BackendInterface:
         ...
 
 
-PainterPointT = tuple[tuple[float, float], float]
-PainterLineT = tuple[tuple[float, float], tuple[float, float]]
-PainterCircleT = tuple[tuple[float, float], float]
-PainterArcT = tuple[float, float]
-AngleT = float
-
-
 class PainterColor:
     ColorSpace = QColor.Spec
 
@@ -176,15 +169,20 @@ class PainterColor:
         return f"PainterColor({self._qcolor}, {self._color_space})"
 
 
-class PainterToStr:
-    def __init__(self, diameter_scale: int = 360) -> None:
+class _PainterCoord:
+    """Represents a coordinate that can be loaded from multiple different coordinate representations"""
+    def __init__(self, diameter_scale: int) -> None:
         self._diameter: int = diameter_scale
         self._radius: float = diameter_scale / 2
-        self._curr_style_str: str = ""
+        self._x: float = 0
+        self._y: float = 0
+
+    def _relative_to_absolute(self, x: float, y: float) -> tuple[float, float]:
+        return x + self._radius, y + self._radius
 
     def _polar_to_cartesian(self, angle_deg: float, radius_scalar: float) -> tuple[float, float]:
         """
-        Convert polar coordinates to Cartesian.
+        Convert polar coordinates to Cartesian, starting at the top left.
 
         :param angle_deg: Angle in degrees
         :param radius_scalar: Relative radius (0 to 1)
@@ -194,7 +192,47 @@ class PainterToStr:
         angle_rad: float = math.radians(angle_deg)
         x: float = 0 + radius_scaled * math.cos(angle_rad)
         y: float = 0 - radius_scaled * math.sin(angle_rad)
-        return x, y
+        return self._relative_to_absolute(x, y)
+
+    def load_from_cartesian(self, rel_x: float, rel_y: float) -> _ty.Self:
+        """
+        Loads internal absolute x and y from relative coordinates from the center of the circle.
+        :param rel_x: Relative x-coordinate
+        :param rel_y: Relative y-coordinate
+        """
+        self._x, self._y = self._relative_to_absolute(rel_x, rel_y)
+        return self
+
+    def load_from_polar(self, angel_deg: float, radius_scalar: float) -> _ty.Self:
+        """
+        Loads internal absolute x and y from polar coordinates.
+        :param angel_deg: Angle in degrees (counter-clock wise)
+        :param radius_scalar: Radius scalar (0-1)
+        """
+        self._x, self._y = self._polar_to_cartesian(angel_deg, min(1.0, radius_scalar))
+        return self
+
+    def __str__(self) -> str:
+        return f"{self._x}, {self._y}"
+
+
+PainterPointT = tuple[tuple[float, float], float]
+PainterCoordT = _PainterCoord
+PainterLineT = tuple[PainterCoordT, PainterCoordT]
+PainterCircleT = tuple[PainterCoordT, float]
+PainterArcT = tuple[float, float]
+AngleT = float
+
+
+class PainterToStr:
+    def __init__(self, diameter_scale: int = 360) -> None:
+        self._diameter: int = diameter_scale
+        self._radius: float = diameter_scale / 2
+        self._curr_style_str: str = ""
+
+    def coord(self) -> _PainterCoord:
+        """Get a coordinate type linked to this PainterToStr instance"""
+        return _PainterCoord(self._diameter)
 
     def line(self, line: PainterLineT, thickness: int = 1, color: PainterColor | None = None) -> None:
         """
@@ -207,16 +245,15 @@ class PainterToStr:
         if color is None:
             color = PainterColor(0, 0, 0)
 
-        ((start_deg, end_deg), (start_radius_scalar, end_radius_scalar)) = line
-        start_point = self._polar_to_cartesian(start_deg, start_radius_scalar)
-        end_point = self._polar_to_cartesian(end_deg, end_radius_scalar)
-        self._curr_style_str += f"Line: ({start_point}, {end_point}), {thickness}{color.as_hex()}"
+        (start_point, end_point) = line
+        self._curr_style_str += f"Line: ({start_point}, {end_point}), {thickness}{color.as_hex()};"
 
-    def arc(self, base_circle: PainterCircleT, arc: PainterArcT, thickness: int = 1, color: PainterColor | None = None) -> None:
+    def arc(self, base_circle: PainterCircleT, arc: PainterArcT, thickness: int = 1, color: PainterColor | None = None
+            ) -> None:
         """
         Draw an arc within the circle canvas.
 
-        :param base_circle: tuple[tuple[origin_x, origin_y], radius scalar (0 to 2)]
+        :param base_circle: tuple[tuple[origin_x, origin_y], radius scalar (0 to 1)]
         :param arc: tuple[Starting angle in degrees, Span angle in degrees]
         :param thickness: int
         :param color: PainterColor
@@ -224,7 +261,9 @@ class PainterToStr:
         if color is None:
             color = PainterColor(0, 0, 0)
 
-        ((base_x, base_y), radius_scalar) = base_circle
+        (base_point, radius_scalar) = base_circle
+        (start_deg, end_deg) = arc
+        self._curr_style_str += f"Arc: ({base_point}), ({start_deg}, {end_deg}), {thickness}#{color.as_hex()};"
 
     def clean_out_style_str(self) -> str:
         """Returns the current style string and then resets it"""
@@ -248,5 +287,7 @@ class StrToPainter:
 
 if __name__ == "__main__":
     obj = PainterToStr()
-    obj.line(((102, 230), (0.3, 1)), color=PainterColor(245, 22, 1, 0))
+    obj.line((obj.coord().load_from_polar(102, 0.3), obj.coord().load_from_polar(230, 1.0)),
+             color=PainterColor(245, 22, 1, 0))
+    obj.arc((obj.coord().load_from_cartesian(180, 180), 350), (0, 360), 2, PainterColor(0, 255, 0))
     print(obj.clean_out_style_str())

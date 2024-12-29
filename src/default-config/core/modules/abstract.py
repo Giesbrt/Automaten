@@ -89,6 +89,7 @@ class BackendInterface:
 
 class PainterColor:
     ColorSpace = QColor.Spec
+    Color = Qt.GlobalColor
 
     def __init__(self, r: int, g: int, b: int, a: int = 255) -> None:
         """
@@ -111,6 +112,10 @@ class PainterColor:
         inst._qcolor = qcolor
         inst._color_space = qcolor.spec()
         return inst
+
+    @classmethod
+    def from_color(cls, global_color: Qt.GlobalColor) -> _ty.Self:
+        return cls.from_qcolor(QColor(global_color))
 
     @classmethod
     def from_string(cls, color_str: str) -> _ty.Self:
@@ -171,16 +176,27 @@ class PainterColor:
 
 class _PainterCoord:
     """Represents a coordinate that can be loaded from multiple different coordinate representations"""
-    def __init__(self, diameter_scale: int) -> None:
-        self._diameter: int = diameter_scale
+    def __init__(self, diameter_scale: float) -> None:
+        self._diameter: float = diameter_scale
         self._radius: float = diameter_scale / 2
         self._x: float = 0
         self._y: float = 0
 
-    def _relative_to_absolute(self, x: float, y: float) -> tuple[float, float]:
-        return x + self._radius, y + self._radius
+    def get_point(self) -> tuple[float, float]:
+        """Returns the calculated absolute point"""
+        return self._x, self._y
 
-    def _polar_to_cartesian(self, angle_deg: float, radius_scalar: float) -> tuple[float, float]:
+    def relative_to_absolute(self, rel_x: float, rel_y: float) -> tuple[float, float]:
+        """
+        Convert relative Cartesian to Cartesian, starting at the top left.
+
+        :param rel_x: Relative x
+        :param rel_y: Relative y
+        :return: tuple[float, float]
+        """
+        return rel_x + self._radius, rel_y + self._radius
+
+    def polar_to_cartesian(self, angle_deg: float, radius_scalar: float) -> tuple[float, float]:
         """
         Convert polar coordinates to Cartesian, starting at the top left.
 
@@ -192,7 +208,7 @@ class _PainterCoord:
         angle_rad: float = math.radians(angle_deg)
         x: float = 0 + radius_scaled * math.cos(angle_rad)
         y: float = 0 - radius_scaled * math.sin(angle_rad)
-        return self._relative_to_absolute(x, y)
+        return self.relative_to_absolute(x, y)
 
     def load_from_cartesian(self, rel_x: float, rel_y: float) -> _ty.Self:
         """
@@ -200,7 +216,7 @@ class _PainterCoord:
         :param rel_x: Relative x-coordinate
         :param rel_y: Relative y-coordinate
         """
-        self._x, self._y = self._relative_to_absolute(rel_x, rel_y)
+        self._x, self._y = self.relative_to_absolute(rel_x, rel_y)
         return self
 
     def load_from_polar(self, angel_deg: float, radius_scalar: float) -> _ty.Self:
@@ -209,11 +225,11 @@ class _PainterCoord:
         :param angel_deg: Angle in degrees (counter-clock wise)
         :param radius_scalar: Radius scalar (0-1)
         """
-        self._x, self._y = self._polar_to_cartesian(angel_deg, min(1.0, radius_scalar))
+        self._x, self._y = self.polar_to_cartesian(angel_deg, min(1.0, radius_scalar))
         return self
 
     def __str__(self) -> str:
-        return f"{self._x}, {self._y}"
+        return f"({self._x}, {self._y})"
 
 
 PainterPointT = tuple[tuple[float, float], float]
@@ -225,8 +241,8 @@ AngleT = float
 
 
 class PainterToStr:
-    def __init__(self, diameter_scale: int = 360) -> None:
-        self._diameter: int = diameter_scale
+    def __init__(self, diameter_scale: float = 360.0) -> None:
+        self._diameter: float = diameter_scale
         self._radius: float = diameter_scale / 2
         self._curr_style_str: str = ""
 
@@ -238,7 +254,7 @@ class PainterToStr:
         """
         Draw a line from one angle to another within a radius range.
 
-        :param line: tuple[tuple[Starting angle in degrees, Ending angle in degrees], tuple[start_radius_scalar, end_radius_scalar]]
+        :param line: tuple[PainterCoordT, PainterCoordT]
         :param thickness: int
         :param color: PainterColor
         """
@@ -253,7 +269,7 @@ class PainterToStr:
         """
         Draw an arc within the circle canvas.
 
-        :param base_circle: tuple[tuple[origin_x, origin_y], radius scalar (0 to 1)]
+        :param base_circle: tuple[PainterCoordT, radius scalar (0 to 1)]
         :param arc: tuple[Starting angle in degrees, Span angle in degrees]
         :param thickness: int
         :param color: PainterColor
@@ -263,7 +279,120 @@ class PainterToStr:
 
         (base_point, radius_scalar) = base_circle
         (start_deg, end_deg) = arc
-        self._curr_style_str += f"Arc: ({base_point}), ({start_deg}, {end_deg}), {thickness}#{color.as_hex()};"
+        radius_scaled = min(1.0, radius_scalar) * self._radius
+        self._curr_style_str += (f"Arc: ({base_point}, {radius_scaled}), ({start_deg}, {end_deg}), "
+                                 f"{thickness}#{color.as_hex()};")
+
+    def circle(self, circle: PainterCircleT, thickness: int = 1, color: PainterColor | None = None) -> None:
+        """
+        Draw a circle.
+
+        :param circle: tuple[PainterCoordT, radius scalar (0 to 1)]
+        :param thickness: int
+        :param color: PainterColor
+        """
+        if color is None:
+            color = PainterColor(0, 0, 0)
+
+        (base_point, radius_scalar) = circle
+        radius_scaled = min(1.0, radius_scalar) * self._radius
+        self._curr_style_str += f"Circle: ({base_point}, {radius_scaled}), {thickness}#{color.as_hex()};"
+
+    def base_rect(self, base_circle: PainterCircleT, top_left_deg: float, bottom_right_deg: float,
+                  thickness: int = 1, color: PainterColor | None = None) -> None:
+        """
+        Draw a rectangle based on circular references.
+
+        :param base_circle: tuple[PainterCoordT, radius scalar (0 to 1)]
+        :param top_left_deg: float, the top left deg for the point of the rectangle
+        :param bottom_right_deg: float, the top right deg for the point of the rectangle
+        :param thickness: int
+        :param color: PainterColor
+        """
+        if color is None:
+            color = PainterColor(0, 0, 0)
+
+        (base_point, radius_scalar) = base_circle
+        base_x, base_y = base_point.get_point()
+        scaled_x = base_x - self._diameter
+        scaled_y = base_y - self._diameter
+        rel_tl_x, rel_tl_y = self.coord().polar_to_cartesian(top_left_deg, min(1.0, radius_scalar))
+        rel_br_x, rel_br_y = self.coord().polar_to_cartesian(bottom_right_deg, min(1.0, radius_scalar))
+        self._curr_style_str += f"Rect: (({rel_tl_x + scaled_x}, {rel_tl_y + scaled_y}), ({rel_br_x + scaled_x}, {rel_br_y + scaled_y})), {thickness}#{color.as_hex()};"
+
+    def rect(self, top_left_point: PainterCoordT, bottom_right_point: PainterCoordT,
+             thickness: int = 1, color: PainterColor | None = None) -> None:
+        """
+        Draw a rectangle based on circular references.
+
+        :param top_left_point: PainterCoordT, the top left point of the rectangle
+        :param bottom_right_point: PainterCoordT, the top left point of the rectangle
+        :param thickness: int
+        :param color: PainterColor
+        """
+        if color is None:
+            color = PainterColor(0, 0, 0)
+
+        self._curr_style_str += f"Rect: ({top_left_point}, {bottom_right_point}), {thickness}#{color.as_hex()};"
+
+    def base_polygon(self, base_circle: PainterCircleT, degs: list[float], thickness: int = 1,
+                     color: PainterColor | None = None) -> None:
+        """
+        Draw a polygon using polar coordinates.
+
+        :param base_circle: tuple[PainterCoordT, radius scalar (0 to 1)]
+        :params degs: list[float], the degs for the points of the polygon
+        :param thickness: int
+        :param color: PainterColor
+        """
+        if color is None:
+            color = PainterColor(0, 0, 0)
+
+        (base_point, radius_scalar) = base_circle
+        base_x, base_y = base_point.get_point()
+        scaled_x = base_x - self._diameter
+        scaled_y = base_y - self._diameter
+
+        points: list[tuple[float, float]] = []
+        for deg in degs:
+            rel_x, rel_y = self.coord().polar_to_cartesian(deg, min(1.0, radius_scalar))
+            points.append((rel_x + scaled_x, rel_y + scaled_y))
+        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}#{color.as_hex()};"
+
+    def polygon(self, points: list[PainterCoordT], thickness: int = 1, color: PainterColor | None = None) -> None:
+        """
+        Draw a polygon using polar coordinates.
+
+        :param points: list[PainterCoordT]
+        :param thickness: int
+        :param color: PainterColor
+        """
+        if color is None:
+            color = PainterColor(0, 0, 0)
+
+        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}#{color.as_hex()};"
+
+    def text(self, start_point: PainterCoordT, text: str, bold: bool = False, italic: bool = False,
+             underline: bool = False, strikethrough: bool = False, color: PainterColor | None = None) -> None:
+        """
+        Draw text from a specific start point.
+
+        :param start_point: PainterCoordT
+        :param text: The text to draw
+        :param bold: bool
+        :param italic: bool
+        :param underline: bool
+        :param strikethrough: bool
+        :param color: PainterColor
+        """
+        if color is None:
+            color = PainterColor(0, 0, 0)
+
+        empty_flag: int = 0
+        for i, flag in enumerate((bold, italic, underline, strikethrough)):
+            empty_flag |= (1 if flag else 0) << i
+
+        self._curr_style_str += f"Text: {start_point} ,('{text}', {empty_flag}#{color.as_hex()})"
 
     def clean_out_style_str(self) -> str:
         """Returns the current style string and then resets it"""
@@ -289,5 +418,15 @@ if __name__ == "__main__":
     obj = PainterToStr()
     obj.line((obj.coord().load_from_polar(102, 0.3), obj.coord().load_from_polar(230, 1.0)),
              color=PainterColor(245, 22, 1, 0))
-    obj.arc((obj.coord().load_from_cartesian(180, 180), 350), (0, 360), 2, PainterColor(0, 255, 0))
+    obj.arc((obj.coord().load_from_cartesian(180, 180), 0.9), (0, 360), 2, PainterColor(0, 255, 0))
+    obj.circle((obj.coord().load_from_cartesian(180, 180), 0.9), 3, PainterColor(255, 0, 0))
+    print(obj.clean_out_style_str())
+    obj.base_rect((obj.coord().load_from_cartesian(180, 180), 1.0), 80, 270)
+    obj.rect(obj.coord().load_from_polar(80, 1.0), obj.coord().load_from_polar(270, 1.0))
+    print(obj.clean_out_style_str())
+    obj.base_polygon((obj.coord().load_from_cartesian(180, 180), 1.0), [80.0, 270.0])
+    obj.polygon([obj.coord().load_from_polar(80, 1.0), obj.coord().load_from_polar(270, 1.0)])
+    print(obj.clean_out_style_str())
+    obj.text(obj.coord().load_from_polar(80, 0.5), "MyText", True, False, True, True,
+             PainterColor.from_color(PainterColor.Color.white))
     print(obj.clean_out_style_str())

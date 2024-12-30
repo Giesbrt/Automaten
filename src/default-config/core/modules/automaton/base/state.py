@@ -13,10 +13,12 @@ import types as _ts
 if _ty.TYPE_CHECKING:
     from core.modules.automaton.base.transition import Transition
 
+from core.modules.automaton.base.displayManager import _StateDisplayManager
+
 
 # Docs generated with Chat-GPT
 
-class State(_abc.ABC):
+class State(_abc.ABC, _StateDisplayManager):
     """
     Represents a state within an automaton.
 
@@ -60,7 +62,8 @@ class State(_abc.ABC):
             Executes the activation callback function, if it exists.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, display_name: str = "", position: _ty.Tuple[float, float] = (0, 0),
+                 outer_radius: float = 0, colour_in_hex: str = "#FFFFFF", line_thickness: float = 1) -> None:
         """
         Initializes a state with a name and an empty set of _transitions.
 
@@ -72,12 +75,14 @@ class State(_abc.ABC):
             - `state_name`: The provided name for the state.
             - `activation_callback`: Set to `None` initially.
         """
-        super().__init__()
+        super().__init__(display_name, position, outer_radius, colour_in_hex, line_thickness)
         self._transitions: _ty.Set[Transition] = set()
         self._state_name: str = name
         self._activation_callback: _ty.Callable or None = None
 
         self._is_active: bool = False  # If the State is currently in use
+
+        self.set_display_name(name)
 
     def set_name(self, new_name: str) -> None:
         """
@@ -87,6 +92,7 @@ class State(_abc.ABC):
             new_name (str): The new name for the state
         """
         self._state_name = new_name
+        self.set_display_name(new_name)
 
     def get_name(self) -> str:
         """

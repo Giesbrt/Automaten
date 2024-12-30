@@ -71,4 +71,4 @@ class DFAState(BaseState):
         return _result.Failure(f"No transition found for state {self.get_name()}!")
 
     def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
-        pass
+        pass  # TODO implement

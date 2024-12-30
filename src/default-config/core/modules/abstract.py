@@ -241,6 +241,7 @@ AngleT = float
 
 
 class PainterToStr:
+    """Converts Painter commands to a string that can be shared between threads"""
     def __init__(self, diameter_scale: float = 360.0) -> None:
         self._diameter: float = diameter_scale
         self._radius: float = diameter_scale / 2
@@ -412,6 +413,144 @@ class StrToPainter:
         clip_path = QPainterPath()
         clip_path.addEllipse(QRectF(center.x() - self.radius, center.y() - self.radius, diameter, diameter))
         self.painter.setClipPath(clip_path)
+
+    def polar_to_cartesian(self, angle_deg, radius):
+        """
+        Convert polar coordinates to Cartesian.
+
+        :param angle_deg: Angle in degrees
+        :param radius: Radius relative to the diameter (0 to 1)
+        :return: QPointF
+        """
+        radius_scaled = radius * self.radius
+        angle_rad = math.radians(angle_deg)
+        x = self.center.x() + radius_scaled * math.cos(angle_rad)
+        y = self.center.y() - radius_scaled * math.sin(angle_rad)
+        return QPointF(x, y)
+
+    def line(self, start_angle, end_angle, radius_range):
+        """
+        Draw a line from one angle to another within a radius range.
+
+        :param start_angle: Starting angle in degrees
+        :param end_angle: Ending angle in degrees
+        :param radius_range: Tuple (start_radius, end_radius) where values are relative to diameter (0 to 1)
+        """
+        start_radius, end_radius = radius_range
+        start_point = self.polar_to_cartesian(start_angle, start_radius)
+        end_point = self.polar_to_cartesian(end_angle, end_radius)
+
+        self.painter.drawLine(start_point, end_point)
+
+    def arc(self, start_angle, span_angle, radius):
+        """
+        Draw an arc within the circle canvas.
+
+        :param start_angle: Starting angle in degrees
+        :param span_angle: Span angle in degrees
+        :param radius: Radius relative to the diameter (0 to 1)
+        """
+        radius_scaled = radius * self.radius
+        rect = QRectF(
+            self.center.x() - radius_scaled, self.center.y() - radius_scaled,
+            radius_scaled * 2, radius_scaled * 2
+        )
+        self.painter.drawArc(rect, int(start_angle * 16), int(span_angle * 16))
+
+    def circle(self, radius, brush=None, pen=None):
+        """
+        Draw a circle.
+
+        :param radius: Radius relative to the diameter (0 to 1)
+        :param brush: Optional QBrush for filling the circle
+        :param pen: Optional QPen for the circle outline
+        """
+        radius_scaled = radius * self.radius
+        if brush:
+            self.painter.setBrush(brush)
+        if pen:
+            self.painter.setPen(pen)
+
+        rect = QRectF(
+            self.center.x() - radius_scaled, self.center.y() - radius_scaled,
+            radius_scaled * 2, radius_scaled * 2
+        )
+        self.painter.drawEllipse(rect)
+
+    def rectangle(self, start_angle, end_angle, radius_range):
+        """
+        Draw a rectangle based on circular references.
+
+        :param start_angle: Starting angle in degrees
+        :param end_angle: Ending angle in degrees
+        :param radius_range: Tuple (start_radius, end_radius) where values are relative to diameter (0 to 1)
+        """
+        start_radius, end_radius = radius_range
+        top_left = self.polar_to_cartesian(start_angle, start_radius)
+        bottom_right = self.polar_to_cartesian(end_angle, end_radius)
+
+        rect = QRectF(top_left, bottom_right)
+        self.painter.drawRect(rect)
+
+    def polygon(self, points):
+        """
+        Draw a polygon using polar coordinates.
+
+        :param points: List of tuples [(angle1, radius1), (angle2, radius2), ...],
+                       where angles are in degrees and radii are relative to the diameter (0 to 1).
+        """
+        polygon = QPainterPath()
+
+        if points:
+            # Convert the first point and move to it
+            first_point = self.polar_to_cartesian(points[0][0], points[0][1])
+            polygon.moveTo(first_point)
+
+            # Convert and draw lines to subsequent points
+            for angle, radius in points[1:]:
+                point = self.polar_to_cartesian(angle, radius)
+                polygon.lineTo(point)
+
+            # Close the polygon
+            polygon.closeSubpath()
+
+        self.painter.drawPath(polygon)
+
+    def text(self, angle, radius, text):
+        """
+        Draw text at a specific angle and radius.
+
+        :param angle: Angle in degrees
+        :param radius: Radius relative to the diameter (0 to 1)
+        :param text: The text to draw
+        """
+        position = self.polar_to_cartesian(angle, radius)
+        self.painter.drawText(position, text)
+
+    def scale(self, factor):
+        """
+        Scale the canvas by a factor.
+
+        :param factor: Scaling factor
+        """
+        self.diameter *= factor
+        self.radius = self.diameter / 2
+
+    def set_pen(self, pen):
+        """
+        Set the pen for drawing.
+
+        :param pen: QPen object
+        """
+        self.painter.setPen(pen)
+
+    def set_brush(self, brush):
+        """
+        Set the brush for filling shapes.
+
+        :param brush: QBrush object
+        """
+        self.painter.setBrush(brush)
 
 
 if __name__ == "__main__":

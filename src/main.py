@@ -91,6 +91,7 @@ class App:  # The main logic and gui are separated
 
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
+        self.apply_theme()
 
         # Setup window
         if self.abs_window_icon_path.startswith("#"):
@@ -403,34 +404,40 @@ class App:  # The main logic and gui are separated
                 event_handler = getattr(self.window, eventFunc)
                 setattr(self.window, eventFunc, self._create_link_event(event_handler, eventFunc))
 
-    def load_themes(self, theme_folder: str) -> None:
-        paths: list[str] = [os.path.join(theme_folder, "adalfarus_base.th")]
-
+    def load_themes(self, theme_folder: str, clear: bool = False) -> None:
+        if clear:
+            Theme.clear_loaded_themes()
         for file in os.listdir(theme_folder):
             if file.endswith(".th"):
                 path = os.path.join(theme_folder, file)
-                if path not in paths:
-                    paths.append(path)
+                Theme.load_from_file(path)
 
-        for path in paths:
-            Theme.load_from_file(path)
-        print(Theme._loaded_themes)
+        if Theme.get_loaded_theme("adalfarus::base") is None:
+            raise RuntimeError(f"Base theme is not present")
 
-    def load_styles(self, style_folder: str) -> None:
+    def load_styles(self, style_folder: str, clear: bool = False) -> None:
+        if clear:
+            Style.clear_loaded_styles()
         for file in os.listdir(style_folder):
             if file.endswith(".st"):
                 path = os.path.join(style_folder, file)
                 Style.load_from_file(path)
-        print(Style.loaded_styles)
 
-        for theme in Theme._loaded_themes:
-            if theme.get_theme_uid() == "adalfarus::thin":
-                style = theme.get_compatible_style("Thin Light Dark")  # "Colored Evening Sky"
-                theme_str, palette = theme.apply_style(style, self.qapp.palette(), )
-                self.qapp.setPalette(palette)
-                break
-        print("TS", theme_str)
-        self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base()))
+        if (Style.get_loaded_style("Default Dark", "*") is None
+                or Style.get_loaded_style("Default Light", "*") is None):
+            raise RuntimeError(f"Default light and/or dark style are/is not present")
+
+    def apply_theme(self) -> None:
+        theme = Theme.get_loaded_theme("adalfarus::thin")  # TODO: Get from settings
+
+        if theme is None:  # TODO: Popup
+            self.logger.warning(f"Specified theme '{'adalfarus::thin'}' is not available")  # TODO: Get from settings
+            return
+        # TODO: Get from settings
+        style = theme.get_compatible_style("Thin Light Dark")  # "Colored Evening Sky"
+        theme_str, palette = theme.apply_style(style, self.qapp.palette(), transparency_mode="none")  # TODO: Get from s
+        self.qapp.setPalette(palette)
+        self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base_styling()))
 
     def update_title(self) -> None:
         raw_title = Template(self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))

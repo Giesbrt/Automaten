@@ -48,7 +48,7 @@ def assign_object_names_iterative(parent: QWidget, prefix: str = "", exclude_pri
 
 
 class Style:
-    loaded_styles: list[_ty.Self] = []
+    _loaded_styles: dict[str, _ty.Self] = {}
 
     def __init__(self, style_name: str, for_paths: list[str], parameters: list[str],
                  palette_parameter: list[str]) -> None:
@@ -56,7 +56,7 @@ class Style:
         self._for_paths: list[str] = for_paths
         self._parameters: list[str] = parameters
         self._palette_parameter: list[str] = palette_parameter
-        self.loaded_styles.append(self)
+        self._loaded_styles[style_name] = self
 
     def get_style_name(self) -> str:
         return self._style_name
@@ -69,6 +69,23 @@ class Style:
 
     def get_for_paths(self) -> list[str]:
         return self._for_paths.copy()
+
+    @classmethod
+    def get_loaded_style(cls, style_name: str, for_theme: "Theme" | _ty.Literal["*"]) -> _ty.Self | None:
+        possible_style = cls._loaded_styles.get(style_name)
+        if possible_style is None:
+            return None
+        if for_theme == "*" or for_theme.is_compatible(possible_style):
+            return possible_style
+        return None
+
+    @classmethod
+    def get_loaded_styles(cls, for_theme: "Theme") -> list[_ty.Self]:
+        possible_styles = cls._loaded_styles.values()
+        found_styles: list[_ty.Self] = []
+        for possible_style in possible_styles:
+            if for_theme.is_compatible(possible_style):
+                found_styles.append(possible_style)
 
     @classmethod
     def load_from_file(cls, filepath: str) -> _ty.Self:
@@ -160,41 +177,31 @@ class Style:
 
         return cls(style_name, for_paths, parameters, palette_parameter)
 
+    @classmethod
+    def clear_loaded_styles(cls) -> None:
+        cls._loaded_styles.clear()
+
     def __repr__(self) -> str:
         return (f"Style(style_name={self._style_name}, for_paths={self._for_paths}, parameters={self._parameters}, "
                 f"palette_parameter={self._palette_parameter})")
 
 
 class Theme:
-    _loaded_themes: dict[str, _ty.Self] = []  # TODO: Make a dictionary
+    _loaded_themes: dict[str, _ty.Self] = {}
 
     def __init__(self, author: str, theme_name: str, theme_str: str, base: str | None, placeholders: list[str],
                  compatible_styling: str | None, load_styles_for: str,
                  inherit_extend_from: tuple[str | None, str | None]) -> None:
         self._author: str = author
         self._theme_name: str = theme_name
+        self._theme_uid: str = f"{self._author}::{self._theme_name}"
         self._theme_str: str = theme_str
         self._base: str | None = base
         self._placeholders: list[str] = placeholders
         self._compatible_styling: str | None = compatible_styling
         self._load_styles_for: str = load_styles_for
         self._inherit_extend_from: tuple[str, str] = inherit_extend_from
-        self._loaded_themes[self.get_theme_uid()] = self
-
-    def get_theme_uid(self) -> str:
-        return self._author + "::" + self._theme_name
-
-    def is_theme(self, theme_str: str) -> bool:
-        return f"{self._author}::{self._theme_name}" == theme_str
-
-    @classmethod
-    def get_loaded_theme(cls, theme_uid: str) -> _ty.Self | None:
-        if theme_uid not in cls._loaded_themes:
-            return None
-        return cls._loaded_themes[theme_uid]
-
-    def get_base(self) -> str:
-        return self._base
+        self._loaded_themes[self._theme_uid] = self
 
     @staticmethod
     def _find_special_sequence(s: str) -> tuple[str, str, str]:
@@ -236,67 +243,60 @@ class Theme:
             return s
         return s[0].lower() + s[1:]
 
+    def get_theme_uid(self) -> str:
+        return self._theme_uid
+
+    def is_theme(self, theme_uid: str) -> bool:
+        return self._theme_uid == theme_uid
+
+    @classmethod
+    def get_loaded_theme(cls, theme_uid: str) -> _ty.Self | None:
+        if theme_uid not in cls._loaded_themes:
+            return None
+        return cls._loaded_themes[theme_uid]
+
+    def get_base_styling(self) -> str:
+        return self._base
+
     def supports_styles(self) -> bool:
         return self._compatible_styling in ("*", "os")
 
     def is_compatible(self, style: Style) -> bool:
         load_st_author, load_st_theme = self._load_styles_for.split("::")
-        for path in style.get_for_paths():  # TODO: Check for wildcards
+        for path in style.get_for_paths():
             author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]
-            if author == load_st_author and theme_name == load_st_theme:
+            if (author == load_st_author or author == "*") and (theme_name == load_st_theme or theme_name == "*"):
                 return True
         return False
 
     def get_compatible_styles(self) -> list[Style]:
         if not self.supports_styles():
             raise RuntimeError(f"The theme '{self._theme_name}' doesn't support styles")
-        compatible_styles = []
-        load_st_author, load_st_theme = self._load_styles_for.split("::")
-        for style in Style.loaded_styles:
-            for path in style.get_for_paths():
-                author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]
-                if author == load_st_author and theme_name == load_st_theme:
-                    compatible_styles.append(style)
-        return compatible_styles
+        return Style.get_loaded_styles(for_theme=self)
 
     def get_compatible_style(self, name: str) -> Style | None:
         if not self.supports_styles():
             raise RuntimeError(f"The theme '{self._theme_name}' doesn't support styles")
-        load_st_author, load_st_theme = self._load_styles_for.split("::")
-        for style in Style.loaded_styles:
-            if style.get_style_name() != name:
-                continue
-            for path in style.get_for_paths():
-                author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]
-                if author == load_st_author and theme_name == load_st_theme:
-                    return style
+        return Style.get_loaded_style(name, for_theme=self)
 
     def assemble_qss_placeholder_row(self, placeholders: list) -> str:
         mode, from_theme = self._inherit_extend_from
-        if mode == "inheriting":
-            theme = None
-            for theme in self._loaded_themes:
-                if theme.is_theme(from_theme):
-                    break
-            if theme is None:
-                raise RuntimeError(f"Unknown theme '{from_theme}'")
-            placeholders.extend(self._placeholders)
-            return theme.assemble_qss_placeholder_row(placeholders) + self._theme_str
-        elif mode == "extending":
-            theme = None
-            for theme in self._loaded_themes:
-                if theme.is_theme(from_theme):
-                    break
-            if theme is None:
-                raise RuntimeError(f"Unknown theme '{from_theme}'")
-            result = self._theme_str + theme.assemble_qss_placeholder_row(placeholders)
-            placeholders.extend(self._placeholders)
-            return result
-        elif mode is None:
+
+        if mode is None:
             placeholders.extend(self._placeholders)
             return self._theme_str
-        else:
+        elif mode not in ("inheriting", "extending"):
             raise RuntimeError(f"Unsupported mode '{mode}'")
+
+        theme = self._loaded_themes.get(from_theme)
+        if theme is None:
+            raise RuntimeError(f"Unknown theme '{from_theme}'")
+        if mode == "inheriting":
+            placeholders.extend(self._placeholders)
+        result = theme.assemble_qss_placeholder_row(placeholders) + self._theme_str
+        if mode == "extending":
+            placeholders.extend(self._placeholders)
+        return result
 
     def apply_style(self, style: Style, palette: QPalette,
                     transparency_mode: _ty.Literal["none", "author", "direct", "indirect"] = "none"
@@ -418,10 +418,11 @@ class Theme:
         return cls(author, theme_name, qss.strip(), base_app_style, placeholders, compatible_styling, load_styles_for,
                    inherit_extend)
 
-    def __eq__(self, other: str) -> bool:
-        return f"{self._author}/{self._theme_name}" == other
+    @classmethod
+    def clear_loaded_themes(cls) -> None:
+        cls._loaded_themes.clear()
 
     def __repr__(self) -> str:
-        return (f"Theme(author={self._author}, theme_name={self._theme_name}, theme_str={self._theme_str[:10]}, "
-                f"base={self._base}, placeholder={self._placeholders}, compatible_styling={self._compatible_styling}, "
+        return (f"Theme(theme_uid={self._theme_uid}, theme_str={self._theme_str[:10]}, base={self._base}, "
+                f"placeholder={self._placeholders[:3]}, compatible_styling={self._compatible_styling}, "
                 f"load_styles_for={self._load_styles_for}, inherit_extend_from={self._inherit_extend_from})")

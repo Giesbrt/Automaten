@@ -6,6 +6,8 @@ from DFAState import DFAState
 from DFATransition import DFATransition
 from DFAAutomaton import DFAAutomaton
 
+from core.modules.automaton.serializer import Serializer
+
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
@@ -39,7 +41,7 @@ class DFAUnitTest(unittest.TestCase):
         dfa.set_start_state(s1)
         dfa.set_end_states({s2})
 
-        dfa.set_word("aab")
+        dfa.set_input("aab")
 
         dfa_result: _result.Result = dfa.simulate()
         print(dfa_result._inner_value)
@@ -63,7 +65,7 @@ class DFAUnitTest(unittest.TestCase):
         dfa.set_start_state(s1)
         dfa.set_end_states({s2})
 
-        dfa.set_word("aab")
+        dfa.set_input("aab")
 
         i = 1
         simulation_return = dfa.simulate_one_step()
@@ -71,9 +73,11 @@ class DFAUnitTest(unittest.TestCase):
             simulation_return = dfa.simulate_one_step()
             i += 1
 
-        self.assertEqual(len(dfa.get_word()), i - 1)  # -1 because the last call is the end call (end of loop)
+        self.assertEqual(len(dfa.get_input()), i - 1)  # -1 because the last call is the end call (end of loop)
 
     def test_serialisation_with_pickle(self):
+        serializer: Serializer = Serializer()
+
         dfa: DFAAutomaton = DFAAutomaton()
 
         s1: DFAState = DFAState("q0")
@@ -91,13 +95,13 @@ class DFAUnitTest(unittest.TestCase):
         dfa.set_start_state(s1)
         dfa.set_end_states({s2})
 
-        dfa.set_word("aab")
+        dfa.set_input("aab")
 
         path = "./tests.txt"
-        serialisation_result = dfa.serialise(path)
+        serialisation_result = serializer.serialise(dfa, path)
         self.assertTrue(isinstance(serialisation_result, _result.Success))
 
-        loading_result = DFAAutomaton.load(path)
+        loading_result = serializer.load(path)
         self.assertTrue(isinstance(loading_result, _result.Success))
         self.assertTrue(isinstance(loading_result.value_or(None), DFAAutomaton))
 

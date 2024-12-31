@@ -85,9 +85,12 @@ class DFAAutomaton(BaseAutomaton):
         It also ensures that the base automaton properties, such as states and transitions, are initialized.
         """
         super().__init__()
-        self.word: str = ""
+        self.word: list = []
         self.char_index: int = 0
         self.current_char: str = ""
+
+        self._input_alphabet = []
+        self._output_alphabet = []
 
     def set_input(self, automaton_input: _ty.Any) -> None:
         """
@@ -96,7 +99,7 @@ class DFAAutomaton(BaseAutomaton):
         Args:
             automaton_input (str): The string of characters to be processed by the automaton.
         """
-        self.word = automaton_input
+        self.word = list(automaton_input)
         self.char_index = 0
         self.current_char = self.word[self.char_index] if self.word else ""
 
@@ -225,3 +228,18 @@ class DFAAutomaton(BaseAutomaton):
 
         self.next_char()  # Move to the next character in the input.
         self.current_state.activate()  # Activate the current state (if such behavior is defined).
+
+    def set_input_alphabet(self, alphabet: _ty.Any) -> None:
+        self._input_alphabet = alphabet
+
+    def set_output_alphabet(self, alphabet: _ty.Any) -> None:
+        self._output_alphabet = alphabet
+
+    def get_input_alphabet(self) -> _ty.Any:
+        return self._input_alphabet
+
+    def get_output_alphabet(self) -> _ty.Any:
+        return self._output_alphabet
+
+
+

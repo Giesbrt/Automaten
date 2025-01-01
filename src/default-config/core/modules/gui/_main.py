@@ -1,5 +1,5 @@
 """TBA"""
-from PySide6.QtWidgets import QWidget, QMainWindow, QMessageBox, QApplication
+from PySide6.QtWidgets import QWidget, QMainWindow, QMessageBox, QPushButton, QCheckBox
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
 
@@ -113,16 +113,39 @@ class MainWindow(MainWindowInterface, QMainWindow):
             self.settings_panel_animation.setEndValue(shown_panel_end_value)
         self.panel_animation_group.start()
 
-    def popup(self, title: str, text: str, description: str, icon: QMessageBox.Icon = QMessageBox.Icon.Information,
-              buttons: list[QMessageBox.StandardButton] | QMessageBox.StandardButton = QMessageBox.StandardButton.Ok,
-              default_button: QMessageBox.StandardButton = QMessageBox.StandardButton.Ok) -> QMessageBox.StandardButton:
-        msg_box = QQuickMessageBox(self, icon, title, text, description,
-                                   standard_buttons=buttons,
-                                   default_button=default_button)
-        return msg_box.exec()
+    def button_popup(self, title: str, text: str, description: str,
+                     icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"],
+                     buttons: list[str], default_button: str, checkbox: str | None = None) -> tuple[str | None, bool]:
+        if checkbox is not None:
+            checkbox = QCheckBox(checkbox)
+        msg_box = QQuickMessageBox(self, getattr(QMessageBox.Icon, icon), title, text,
+                                   checkbox=checkbox, standard_buttons=None, default_button=None)
+        button_map: dict[str, QPushButton] = {}
+        for button_str in buttons:
+            button = QPushButton(button_str)
+            button_map[button_str] = button
+            msg_box.addButton(button, QMessageBox.ButtonRole.ActionRole)
+        custom_button = button_map.get(default_button)
+        if custom_button is not None:
+            msg_box.setDefaultButton(custom_button)
+        msg_box.setDetailedText(description)
+
+        clicked_button: int = msg_box.exec()
+
+        checkbox_checked = False
+        if checkbox is not None:
+            checkbox_checked = checkbox.isChecked()
+
+        for button_text, button_obj in button_map.items():
+            if msg_box.clickedButton() == button_obj:
+                return button_text, checkbox_checked
+        return None, checkbox_checked
 
     def set_scroll_speed(self, value: float) -> None:
         return
+
+    def internal_obj(self) -> QMainWindow:
+        return self
 
     def start(self) -> None:
         self.show()

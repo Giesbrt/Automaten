@@ -6,6 +6,7 @@ from pathlib import Path as PLPath
 from traceback import format_exc
 import multiprocessing
 from string import Template
+from argparse import ArgumentParser
 import threading
 import logging
 import sys
@@ -53,8 +54,7 @@ class App:  # The main logic and gui are separated
     qapp: QApplication | None = None
     linked: bool = False
 
-    def __init__(self) -> None:
-        # Setting up the base directory in AppData\Local? For now it's in ./localconfig
+    def __init__(self, input_path: str, output_path: str, logging_level: int | None = None) -> None:
         self.base_app_dir: str = config.base_app_dir
         self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
@@ -63,13 +63,14 @@ class App:  # The main logic and gui are separated
         self.styling_folder: str = os.path.join(self.base_app_dir, "styling")  # App styling
 
         # TODO: remove dependency on self.window.icons_dir
-        self.window.icons_dir = os.path.join(self.data_folder, "icons")
-        self.window.app = self.qapp
+        # self.window.icons_dir = os.path.join(self.data_folder, "icons")
+        self.window.setup_gui()
+        # self.window.repaint()
 
         # Setup logger
         self._order_logs(f"{self.data_folder}/logs")
         self.logger: ActLogger = ActLogger(log_to_file=True, filename=f"{self.data_folder}/logs/latest.log")
-        self.logger.logger.setLevel(logging.DEBUG if config.INDEV else logging.INFO)
+        self.logger.logger.setLevel(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
         self.logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
         self.logger.monitor_pipe(sys.stderr, level=logging.ERROR)
         for exported_line in config.exported_logs.split("\n"):
@@ -91,6 +92,7 @@ class App:  # The main logic and gui are separated
 
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
+        self.window.app = self.qapp
         self.apply_theme()
 
         # Setup window
@@ -107,15 +109,9 @@ class App:  # The main logic and gui are separated
             width = 1050
         if self.user_settings.retrieve("user_configs_advanced", "save_window_position", "bool"):
             self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
-        else:
+        else:                                                  # I guess windows does some weird shit with the title bar
             self.window.set_window_dimensions(height, width)
-        self.window.setup_gui()  # I guess windows does some weird shit with the title bar
-        assign_object_names_iterative(self.window)  # Set object names for theming
-        #self.window.set_global_theme("""
-        #    QPushButton#user_panel-settings_button {
-        #        background-color: lightblue;
-        #    }
-        #""", self.window.AppStyle.Default)  # getattr(self.window.AppStyle, "Fusion")
+        assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
         self.link_gui()
 
         # Setup values, signals, ...
@@ -194,10 +190,10 @@ class App:  # The main logic and gui are separated
         """Checks for an update and creates a message box accordingly."""
         print("Checking time taken to check for update ...")
         timer = TimidTimer()
-        icon = QMessageBox.Icon.Information
+        icon = "Information"
         title, text, description = "Title", "Text", "Description"
         checkbox, checkbox_setting = None, ("", "")
-        standard_buttons, default_button = QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok
+        standard_buttons, default_button = ["Ok"], "Ok"
         retval_func = lambda button: None
         do_popup: bool = True
 
@@ -236,11 +232,12 @@ class App:  # The main logic and gui are separated
                 text = (f"There is a newer version ({found_version}) "
                         f"available.\nDo you want to open the link to the update?")
                 description = found_release.get("description")
-                checkbox, checkbox_setting = QCheckBox("Do not show again"), ("configs", "update_info")
+                checkbox, checkbox_setting = "Do not show again", ("configs", "update_info")
+                standard_buttons, default_button = ["Yes", "No"], "Yes"
 
                 def retval_func(button) -> None:
                     """TBA"""
-                    if button == QMessageBox.StandardButton.Yes:
+                    if button == "Yes":
                         url = found_release.get("updateUrl", "None")
                         if url.title() == "None":
                             link = update_json["metadata"].get("sorryUrl", "https://example.com")
@@ -252,13 +249,13 @@ class App:  # The main logic and gui are separated
                 text = (f"No new updates available.\nChecklist last updated "
                         f"{update_json['metadata']['lastUpdated'].replace('-', '.')}.")
                 description = f" --- v{found_version} --- \n{found_release.get('description')}"
-                checkbox, checkbox_setting = QCheckBox("Do not show again"), ("configs", "no_update_info")
+                checkbox, checkbox_setting = "Do not show again", ("configs", "no_update_info")
             elif show_no_update_info and found_push:
                 title = "Info"
                 text = (f"New version available, but not recommended {found_version}.\n"
                         f"Checklist last updated {update_json['metadata']['lastUpdated'].replace('-', '.')}.")
                 description = found_release.get("description")
-                checkbox, checkbox_setting = QCheckBox("Do not show again"), ("configs", "no_update_info")
+                checkbox, checkbox_setting = "Do not show again", ("configs", "no_update_info")
             else:
                 title, text, description = "Update Info", "There was a logic-error when checking for updates.", ""
                 do_popup = False
@@ -266,21 +263,26 @@ class App:  # The main logic and gui are separated
             icon = QMessageBox.Icon.Information  # Reset everything to default, we don't know when the error happened
             title, text, description = "Update Info", "There was an error when checking for updates.", format_exc()
             checkbox, checkbox_setting = None, ("", "")
-            standard_buttons, default_button = QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok
+            standard_buttons, default_button = ["Ok"], "Ok"
             retval_func = lambda button: None
-        except (requests.exceptions.RequestException, requests.exceptions.Timeout):
-            title, text, description = "Update Info", "The request timed out.\nPlease check your internet connection and try again.", format_exc()
-            standard_buttons, default_button = QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok
+        except requests.exceptions.Timeout:
+            title, text, description = "Update Info", ("The request timed out.\n"
+                                                       "Please check your internet connection, "
+                                                       "and try again."), format_exc()
+            standard_buttons, default_button = ["Ok"], "Ok"
+        except requests.exceptions.RequestException:
+            title, text, description = "Update Info", ("There was an error with the request.\n"
+                                                       "Please check your internet connection and antivirus, "
+                                                       "and try again."), format_exc()
+            standard_buttons, default_button = ["Ok"], "Ok"
         finally:
             print("Popup time: ", timer.tock())
             print("Total:", timer.end())
             if do_popup:
-                msg_box = QQuickMessageBox(self.window, icon, title, text, description, checkbox,
-                                           standard_buttons=standard_buttons,
-                                           default_button=default_button)
-                retval = msg_box.exec()  # Keep ref to msg_box so checkbox doesn't get deleted prematurely
+                retval, checkbox_checked = self.window.button_popup(title, text, description, icon, standard_buttons,
+                                                                    default_button, checkbox)
                 retval_func(retval)
-                if checkbox is not None and checkbox.isChecked():
+                if checkbox is not None and checkbox_checked:
                     self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
 
     def configure_settings(self) -> None:
@@ -473,12 +475,36 @@ if __name__ == "__main__":
     dp_app: App | None = None
     current_exit_code: int = -1
 
+    parser = ArgumentParser(description=f"{config.PROGRAM_NAME}")
+    parser.add_argument("input", nargs="?", default="", help="Path to the input file.")
+    parser.add_argument("output", nargs="?", default="", help="Path to the output file.")
+    parser.add_argument("-o", nargs="?", default="", help="Path to the output file")
+    parser.add_argument("--logging-mode", choices=["DEBUG", "INFO", "WARN", "ERROR"], default=None,
+                        help="Logging mode (default: None)")
+    args = parser.parse_args()
+
+    logging_mode = args.logging_mode
+    logging_level = None
+    if logging_mode is not None:
+        logging_level = getattr(logging, logging_mode.upper(), None)
+    if logging_level is None and logging_mode is not None:
+        logging.error(f"Invalid logging mode: {logging_mode}")
+        sys.exit(1)
+
+    input_path = os.path.abspath(args.input)
+    output_path = os.path.abspath(args.o or args.output)
+
+    if not os.path.exists(input_path):
+        logging.error(f"The input file ({input_path}) needs to exist")
+        sys.exit(1)
+    config.exported_logs += f"Reading {input_path}, writing {output_path}\n"
+
     try:
         qapp = QApplication(sys.argv)
         qgui = MainWindow()
         App.window = qgui
         App.qapp = qapp
-        dp_app = App()  # Shows gui
+        dp_app = App(input_path, output_path, logging_level)  # Shows gui
         current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()

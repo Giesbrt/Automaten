@@ -23,15 +23,14 @@ from PySide6.QtGui import (QCloseEvent, QResizeEvent, QMoveEvent, QFocusEvent, Q
                            QWheelEvent, QTabletEvent)
 from PySide6.QtCore import QEvent, QTimerEvent
 
-from packaging.version import Version, InvalidVersion
-import stdlib_list
-import requests
-
-# Aplustools imports (2.0.0.0a1 stable, not feature complete release.)
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType
 from aplustools.io import ActLogger
 from aplustools.package.timid import TimidTimer
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
+
+from packaging.version import Version, InvalidVersion
+import stdlib_list
+import requests
 
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage

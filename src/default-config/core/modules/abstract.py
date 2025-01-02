@@ -2,7 +2,7 @@
 import math
 import threading
 
-from PySide6.QtWidgets import QWidget, QApplication
+from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
@@ -64,11 +64,19 @@ class MainWindowInterface:
     def destroy_popup(self, index) -> None:  # Remove popup by index
         raise NotImplementedError
 
+    def button_popup(self, title: str, text: str, description: str,
+                     icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"],
+                     buttons: list[str], default_button: str, checkbox: str | None = None) -> tuple[str | None, bool]:
+        raise NotImplementedError
+
     def set_theme_to_singular(self, theme_str: str, widget_or_window: QWidget) -> None:
         """Applies a theme string to a singular object"""
         raise NotImplementedError
 
     def set_global_theme(self, theme_str: str, base: str | None = None) -> None:
+        raise NotImplementedError
+
+    def internal_obj(self) -> QMainWindow:
         raise NotImplementedError
 
     def start(self) -> None:

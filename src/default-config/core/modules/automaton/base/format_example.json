@@ -1,0 +1,96 @@
+{
+    "automaton_info": {
+        "type": "dfa"
+    },
+
+    "states": [
+        {
+            "display_name": "q0",
+            "is_root": true,
+            "position": {
+                "x": 0,
+                "y": 5
+            },
+            "is_active": true,
+            "colour": "#FFFF00",
+            "design": [
+                {
+                    "shape": "circle",
+                    "radius": 3.5,
+                    "background_colour": "#FF0000",
+                    "relative_position": {
+                        "x": 0,
+                        "y": 5
+                    }
+                }
+            ]
+        },
+        {
+            "display_name": "q1",
+            "is_root": false,
+            "position": {
+                "x": 5,
+                "y": 10
+            },
+            "is_active": true,
+            "colour": "#FFFF00",
+            "design": [
+                {
+                    "shape": "circle",
+                    "radius": 3.5,
+                    "background_colour": "#FF0000",
+                    "relative_position": {
+                        "x": 0,
+                        "y": 5
+                    }
+                },
+                {
+                    "shape": "rectangle",
+                    "height": 5,
+                    "width": 3
+                    "background_colour": "#FF0000",
+                    "relative_position": {
+                        "x": 0,
+                        "y": 5
+                    }
+                },
+                {
+                    "shape": "line",
+                    "background_colour": "#FF0000",
+                    "relative_position_start": {
+                        "x": 0,
+                        "y": 5
+                    },
+                    "relative_position_end": {
+                        "x": 5,
+                        "y": 0
+                    }
+                }
+            ]
+        }
+    ],
+
+    "transitions": [
+        {
+            "is_active": false,
+            "start_node": {
+                "node_index": 0,
+                "connecting_point": "n"
+            },
+            "end_node": {
+                "node_index": 1,
+                "connecting_point": "s"
+            },
+            "display_name": "a"
+        }
+    ]
+}
+
+
+Formen die Erlaubt sind:
+Line #
+Arc
+Circle #
+Rect #
+Polygon
+Text (#)

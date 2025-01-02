@@ -4,7 +4,8 @@ from returns import result as _result
 # Abstract Machine related imports
 from core.modules.automaton.automatonBridge import AutomatonBridge
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from automatonProvider import AutomatonProvider
+from core.modules.automaton.automatonProvider import AutomatonProvider
+from core.modules.automaton.UiBridge import UiBridge
 
 from queue import Queue
 
@@ -83,13 +84,38 @@ class SimulationLoader:
         self.restart_counter = 0
         self.error_cache = Queue()
 
-    def serialise_automaton_to_bridge(self) -> None:  # Todo serialise the automaton and push to bridge
-        pass
+    def serialise_automaton_to_bridge(self, return_value: _ty.Any) -> None:  # Todo handle return_value
+        from core.modules.automaton.base.state import State
+        from core.modules.automaton.base.transition import Transition
+
+        serialised_update: _ty.Dict[str, _ty.Any] = {}
+
+        # serialisation
+        for state in self.automaton.get_states():
+            state: State = state
+            if not state.is_active():
+                continue
+
+            serialised_update["state"] = {}
+            serialised_update["state"]["id"] = self.automaton.get_state_index(state)
+            serialised_update["state"]["is_active"] = state.is_active()
+
+        for transition in self.automaton.get_transitions():
+            transition: Transition = transition
+            if not transition.is_active():
+                continue
+
+            serialised_update["transition"] = {}
+            serialised_update["transition"]["id"] = self.automaton.get_transition_index(transition)
+            serialised_update["transition"]["is_active"] = transition.is_active()
+
+        # push to bridge
+        UiBridge().add_simulation_item(serialised_update)
 
     def handle_bridge(self) -> None:  # Todo get data from bridge and handle it
         pass
 
-    def simulate(self) -> _result.Result:
+    def simulate(self) -> _result.Result:  # Todo handle return value
         try:
             return_result = self.automaton.simulate_one_step()
             self.serialise_automaton_to_bridge()
@@ -97,8 +123,6 @@ class SimulationLoader:
             while return_result is None:
                 return_result = self.automaton.simulate_one_step()
                 self.serialise_automaton_to_bridge()
-
-            # Todo send simulation result to user
 
         except Exception as e:
             log_message: str = (f"An error occurred whilst trying to simulate an "

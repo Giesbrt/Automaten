@@ -312,6 +312,13 @@ class Automaton(_abc.ABC):
         """
         raise NotImplementedError("get_output_alphabet must be implemented in a subclass.")
 
+    def get_state_index(self, state: State) -> int:
+        for i, s in enumerate(self.get_states()):
+            if s is not state:
+                continue
+            return i
+        return 0
+
     def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
         """
         Serializes the automaton to a JSON-compatible format, including states and transitions.

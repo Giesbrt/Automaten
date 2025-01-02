@@ -163,3 +163,6 @@ class AutomatonBridge:
 
     def get_state_index(self, state: State) -> int:
         return self.automaton_impl.get_state_index(state)
+
+    def get_transition_index(self, transition: Transition) -> int:
+        return self.automaton_impl.get_transition_index(transition)

@@ -319,6 +319,13 @@ class Automaton(_abc.ABC):
             return i
         return 0
 
+    def get_transition_index(self, transition: Transition) -> int:
+        for i, t in enumerate(self.get_transitions()):
+            if t is not transition:
+                continue
+            return i
+        return 0
+
     def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
         """
         Serializes the automaton to a JSON-compatible format, including states and transitions.

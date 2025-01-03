@@ -28,7 +28,10 @@ class Transition(_abc.ABC, _TransitionDisplayManager):
         activation_callback (_ty.Callable or None): An optional callback triggered when the transition is activated.
     """
 
-    def __init__(self, start_state: State, transition_target_state: State, condition: _ty.Any,
+    def __init__(self, start_state: State,
+                 start_connecting_point: _ty.Literal['n', 'w', 's', 'e'],
+                 transition_target_state: State, condition: _ty.Any,
+                 target_connecting_point: _ty.Literal['n', 'w', 's', 'e'],
                  display_name: str = "", colour_in_hex: str = "#000000", line_thickness: float = 1) -> None:
         """
         Initializes a transition with a starting and a target state.
@@ -44,6 +47,9 @@ class Transition(_abc.ABC, _TransitionDisplayManager):
 
         self._condition: _ty.Any = condition
         self._is_active: bool = False
+
+        self._start_connecting_point: _ty.Literal['n', 'w', 's', 'e'] = start_connecting_point
+        self._target_connecting_point: _ty.Literal['n', 'w', 's', 'e'] = target_connecting_point
 
         # Automatically adds this transition to the start state's set of transitions.
         self.start_state.add_transition(self)
@@ -124,6 +130,18 @@ class Transition(_abc.ABC, _TransitionDisplayManager):
 
     def is_active(self) -> bool:
         return self._is_active
+
+    def get_target_connecting_point(self) -> _ty.Literal['n', 'w', 's', 'e']:
+        return self._target_connecting_point
+
+    def get_start_connecting_point(self) -> _ty.Literal['n', 'w', 's', 'e']:
+        return self._start_connecting_point
+
+    def set_target_connecting_point(self, new_connecting_point: _ty.Literal['n', 'w', 's', 'e']) -> None:
+        self._target_connecting_point = new_connecting_point
+
+    def set_start_connecting_point(self, new_connecting_point: _ty.Literal['n', 'w', 's', 'e']) -> None:
+        self._start_connecting_point = new_connecting_point
 
     def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
         """

@@ -115,6 +115,9 @@ class State(_abc.ABC, _StateDisplayManager):
     def add_transition(self, new_transition: "Transition") -> None:
         self._transitions.add(new_transition)
 
+    def remove_transition(self, old_transition: "Transition") -> None:
+        self._transitions.remove(old_transition)
+
     @_abc.abstractmethod
     def find_transition(self, current_input_char: str) -> _result.Result:
         """

@@ -172,3 +172,9 @@ class AutomatonBridge:
 
     def get_current_return_value(self) -> _ty.Any:
         return self.automaton_impl.get_current_return_value()
+
+    def delete_state(self, state: "State") -> None:
+        self.automaton_impl.delete_state(state)
+
+    def delete_transition(self, transition: "Transition") -> None:
+        self.automaton_impl.delete_transition(transition)

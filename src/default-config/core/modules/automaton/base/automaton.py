@@ -346,6 +346,29 @@ class Automaton(_abc.ABC):
         """
         raise NotImplementedError("get_current_return_value must be implemented in a subclass.")
 
+    def delete_state(self, state: "State") -> None:
+        if state not in self.states:
+            return
+        self.states.remove(state)
+
+        for transition in state.get_transitions():
+            state.remove_transition(transition)
+            del transition
+
+        self.get_transitions(True)  # Update the Transitions set
+
+    def delete_transition(self, transition: "Transition") -> None:
+        if transition not in self.get_transitions():
+            return
+
+        transition_start_state: State = transition.get_start_state()
+        transition_start_state.remove_transition(transition)
+
+        self.transitions.remove(transition)
+        del transition
+
+        self.get_transitions(True)  # Update the Transitions set
+
     def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
         """
         Serializes the automaton to a JSON-compatible format, including states and transitions.

@@ -326,6 +326,26 @@ class Automaton(_abc.ABC):
             return i
         return 0
 
+    @_abc.abstractmethod
+    def get_current_index(self) -> int:
+        """
+        Returns the current index where the pointer (on the input sequence) is located
+
+        Returns:
+            int: current index of the pointer
+        """
+        raise NotImplementedError("get_current_index must be implemented in a subclass.")
+
+    @_abc.abstractmethod
+    def get_current_return_value(self) -> _ty.Any:
+        """
+        Returns the last return value of the automaton after one step of simulation
+
+        Returns:
+            _ty.Any: The return value
+        """
+        raise NotImplementedError("get_current_return_value must be implemented in a subclass.")
+
     def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
         """
         Serializes the automaton to a JSON-compatible format, including states and transitions.

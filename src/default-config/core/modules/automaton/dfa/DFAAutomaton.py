@@ -241,5 +241,25 @@ class DFAAutomaton(BaseAutomaton):
     def get_output_alphabet(self) -> _ty.Any:
         return self._output_alphabet
 
+    def get_current_return_value(self) -> _ty.Any:
+        """
+        Returns the last return value of the automaton after one step of simulation
+
+        Returns:
+            _ty.Any: The return value
+        """
+        return None  # None due to the lack of return values in a dfa automaton
+
+    def get_current_index(self) -> int:
+        """
+        Returns the current index where the pointer (on the input sequence) is located
+
+        Returns:
+            int: current index of the pointer
+        """
+        return self.char_index
+
+
+
 
 

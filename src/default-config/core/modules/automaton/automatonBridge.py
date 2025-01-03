@@ -166,3 +166,9 @@ class AutomatonBridge:
 
     def get_transition_index(self, transition: Transition) -> int:
         return self.automaton_impl.get_transition_index(transition)
+
+    def get_current_index(self) -> int:
+        return self.automaton_impl.get_current_index()
+
+    def get_current_return_value(self) -> _ty.Any:
+        return self.automaton_impl.get_current_return_value()

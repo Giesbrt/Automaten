@@ -63,7 +63,7 @@ class State(_abc.ABC, _StateDisplayManager):
     """
 
     def __init__(self, name: str, display_name: str = "", position: _ty.Tuple[float, float] = (0, 0),
-                 outer_radius: float = 0, colour_in_hex: str = "#FFFFFF", line_thickness: float = 1) -> None:
+                 colour_in_hex: str = "#FFFFFF") -> None:
         """
         Initializes a state with a name and an empty set of _transitions.
 
@@ -75,7 +75,7 @@ class State(_abc.ABC, _StateDisplayManager):
             - `state_name`: The provided name for the state.
             - `activation_callback`: Set to `None` initially.
         """
-        super().__init__(display_name, position, outer_radius, colour_in_hex, line_thickness)
+        super().__init__(display_name, position, colour_in_hex)
         self._transitions: _ty.Set[Transition] = set()
         self._state_name: str = name
         self._activation_callback: _ty.Callable or None = None

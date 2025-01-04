@@ -240,12 +240,10 @@ class _PainterCoord:
         return f"({self._x}, {self._y})"
 
 
-PainterPointT = tuple[tuple[float, float], float]
 PainterCoordT = _PainterCoord
 PainterLineT = tuple[PainterCoordT, PainterCoordT]
 PainterCircleT = tuple[PainterCoordT, float]
 PainterArcT = tuple[float, float]
-AngleT = float
 
 
 class PainterToStr:

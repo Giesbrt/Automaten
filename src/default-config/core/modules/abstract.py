@@ -257,6 +257,10 @@ class PainterToStr:
         """Get a coordinate type linked to this PainterToStr instance"""
         return _PainterCoord(self._diameter)
 
+    def radius(self) -> float:
+        """TBA"""
+        return self._radius
+
     def line(self, line: PainterLineT, thickness: int = 1, color: PainterColor | None = None) -> None:
         """
         Draw a line from one angle to another within a radius range.
@@ -575,3 +579,39 @@ if __name__ == "__main__":
     obj.text(obj.coord().load_from_polar(80, 0.5), "MyText", True, False, True, True,
              PainterColor.from_color(PainterColor.Color.white))
     print(obj.clean_out_style_str())
+
+    # Demonstration
+    painter = PainterToStr(diameter_scale=360.0)
+
+    center: PainterCoordT = painter.coord().load_from_cartesian(0, 0)
+    top: PainterCoordT = painter.coord().load_from_cartesian(0, -painter.radius())
+    bottom: PainterCoordT = painter.coord().load_from_cartesian(0, painter.radius())
+    left: PainterCoordT = painter.coord().load_from_cartesian(-painter.radius(), 0)
+    right: PainterCoordT = painter.coord().load_from_cartesian(painter.radius(), 0)
+
+    # Polar coordinates specify a point's location using:
+    #  radius: Distance from the origin.
+    #  angle_deg: Angle measured from the positive x-axis (0°) counterclockwise.
+    #      ____
+    #    /      \
+    #    |      | <--- This is 0 degrees, from there on if you count 90 in the counter clockwise dir you're at the top
+    #    \_____/
+    center_2: PainterCoordT = painter.coord().load_from_polar(0, 0)
+    top_2: PainterCoordT = painter.coord().load_from_polar(90, 1.0)
+    bottom_2: PainterCoordT = painter.coord().load_from_polar(270, 1.0)
+    left_2: PainterCoordT = painter.coord().load_from_polar(180, 1.0)
+    right_2: PainterCoordT = painter.coord().load_from_polar(0, 1.0)
+
+    print(f"{center} || {center_2}\n{top} || {top_2}\n{bottom} || {bottom_2}\n{left} || {left_2}\n{right} || {right_2}")
+
+    # Red cross
+    painter.line((top, bottom), thickness=10, color=PainterColor.from_color(PainterColor.Color.red))
+    painter.line((left, right), thickness=10, color=PainterColor.from_color(PainterColor.Color.red))
+
+    # Output result
+    print(f"Fehler zustand design (red cross): {painter.clean_out_style_str()}")
+
+    # Draw Circle
+    smaller_radius: float = 0.9
+    painter.circle((center, smaller_radius), thickness=2, color=PainterColor(0, 0, 0))
+    print(f"Endzustand (Smaller Circle) design: {painter.clean_out_style_str()}")

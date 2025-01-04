@@ -84,7 +84,7 @@ class SimulationLoader:
         self.restart_counter = 0
         self.error_cache = Queue()
 
-    def serialise_automaton_to_bridge(self, return_value: _ty.Any) -> None:  # Todo handle return_value
+    def serialise_automaton_to_bridge(self) -> None:
         from core.modules.automaton.base.state import State
         from core.modules.automaton.base.transition import Transition
 
@@ -108,6 +108,11 @@ class SimulationLoader:
             serialised_update["transition"] = {}
             serialised_update["transition"]["id"] = self.automaton.get_transition_index(transition)
             serialised_update["transition"]["is_active"] = transition.is_active()
+
+        serialised_update["automaton"] = {}
+        serialised_update["automaton"]["input"] = list(self.automaton.get_input())
+        serialised_update["automaton"]["pointer_index"] = self.automaton.get_current_index()
+        serialised_update["automaton"]["output"] = self.automaton.get_current_return_value()
 
         # push to bridge
         UiBridge().add_simulation_item(serialised_update)

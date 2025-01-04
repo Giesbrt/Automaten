@@ -351,8 +351,11 @@ class Automaton(_abc.ABC):
             return
         self.states.remove(state)
 
-        for transition in state.get_transitions():
-            state.remove_transition(transition)
+        _transition_copy: _ty.Set = self.get_transitions()
+        for transition in _transition_copy:
+            if not transition.get_start_state() == state and not transition.get_transition_target() == state:
+                continue
+            self.transitions.remove(transition)
             del transition
 
         self.get_transitions(True)  # Update the Transitions set

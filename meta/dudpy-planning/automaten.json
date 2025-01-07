@@ -1,0 +1,42 @@
+{
+	"name": "DFA",
+	"author": "Giesbrt",
+	"uuid": "...",
+	"token_lsts": [
+		["a", "b", "c", "d"],
+		["L", "R", "H"]
+	],
+	"is_custom_token_lst": [
+		true, 
+		false
+	],
+	"abs_transition_idxs": [0, 1, 1],
+	"types": {
+		"default": {
+			"design": "..."
+		},
+		"end": {
+			"design": "..."
+		},
+		"fehler": {
+			"design": "..."
+		}
+	},
+	"content": [
+		{
+			"name": "q0",
+			"type": "end",
+			"transitions": [
+				[1, [0, 0, 0]]
+			]
+		},
+		{
+			"name": "q1",
+			"type": "default",
+			"transitions": [
+				[0, [2, 1, 1]]
+			]
+		}
+	],
+	"custom_python": "..."
+}

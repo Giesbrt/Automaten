@@ -5,6 +5,11 @@ from returns import result as _result
 # Bridge Import
 from core.modules.automaton.UiBridge import UiBridge
 
+# abstract imports
+from core.modules.abstract import IUiState
+from core.modules.abstract import IUiTransition
+from core.modules.abstract import IUiAutomaton
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
@@ -12,13 +17,17 @@ import typing as _ty
 import types as _ts
 
 
-class UiState:
-    def __init__(self):    # Todo fix default values
-        self._colour: str = None
-        self._position: _ty.Tuple[float, float] = None
-        self._display_text: str = None
-        self._design: str = None
+class UiState(IUiState):
+    def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, automaton_type: str):
+        super().__init__(colour, position, display_text, automaton_type)
+        self._colour: str = colour
+        self._position: _ty.Tuple[float, float] = position
+        self._display_text: str = display_text
+        self._type: str = automaton_type
         self._is_active: bool = False
+
+    def __new__(cls, *args, **kwargs):
+        return object.__new__(cls)
 
     def set_colour(self, colour: str) -> None:
         self._colour = colour
@@ -28,9 +37,6 @@ class UiState:
 
     def set_display_text(self, display_text: str) -> None:
         self._display_text = display_text
-
-    def set_design(self, design: str) -> None:
-        self._design = design
 
     def get_colour(self) -> str:
         return self._colour
@@ -41,9 +47,6 @@ class UiState:
     def get_display_text(self) -> str:
         return self._display_text
 
-    def get_design(self) -> str:
-        return self._design
-
     def is_active(self) -> bool:
         return self._is_active
 
@@ -53,34 +56,20 @@ class UiState:
     def _deactivate(self) -> None:
         self._is_active = False
 
-    def push_update_to_bridge(self) -> None:
-        """
-        Sends the state data to the bridge when updating the UI.
-        """
-        pass  # Todo: implement
 
+class UiTransition(IUiTransition):
+    def __init__(self, from_state: UiState, from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'],
+                 to_state: UiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w']):
+        super().__init__(from_state, from_state_connecting_point, to_state, to_state_connecting_point)
+        self._from_state: UiState = from_state
+        self._from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = from_state_connecting_point
+        self._to_state: UiState = to_state
+        self._to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = to_state_connecting_point
 
-class UiTransition:
-    def __init__(self):    # Todo fix default values
-        self._colour: str = None
-        self._position: _ty.Tuple[float, float] = None
-        self._display_text: str = None
-        self._from_state: UiState = None
-        self._from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = None
-        self._to_state: UiState = None
-        self._to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = None
-
-        self._design: str = None
         self._is_active: bool = False
 
-    def set_colour(self, colour: str) -> None:
-        self._colour = colour
-
-    def set_position(self, position: _ty.Tuple[float, float]) -> None:
-        self._position = position
-
-    def set_display_text(self, display_text: str) -> None:
-        self._display_text = display_text
+    def __new__(cls, *args, **kwargs):
+        return object.__new__(cls)
 
     def set_from_state(self, from_state: UiState) -> None:
         self._from_state = from_state
@@ -94,18 +83,6 @@ class UiTransition:
     def set_to_state_connecting_point(self, connecting_point: _ty.Literal['n', 's', 'e', 'w']) -> None:
         self._to_state_connecting_point = connecting_point
 
-    def set_design(self, design: str) -> None:
-        self._design = design
-
-    def get_colour(self) -> str:
-        return self._colour
-
-    def get_position(self) -> _ty.Tuple[float, float]:
-        return self._position
-
-    def get_display_text(self) -> str:
-        return self._display_text
-
     def get_from_state(self) -> UiState:
         return self._from_state
 
@@ -118,9 +95,6 @@ class UiTransition:
     def get_to_state_connecting_point(self) -> _ty.Literal['n', 's', 'e', 'w']:
         return self._to_state_connecting_point
 
-    def get_design(self) -> str:
-        return self._design
-
     def is_active(self) -> bool:
         return self._is_active
 
@@ -130,24 +104,24 @@ class UiTransition:
     def _deactivate(self) -> None:
         self._is_active = False
 
-    def push_update_to_bridge(self) -> None:
-        """
-        Sends the transition data to the bridge when updating the UI.
-        """
-        pass  # Todo: implement
 
+class UiAutomaton(IUiTransition):
 
-class UiAutomaton:
-
-    def __init__(self, automaton_type: str):  # Todo fix default values
+    def __init__(self, automaton_type: str, from_state: IUiState,
+                 from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'], to_state: IUiState,
+                 to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w']):
+        super().__init__(from_state, from_state_connecting_point, to_state, to_state_connecting_point)
         self._type: str = automaton_type
 
         self._states: _ty.Set[UiState] = set()
         self._transitions: _ty.Set[UiTransition] = set()
 
-        self._start_state: UiState = None
+        self._start_state: UiState | None = None
         self._input: _ty.List[_ty.Any] = []
         self._pointer_index: int = 0
+
+    def __new__(cls, *args, **kwargs):
+        return object.__new__(cls)
 
     def delete_state(self, state: UiState) -> None:
         # Convert state into index of _states and send to bridge

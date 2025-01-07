@@ -40,14 +40,14 @@ class AutomatonBridge:
         """
         return self.automaton_impl.get_states()
 
-    def get_transitions(self) -> _ty.Set:
+    def get_transitions(self, scrape_transition: bool = True) -> _ty.Set:
         """
         Returns the set of all transitions in the automaton.
 
         Returns:
             _ty.Set[Transition]: A set containing all transitions between states in the automaton.
         """
-        return self.automaton_impl.get_transitions()
+        return self.automaton_impl.get_transitions(scrape_transition)
 
     def get_current_state(self) -> State:
         """
@@ -175,3 +175,12 @@ class AutomatonBridge:
 
     def delete_transition(self, transition: "Transition") -> None:
         self.automaton_impl.delete_transition(transition)
+
+    def add_state(self, state: State, state_type: str) -> None:
+        self.automaton_impl.add_state(state, state_type)
+
+    def get_state_by_id(self, state_id: int) -> State:
+        return self.automaton_impl.get_state_by_id(state_id)
+
+    def get_transition_by_id(self, transition_id: int) -> Transition:
+        return self.automaton_impl.get_transition_by_id(transition_id)

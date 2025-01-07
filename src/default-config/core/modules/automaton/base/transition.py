@@ -12,12 +12,11 @@ import types as _ts
 
 # Abstract Machine related imports
 from core.modules.automaton.base.state import State
-from core.modules.automaton.base.displayManager import _TransitionDisplayManager
 
 
 # Docs generated with Chat-GPT
 
-class Transition(_abc.ABC, _TransitionDisplayManager):
+class Transition(_abc.ABC):
     """
     Represents a generic transition between states in an automaton. It is flexible to support
     various automata by allowing custom logic for transition conditions.
@@ -29,10 +28,7 @@ class Transition(_abc.ABC, _TransitionDisplayManager):
     """
 
     def __init__(self, start_state: State,
-                 start_connecting_point: _ty.Literal['n', 'w', 's', 'e'],
-                 transition_target_state: State, condition: _ty.Any,
-                 target_connecting_point: _ty.Literal['n', 'w', 's', 'e'],
-                 display_name: str = "", colour_in_hex: str = "#000000", line_thickness: float = 1) -> None:
+                 transition_target_state: State, condition: _ty.Any) -> None:
         """
         Initializes a transition with a starting and a target state.
 
@@ -40,16 +36,12 @@ class Transition(_abc.ABC, _TransitionDisplayManager):
             start_state (State): The state from which this transition starts.
             transition_target_state (State): The state this transition leads to.
         """
-        super().__init__(display_name, colour_in_hex, line_thickness)
         self.start_state: State = start_state
         self.transition_target_state: State = transition_target_state
         self.activation_callback: _ty.Callable or None = None
 
         self._condition: _ty.Any = condition
         self._is_active: bool = False
-
-        self._start_connecting_point: _ty.Literal['n', 'w', 's', 'e'] = start_connecting_point
-        self._target_connecting_point: _ty.Literal['n', 'w', 's', 'e'] = target_connecting_point
 
         # Automatically adds this transition to the start state's set of transitions.
         self.start_state.add_transition(self)
@@ -130,18 +122,6 @@ class Transition(_abc.ABC, _TransitionDisplayManager):
 
     def is_active(self) -> bool:
         return self._is_active
-
-    def get_target_connecting_point(self) -> _ty.Literal['n', 'w', 's', 'e']:
-        return self._target_connecting_point
-
-    def get_start_connecting_point(self) -> _ty.Literal['n', 'w', 's', 'e']:
-        return self._start_connecting_point
-
-    def set_target_connecting_point(self, new_connecting_point: _ty.Literal['n', 'w', 's', 'e']) -> None:
-        self._target_connecting_point = new_connecting_point
-
-    def set_start_connecting_point(self, new_connecting_point: _ty.Literal['n', 'w', 's', 'e']) -> None:
-        self._start_connecting_point = new_connecting_point
 
     def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
         """

@@ -13,12 +13,10 @@ import types as _ts
 if _ty.TYPE_CHECKING:
     from core.modules.automaton.base.transition import Transition
 
-from core.modules.automaton.base.displayManager import _StateDisplayManager
-
 
 # Docs generated with Chat-GPT
 
-class State(_abc.ABC, _StateDisplayManager):
+class State(_abc.ABC):
     """
     Represents a state within an automaton.
 
@@ -62,8 +60,7 @@ class State(_abc.ABC, _StateDisplayManager):
             Executes the activation callback function, if it exists.
     """
 
-    def __init__(self, name: str, display_name: str = "", position: _ty.Tuple[float, float] = (0, 0),
-                 colour_in_hex: str = "#FFFFFF") -> None:
+    def __init__(self, name: str) -> None:
         """
         Initializes a state with a name and an empty set of _transitions.
 
@@ -75,14 +72,11 @@ class State(_abc.ABC, _StateDisplayManager):
             - `state_name`: The provided name for the state.
             - `activation_callback`: Set to `None` initially.
         """
-        super().__init__(display_name, position, colour_in_hex)
         self._transitions: _ty.Set[Transition] = set()
         self._state_name: str = name
         self._activation_callback: _ty.Callable or None = None
 
         self._is_active: bool = False  # If the State is currently in use
-
-        self.set_display_name(name)
 
     def set_name(self, new_name: str) -> None:
         """
@@ -92,7 +86,6 @@ class State(_abc.ABC, _StateDisplayManager):
             new_name (str): The new name for the state
         """
         self._state_name = new_name
-        self.set_display_name(new_name)
 
     def get_name(self) -> str:
         """
@@ -176,8 +169,3 @@ class State(_abc.ABC, _StateDisplayManager):
     def is_active(self) -> bool:
         return self._is_active
 
-    def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
-        """
-        Serialises the State into json format to send via the bridge
-        """
-        raise NotImplementedError("serialise_to_json must be implemented in a subclass.")

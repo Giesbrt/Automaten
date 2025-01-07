@@ -96,9 +96,6 @@ class Automaton(_abc.ABC):
 
         get_output_alphabet() -> _ty.Any:
             Abstract method to get the output alphabet for the automaton.
-
-        serialise_to_json() -> _ty.Dict[str, _ty.Any]:
-            Serializes the automaton to a JSON-compatible format, including states and transitions.
     """
 
     def __init__(self) -> None:
@@ -371,41 +368,3 @@ class Automaton(_abc.ABC):
         del transition
 
         self.get_transitions(True)  # Update the Transitions set
-
-    def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
-        """
-        Serializes the automaton to a JSON-compatible format, including states and transitions.
-
-        Returns:
-            _ty.Dict[str, _ty.Any]: A dictionary representing the serialized automaton.
-        """
-        serialised: _ty.Dict[str, _ty.Any] = {}
-
-        # serialise states
-        serialised_states: _ty.List[_ty.Dict[str, _ty.Any]] = []
-        for state in self.get_states():
-            # special state
-            flag_list: _ty.List[str] = []
-
-            if state is self.start_state:
-                # start_state
-                flag_list.append("start_state")
-
-            if state in self.get_end_states():
-                # end_state
-                flag_list.append("end_state")
-
-            serialised_data: _ty.Dict[str, _ty.Any] = state.serialise_to_json(flag_list)
-            serialised_states.append(serialised_data)
-
-        # serialise transitions
-        serialised_transitions: _ty.List[_ty.Dict[str, _ty.Any]] = []
-        for transition in self.get_transitions():
-            # special state
-            flag_list: _ty.List[str] = []
-
-            serialised_data: _ty.Dict[str, _ty.Any] = transition.serialise_to_json(flag_list)
-            serialised_transitions.append(serialised_data)
-
-        serialised["object"] = serialised_states + serialised_transitions
-        return serialised

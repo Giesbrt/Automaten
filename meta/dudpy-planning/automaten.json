@@ -28,14 +28,16 @@
 			"type": "end",
 			"transitions": [
 				[1, [0, 0, 0]]
-			]
+			],
+			"background_color": "#ffffff"
 		},
 		{
 			"name": "q1",
 			"type": "default",
 			"transitions": [
 				[0, [2, 1, 1]]
-			]
+			],
+			"background_color": "#ffffff"
 		}
 	],
 	"custom_python": "..."

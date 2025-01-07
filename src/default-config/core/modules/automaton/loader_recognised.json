@@ -1,0 +1,34 @@
+{
+    "id": "giesbrt:dfa",
+    "content": [
+        {
+            "name": "q0",
+            "type": "default",
+            "transitions":[
+                {
+                    "to": 1,
+                    "condition": "a"  -- for tm and mealy seperate the arguments with '|'
+                },
+                {
+                    "to": 0,
+                    "condition": "b"
+                }
+            ]
+        },
+        {
+            "name": "q1",
+            "type": "end",
+            "transitions":[
+                {
+                    "to": 1,
+                    "condition": "a"
+                },
+                {
+                    "to": 0,
+                    "condition": "b"
+                }
+
+            ]
+        }
+    ]
+}

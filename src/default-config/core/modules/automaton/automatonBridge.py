@@ -158,9 +158,6 @@ class AutomatonBridge:
     def get_output_alphabet(self) -> _ty.Any:
         return self.automaton_impl.get_output_alphabet()
 
-    def serialise_to_json(self) -> _ty.Dict[str, _ty.Any]:
-        return self.automaton_impl.serialise_to_json()
-
     def get_state_index(self, state: State) -> int:
         return self.automaton_impl.get_state_index(state)
 

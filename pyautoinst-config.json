@@ -19,7 +19,7 @@
   },
   {
    "optionDest": "icon_file",
-   "value": ".\\src\\default-config\\data\\assets\\logo-nobg.ico"
+   "value": ".\\src\\default-config\\data\\assets\\app_icons\\shelline\\logo-nobg.ico"
   },
   {
    "optionDest": "clean_build",
@@ -112,6 +112,22 @@
   {
    "optionDest": "datas",
    "value": "./.env/Lib/site-packages/win32ctypes;win32ctypes/"
+  },
+  {
+   "optionDest": "collect_all",
+   "value": "win32con"
+  },
+  {
+   "optionDest": "collect_all",
+   "value": "win32file"
+  },
+  {
+   "optionDest": "hiddenimports",
+   "value": "win32con"
+  },
+  {
+   "optionDest": "hiddenimports",
+   "value": "win32file"
   }
  ],
  "nonPyinstallerOptions": {

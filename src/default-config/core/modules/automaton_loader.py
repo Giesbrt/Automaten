@@ -21,6 +21,9 @@ class _Backend(BackendInterface):
             if 1 == 0:
                 print("WE ARE HERE")
 
+    def __new__(cls, *args, **kwargs):
+        return object.__new__(cls, *args, **kwargs)
+
 
 def start(simple_stor: JSONAppStorage, extended_stor: MultiUserDBStorage) -> BackendInterface:
     global simple_storage

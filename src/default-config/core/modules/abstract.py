@@ -192,6 +192,7 @@ class IUiTransition(_abc.ABC):
         self._to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = to_state_connecting_point
 
         self._is_active: bool = False
+
     @_abc.abstractmethod
     def set_from_state(self, from_state: 'IUiState') -> None:
         """Sets the source state of the transition."""
@@ -262,6 +263,7 @@ class IUiAutomaton(_abc.ABC):
         self._start_state: IUiState | None = None
         self._input: _ty.List[_ty.Any] = []
         self._pointer_index: int = 0
+
     @_abc.abstractmethod
     def get_states(self) -> _ty.Set['IUiState']:
         """Returns all states in the automaton."""

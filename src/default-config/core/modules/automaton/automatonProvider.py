@@ -47,3 +47,6 @@ class AutomatonProvider:
 
     def get_automaton_transition(self) -> _ty.Callable:
         return self.registered_automatons[self.automaton_type]['transition']
+
+    def is_automaton(self) -> bool:
+        return self.automaton_type in self.registered_automatons

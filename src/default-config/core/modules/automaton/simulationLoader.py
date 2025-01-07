@@ -42,43 +42,71 @@ class SimulationLoader:
     def get_error_callback(self) -> _ty.Callable or None:
         return self.error_callback
 
-    def save_automaton(self, file_path: str) -> _result.Result:
-        automaton_implementation: BaseAutomaton = self.automaton.get_implementation()
-        serialisation_result: _result.Result = Serializer.serialise(automaton_implementation, file_path)
+    def load_automaton(self, serialised_automaton: _ty.Dict[str, _ty.Any]) -> _result.Result:
+        # Accepts format, displayed in automaten.json
+        id_string: str = serialised_automaton['id']  # author:automaton_type
+        split_id_string: _ty.List[str] = id_string.split(':')
+        automaton_type: str = split_id_string[1]
 
-        return serialisation_result
-
-    def load_automaton(self, file_path: str) -> _result.Result:
-        deserialization_result: _result.Result = Serializer.load(file_path)
-        if not isinstance(deserialization_result, _result.Success):
-            return deserialization_result
-
-        loaded_automaton = deserialization_result.value_or(None)
-        if loaded_automaton is None:
-            log_message: str = "Could not load automaton: Automaton is None"
+        # does the requested automaton exist?
+        success: bool = self.init_automaton(automaton_type)
+        if not success:
+            log_message: str = f"Could not recognise automaton of type {automaton_type}"
             ActLogger().error(log_message)
             return _result.Failure(log_message)
 
-        if not isinstance(loaded_automaton, BaseAutomaton):
-            log_message: str = f"Loaded automaton is not recognised as an automaton: {type(loaded_automaton).__name__}"
-            ActLogger().error(log_message)
-            return _result.Failure(log_message)
-
-        automaton_bridge: AutomatonBridge = AutomatonBridge(loaded_automaton)
-        self.automaton = automaton_bridge
-        self.__reset_temp_data()
-
-        log_message: str = f"Loaded automaton of type {type(loaded_automaton).__name__}"
-        ActLogger().info(log_message)
-        return _result.Success(log_message)
-
-    def init_automaton(self, automaton_type: str) -> None:
         automaton_provider: AutomatonProvider = AutomatonProvider(automaton_type)
+        raw_state = automaton_provider.get_automaton_state()
+
+        content: _ty.List[_ty.Dict[str, _ty.Any]] = serialised_automaton['content']
+
+        transitions: _ty.List[_ty.Dict[str, _ty.Any]] = []
+
+        for i, state in enumerate(content):
+            # Create a state
+            state_name: str = state['name']
+            state_type: str = state["type"]
+
+            specific_state = raw_state(state_name)
+            self.automaton.add_state(specific_state, state_type)
+            # todo handle start state
+
+            # Handle transition
+            transition_data: _ty.List[_ty.Any] = state['transitions']
+            for transition in transition_data:
+                # Copy the transition and add a field "from" which is the id of the current node
+                modified: _ty.Dict[str, _ty.Any] = transition
+                modified["from"] = i
+                transitions.append(modified)
+
+            # Create transitions
+            raw_transition = automaton_provider.get_automaton_transition()
+            for transition in transitions:
+                to_state: int = transition["to"]
+                from_state: int = transition["from"]
+                condition: str = transition["condition"]
+
+                start_state = self.automaton.get_state_by_id(to_state)
+                end_state = self.automaton.get_state_by_id(from_state)
+                transition = raw_transition(start_state, end_state, condition)
+
+                start_state.add_transition(transition)
+                self.automaton.get_transitions(True)
+
+
+
+    def init_automaton(self, automaton_type: str) -> bool:
+        automaton_provider: AutomatonProvider = AutomatonProvider(automaton_type)
+        if not automaton_provider.is_automaton():
+            ActLogger().error(f"Could not recognise automaton of type {automaton_type}")
+            return False
+
         automaton_implementation: BaseAutomaton = automaton_provider.get_automaton_base()()
         self.automaton = AutomatonBridge(automaton_implementation)
         ActLogger().info(f"Initialised new {automaton_type}-Automaton")
 
         self.__reset_temp_data()
+        return True
 
     def __reset_temp_data(self) -> None:
         self.restart_counter = 0

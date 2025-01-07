@@ -202,6 +202,24 @@ class Automaton(_abc.ABC):
         """
         self.states = new_states
 
+    @_abc.abstractmethod
+    def add_state(self, state: State, state_type: str) -> None:
+        raise NotImplementedError("add_state must be implemented in a subclass.")
+
+    def get_state_by_id(self, state_id: int) -> State:
+        for i, state in enumerate(self.states):
+            if i != state_id:
+                continue
+
+            return state
+
+    def get_transition_by_id(self, transition_id: int) -> Transition:
+        for i, transition in enumerate(self.transitions):
+            if i != transition_id:
+                continue
+
+            return transition
+
     def set_transitions(self, new_transitions: _ty.Set) -> None:
         """
         Sets a new set of transitions for the automaton.

@@ -20,8 +20,8 @@ class AutomatonProvider:
         self.automaton_type: str = automaton_type
 
         # registered Automatons
-        self.register_automaton('dfa', DFAAutomaton.BaseAutomaton, DFAState.BaseState, DFATransition.BaseTransition)
-        self.register_automaton('tm', TMAutomaton.BaseAutomaton, TMState.BaseState, TMTransition.BaseTransition)
+        self.register_automaton('dfa', DFAAutomaton.DFAAutomaton, DFAState.DFAState, DFATransition.DFATransition)
+        self.register_automaton('tm', TMAutomaton.TMAutomaton, TMState.TMState, TMTransition.TMTransition)
 
     def set_automaton_type(self, new_type: str) -> None:
         self.automaton_type = new_type

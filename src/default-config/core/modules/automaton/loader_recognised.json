@@ -1,5 +1,6 @@
 {
     "id": "giesbrt:dfa",
+    "input": ["a", "b", "b", ...],
     "content": [
         {
             "name": "q0",

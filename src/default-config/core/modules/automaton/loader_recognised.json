@@ -3,7 +3,7 @@
     "input": ["a", "b", "b", ...],
     "content": [
         {
-            "name": "q0",
+            "name": "q0",  -- Index 0 ist immer die start state
             "type": "default",
             "transitions":[
                 {

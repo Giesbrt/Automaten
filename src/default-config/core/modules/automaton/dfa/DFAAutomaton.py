@@ -6,10 +6,12 @@ from aplustools.io import ActLogger
 import typing as _ty
 
 # Abstract Machine related imports
-from DFAState import DFAState
+from core.modules.automaton.dfa.DFAState import DFAState
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 
 import pickle
+
+from core.modules.automaton.base.state import State
 
 
 # Docs generated with Chat-GPT
@@ -258,6 +260,17 @@ class DFAAutomaton(BaseAutomaton):
             int: current index of the pointer
         """
         return self.char_index
+
+    def add_state(self, state: State, state_type: str) -> None:
+        self.states.add(state)
+        match state_type:
+            case "end":
+                self.end_states.add(state)
+
+            case "default":
+                pass
+
+
 
 
 

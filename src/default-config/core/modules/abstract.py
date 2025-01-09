@@ -164,6 +164,10 @@ class IUiState(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
+    def get_type(self) -> str:  # TODO: add docu to IUiState
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
     def is_active(self) -> bool:
         """Checks if the state is active."""
         raise NotImplementedError("This method must be implemented by subclasses.")

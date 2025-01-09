@@ -17,7 +17,7 @@ import typing as _ty
 import types as _ts
 
 
-class UiState(IUiState):
+class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type Any
     def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, automaton_type: str):
         super().__init__(colour, position, display_text, automaton_type)
         self._colour: str = colour
@@ -46,6 +46,9 @@ class UiState(IUiState):
 
     def get_display_text(self) -> str:
         return self._display_text
+
+    def get_type(self) -> str:  # TODO: add docu to IUiState
+        return self._type
 
     def is_active(self) -> bool:
         return self._is_active

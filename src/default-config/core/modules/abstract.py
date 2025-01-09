@@ -185,13 +185,22 @@ class IUiState(_abc.ABC):
 class IUiTransition(_abc.ABC):
 
     def __init__(self, from_state: IUiState, from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'],
-                 to_state: IUiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w']):
+                 to_state: IUiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'], condition: _ty.List[str]):
         self._from_state: IUiState = from_state
         self._from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = from_state_connecting_point
         self._to_state: IUiState = to_state
         self._to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = to_state_connecting_point
+        self._condition: _ty.List[str] = condition
 
         self._is_active: bool = False
+
+    @_abc.abstractmethod
+    def set_condition(self, condition: _ty.List[str]) -> None:
+        self._condition = condition
+
+    @_abc.abstractmethod
+    def get_condition(self) -> _ty.List[str]:
+        return self._condition
 
     @_abc.abstractmethod
     def set_from_state(self, from_state: 'IUiState') -> None:
@@ -254,7 +263,7 @@ class IUiTransition(_abc.ABC):
 
 class IUiAutomaton(_abc.ABC):
 
-    def __init__(self, automaton_type: str):
+    def __init__(self, automaton_type: str, author: str):
         self._type: str = automaton_type
 
         self._states: _ty.Set[IUiState] = set()
@@ -263,6 +272,47 @@ class IUiAutomaton(_abc.ABC):
         self._start_state: IUiState | None = None
         self._input: _ty.List[_ty.Any] = []
         self._pointer_index: int = 0
+
+        self._author: str = author
+        self._token_lists: _ty.List[_ty.List[str]] = []
+        self._changeable_token_lists: _ty.List[bool] = []
+        self._transition_pattern: _ty.List[int] = []
+
+    @_abc.abstractmethod
+    def get_author(self) -> str:
+        """Returns the author of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def get_token_lists(self) -> _ty.List[_ty.List[str]]:
+        """Returns the token lists of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def get_changeable_token_lists(self) -> _ty.List[bool]:
+        """Returns the changeable token lists of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def get_transition_pattern(self) -> _ty.List[int]:
+        """Returns the transition pattern of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def set_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
+        """Sets the token lists of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_changeable_token_lists(self, changeable_token_lists: _ty.List[bool]) -> None:
+        """Sets the changeable token lists of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
+        """Sets the transition pattern of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
 
     @_abc.abstractmethod
     def get_states(self) -> _ty.Set['IUiState']:

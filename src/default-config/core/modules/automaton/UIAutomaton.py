@@ -59,8 +59,9 @@ class UiState(IUiState):
 
 class UiTransition(IUiTransition):
     def __init__(self, from_state: UiState, from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'],
-                 to_state: UiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w']):
-        super().__init__(from_state, from_state_connecting_point, to_state, to_state_connecting_point)
+                 to_state: UiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w']
+                 , condition: _ty.List[str]):
+        super().__init__(from_state, from_state_connecting_point, to_state, to_state_connecting_point, condition)
         self._from_state: UiState = from_state
         self._from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = from_state_connecting_point
         self._to_state: UiState = to_state
@@ -104,13 +105,18 @@ class UiTransition(IUiTransition):
     def _deactivate(self) -> None:
         self._is_active = False
 
+    def set_condition(self, condition: _ty.List[str]) -> None:
+        self._condition = condition
 
-class UiAutomaton(IUiTransition):
+    def get_condition(self) -> _ty.List[str]:
+        return self._condition
 
-    def __init__(self, automaton_type: str, from_state: IUiState,
-                 from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'], to_state: IUiState,
-                 to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w']):
-        super().__init__(from_state, from_state_connecting_point, to_state, to_state_connecting_point)
+
+class UiAutomaton(IUiAutomaton):
+
+    def __init__(self, automaton_type: str, author: str):
+        super().__init__(automaton_type, author)
+
         self._type: str = automaton_type
 
         self._states: _ty.Set[UiState] = set()
@@ -286,3 +292,26 @@ class UiAutomaton(IUiTransition):
         self._pointer_index = automaton_data["pointer_index"]
 
         return _result.Success(automaton_data["output"])
+
+    def get_author(self) -> str:
+        return self._author
+
+    def get_token_lists(self) -> _ty.List[_ty.List[str]]:
+        return self._token_lists
+
+    def get_changeable_token_lists(self) -> _ty.List[bool]:
+        return self._changeable_token_lists
+
+    def get_transition_pattern(self) -> _ty.List[int]:
+        return self._transition_pattern
+
+    def set_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
+        self._token_lists = token_lists
+
+    def set_changeable_token_lists(self, changeable_token_lists: _ty.List[bool]) -> None:
+        self._changeable_token_lists = changeable_token_lists
+
+    def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
+        self._transition_pattern = transition_pattern
+
+

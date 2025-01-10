@@ -2,16 +2,15 @@ import unittest
 import returns.result as _result
 
 # Abstract Machine related imports
-from DFAState import DFAState
-from DFATransition import DFATransition
-from DFAAutomaton import DFAAutomaton
+# from DFAState import DFAState
+# from DFATransition import DFATransition
+# from DFAAutomaton import DFAAutomaton
+
+from core.utils.DFA import DFATransition, DFAState, DFAAutomaton
 
 from core.modules.automaton.serializer import Serializer
 
 # Standard typing imports for aps
-import collections.abc as _a
-import typing as _ty
-import types as _ts
 
 
 class DFAUnitTest(unittest.TestCase):

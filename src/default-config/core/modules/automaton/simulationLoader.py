@@ -37,6 +37,7 @@ class SimulationLoader:
         self._bridge.add_simulation_item(item)
 
     def _push_error_to_bridge(self, error: _ty.Dict[str, _ty.Any]) -> None:
+        # Todo
         ActLogger().error("Received an Error from automaton simulation, can not push to bridge due to it being not implemented. Error: " + str(error))
 
     def handle_bridge(self) -> None:  # Todo get data from bridge and handle it
@@ -44,13 +45,17 @@ class SimulationLoader:
             return
 
         bridge_data: _ty.Dict[str, _ty.Any] = self._bridge.get_ui_task()
+
         try:
-            automaton_simulator: AutomatonSimulator = AutomatonSimulator(simulation_request=bridge_data,
-                                                                         simulation_result_callback=self._push_simulation_to_bridge,
-                                                                         error_callable=self._push_error_to_bridge,
-                                                                         max_restart_counter=self._max_restart_counter)
-            result: _result.Result = automaton_simulator.run()
-            ActLogger().info(f"Finished automaton simulation, result: " + (result._inner_value or "Could not cache the simulation result."))
+            match (str(bridge_data["action"]).lower()):
+                case "simulation":
+
+                    automaton_simulator: AutomatonSimulator = AutomatonSimulator(simulation_request=bridge_data,
+                                                                                 simulation_result_callback=self._push_simulation_to_bridge,
+                                                                                 error_callable=self._push_error_to_bridge,
+                                                                                 max_restart_counter=self._max_restart_counter)
+                    result: _result.Result = automaton_simulator.run()
+                    ActLogger().info(f"Finished automaton simulation, result: " + (result._inner_value or "Could not cache the simulation result."))
 
         except Exception as e:
             error_packet: _ty.Dict[str, _ty.Any] = {}
@@ -61,4 +66,5 @@ class SimulationLoader:
             self._push_error_to_bridge(error_packet)
 
         self._bridge.complete_backend_task()
+
 

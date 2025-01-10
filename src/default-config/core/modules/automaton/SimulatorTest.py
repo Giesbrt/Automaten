@@ -53,6 +53,55 @@ if __name__ == '__main__':
         ]
     }
 
+    # data = {
+    #     "id": "custom:dfa",
+    #     "input": list(str(input("input >> ")).split(",")),
+    #     "content": [
+    #         {
+    #             "name": "q0",  # Start-Zustand
+    #             "type": "default",
+    #             "transitions": [
+    #                 {
+    #                     "to": 1,
+    #                     "condition": "a"
+    #                 },
+    #                 {
+    #                     "to": 2,
+    #                     "condition": "b"
+    #                 }
+    #             ]
+    #         },
+    #         {
+    #             "name": "q1",
+    #             "type": "default",
+    #             "transitions": [
+    #                 {
+    #                     "to": 2,
+    #                     "condition": "a"
+    #                 },
+    #                 {
+    #                     "to": 0,
+    #                     "condition": "b"
+    #                 }
+    #             ]
+    #         },
+    #         {
+    #             "name": "q2",
+    #             "type": "end",  # End-Zustand
+    #             "transitions": [
+    #                 {
+    #                     "to": 0,
+    #                     "condition": "a"
+    #                 },
+    #                 {
+    #                     "to": 1,
+    #                     "condition": "b"
+    #                 }
+    #             ]
+    #         }
+    #     ]
+    # }
+
     i = 0
 
     while i < 1:

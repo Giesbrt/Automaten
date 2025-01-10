@@ -6,10 +6,8 @@ from aplustools.io import ActLogger
 import typing as _ty
 
 # Abstract Machine related imports
-from core.modules.automaton.dfa.DFAState import DFAState
+from old_but_maybe_needed.dfa.DFAState import DFAState
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-
-import pickle
 
 from core.modules.automaton.base.state import State
 

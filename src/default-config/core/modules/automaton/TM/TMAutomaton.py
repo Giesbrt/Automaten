@@ -1,20 +1,16 @@
 from returns import result as _result
-#from aplustools.io import ActLogger
-import sys
-import os
-
+from aplustools.io import ActLogger
 
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
-# Abstract Machine related imports
-from TMState import TMState
-from automaton import Automaton as BaseAutomaton
-from transition import Transition as BaseTransition
 
-# Comments generated with Chat-GPT
+# Abstract Machine related imports
+from core.modules.automaton.TM.TMState import TMState
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from core.modules.automaton.base.transition import Transition as BaseTransition
+
 
 class TMAutomaton(BaseAutomaton):
     """
@@ -102,8 +98,7 @@ class TMAutomaton(BaseAutomaton):
         self.head: int = 0
         self.current_char: str = ""
         self.LBAutomaton: bool = False
-        self.output_alphabet = []
-        self.input_alphabet = []
+
         self.end_states: _ty.Set[TMState] = set()
 
     def set_mode(self, mode):
@@ -130,9 +125,6 @@ class TMAutomaton(BaseAutomaton):
         self.head = 0
         self.current_char = self.memoryTape[self.head]
 
-    def get_current_state(self):
-        return super().get_current_state()
-
     def get_input(self) -> str:
         """
         Retrieves the input word from the memory tape.
@@ -140,42 +132,7 @@ class TMAutomaton(BaseAutomaton):
         Returns:
             str: The reconstructed word from the tape.
         """
-        return "".join(self.memoryTape.get(i, "B") for i in range(min(self.memoryTape.keys()), max(self.memoryTape.keys()) + 1))
-    def set_input_alphabet(self, alphabet: _ty.Any) -> None:
-        """
-        Abstract method to set the input alphabet for the automaton.
-
-        Args:
-            alphabet (_ty.Any): The input alphabet to be set for the automaton.
-        """
-        self.input_alphabet = alphabet
-
-    def set_output_alphabet(self, alphabet: _ty.Any) -> None:
-        """
-        Abstract method to set the output alphabet for the automaton.
-
-        Args:
-            alphabet (_ty.Any): The output alphabet to be set for the automaton.
-        """
-        self.output_alphabet = alphabet
-
-    def get_input_alphabet(self) -> _ty.Any:
-        """
-        Abstract method to get the input alphabet for the automaton.
-
-        Returns:
-            _ty.Any: The input alphabet for the automaton.
-        """
-        return self.input_alphabet
-
-    def get_output_alphabet(self) -> _ty.Any:
-        """
-        Abstract method to get the output alphabet for the automaton.
-
-        Returns:
-            _ty.Any: The output alphabet for the automaton.
-        """
-        return self.output_alphabet
+        return "".join(self.memoryTape.get(i, "B") for i in range(max(self.memoryTape.keys()) + 1))
 
     def right(self) -> None:
         """
@@ -193,7 +150,6 @@ class TMAutomaton(BaseAutomaton):
         elif not self.LBAutomaton:
             self.memoryTape[self.head] = "B"
             self.current_char = self.memoryTape[self.head]
-            print(self.memoryTape)
         else:
             return _result.Failure("You can't go further, your automaton is linear bounded!")
 
@@ -221,7 +177,6 @@ class TMAutomaton(BaseAutomaton):
         Writes the current character to the tape at the head's position.
         """
         self.memoryTape[self.head] = self.current_char
-        print(self.memoryTape, "memory")
 
     def set_end_states(self, new_end_states: _ty.Set[TMState]) -> None:
         """
@@ -258,17 +213,15 @@ class TMAutomaton(BaseAutomaton):
             None: If the machine halts due to an invalid state or transition.
         """
         transition_result: _result.Result = self.current_state.find_transition(self.current_char)
-        if not isinstance(transition_result, _result.Success):
-            return _result.Failure("There's no possible transition")
-        
         target_state, condition = transition_result.unwrap()
+        if not isinstance(transition_result, _result.Success):
+            return  # No valid transition found.
 
         transition: TMState = target_state
         if not transition or transition not in self.states:
-            return  _result.Failure("Invalid target state!") 
+            return  # Invalid target state.
 
         self.current_state = transition
-        print(self.current_state)
         return condition
 
     def next_location(self, callback=None):
@@ -310,11 +263,11 @@ class TMAutomaton(BaseAutomaton):
             an error is logged and the simulation returns a failure.
         """
         if not self.start_state:
-            #ActLogger().error("Tried to start simulation of TM-Automaton without start state!")
+            ActLogger().error("Tried to start simulation of TM-Automaton without start state!")
             return _result.Failure("No start state found")
 
         if self.start_state not in self.states:
-            #ActLogger().error("Tried to start simulation of TM-Automaton without start state in automaton states!")
+            ActLogger().error("Tried to start simulation of TM-Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
 
         self.current_state = self.start_state
@@ -322,12 +275,7 @@ class TMAutomaton(BaseAutomaton):
 
         while True:
             condition = self.next_state()  # Transition to the next state.
-            if isinstance(condition, _result.Failure):
-                return condition
-            if isinstance(condition, tuple) and len(condition) == 2:
-                self.current_char = condition[0] 
-            else:
-                return _result.Failure("There is no condition!")
+            self.current_char = condition[0]
             if self.current_char != "_":
                 self.write()
             if condition[1] == "L":
@@ -362,31 +310,33 @@ class TMAutomaton(BaseAutomaton):
             an error is logged and the simulation returns a failure.
         """
         if not self.start_state:
-            #ActLogger().error("Tried to start simulation of DFA-Automaton without start state!")
+            ActLogger().error("Tried to start simulation of DFA-Automaton without start state!")
             return _result.Failure("No start state found")
 
         if self.start_state not in self.states:
-            #ActLogger().error("Tried to start simulation of DFA-Automaton without start state in automaton states!")
+            ActLogger().error("Tried to start simulation of DFA-Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
 
         if self.current_state is None:
             self.current_state = self.start_state
             self.current_state.activate()
 
+        if self.current_char != self.memoryTape[self.head]:
+            self.write()
+
+        try:
+            self.next_location()
+        except:
+            pass
 
         condition = self.next_state()  # Transition to the next state.
-        if isinstance(condition, _result.Failure):
-            return condition
-        if isinstance(condition, tuple) and len(condition) == 2:
-            self.current_char = condition[0] 
-            self.write()
-        else: 
-            return _result.Failure("There is no condition.")
-        if condition[1] == "L":
-            self.left()
-        if condition[1] == "R":
-            self.right()
-        if condition[1] == "H":
+        self.current_char = condition[0]
+        if self.condition[1] == "L":
+            self.next_location(self.left)
+        if self.condition[1] == "R":
+            self.next_location(self.right)
+        if self.condition[1] == "H":
             if self.current_state in self.end_states:
                 return _result.Success("Automaton terminated in an end state!")
             return _result.Failure("Automaton failed to terminate in an end state!")
+        self.current_state.activate()  # Activate the current state (if such behavior is defined).

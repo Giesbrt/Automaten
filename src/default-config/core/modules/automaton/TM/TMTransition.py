@@ -1,15 +1,15 @@
 from returns import result as _result
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
-from state import State as BaseState
-from transition import Transition as BaseTransition
+from core.modules.automaton.base.state import State as BaseState
+from core.modules.automaton.base.transition import Transition as BaseTransition
 
 # Standard typing imports for advanced functionality
 import collections.abc as _a
 import typing as _ty
 import types as _ts
+
 
 # Comments generated with Chat-GPT
 
@@ -71,5 +71,5 @@ class TMTransition(BaseTransition):
             to_write = condition_parts[1]  # Character to write
             head_move = condition_parts[2]  # Direction to move the head
             return _result.Success((to_write, head_move))  # Transition can occur
-        
+
         return _result.Failure(f"Cannot transition with input {str(current_input)}!")  # Invalid transition

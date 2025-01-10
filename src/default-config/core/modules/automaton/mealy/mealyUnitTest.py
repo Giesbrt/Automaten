@@ -1,12 +1,13 @@
 import sys
 import os
 
-from mealyAutomaton import MealyAutomaton
-from mealyState import MealyState
-from mealyTransition import MealyTransition
+from core.modules.automaton.mealy.mealyAutomaton import MealyAutomaton
+from core.modules.automaton.mealy.mealyState import MealyState
+from core.modules.automaton.mealy.mealyTransition import MealyTransition
 from returns import result as _result
 
 import unittest
+
 
 class TestMealyAutomaton(unittest.TestCase):
 
@@ -44,6 +45,7 @@ class TestMealyAutomaton(unittest.TestCase):
         self.assertIsInstance(result, _result.Success)
         self.assertEqual(self.M.get_current_state(), self.state_q0)
         self.assertEqual(self.M.get_output(), "Obst")
+
 
 if __name__ == '__main__':
     unittest.main()

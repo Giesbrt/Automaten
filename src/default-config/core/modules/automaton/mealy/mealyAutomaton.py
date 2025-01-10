@@ -2,14 +2,14 @@ from returns import result as _result
 #from aplustools.io import ActLogger
 
 
-
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
 import types as _ts
 # Abstract Machine related imports
-from mealyState import MealyState
-from automaton import Automaton as BaseAutomaton
+from core.modules.automaton.mealy.mealyState import MealyState
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+
 
 # Comments generated with Chat-GPT
 
@@ -114,7 +114,7 @@ class MealyAutomaton(BaseAutomaton):
             any: The input sequence currently set for the automaton.
         """
         return self.input
-    
+
     def get_output(self) -> _ty.Any:
         return self.output
 
@@ -208,11 +208,11 @@ class MealyAutomaton(BaseAutomaton):
             an error is logged, and the simulation returns a failure.
         """
         if not self.start_state:
-            #ActLogger().error("Tried to start simulation of Mealy Automaton without a start state!")
+            # ActLogger().error("Tried to start simulation of Mealy Automaton without a start state!")
             return _result.Failure("No start state found")
 
         if self.start_state not in self.states:
-            #ActLogger().error("Tried to start simulation of Mealy Automaton without start state in automaton states!")
+            # ActLogger().error("Tried to start simulation of Mealy Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
 
         self.current_state = self.start_state
@@ -249,11 +249,11 @@ class MealyAutomaton(BaseAutomaton):
             return _result.Success("End of input sequence reached :)")
 
         if not self.start_state:
-            #ActLogger().error("Tried to start simulation of Mealy Automaton without a start state!")
+            # ActLogger().error("Tried to start simulation of Mealy Automaton without a start state!")
             return _result.Failure("No start state found")
 
         if self.start_state not in self.states:
-            #ActLogger().error("Tried to start simulation of Mealy Automaton without start state in automaton states!")
+            # ActLogger().error("Tried to start simulation of Mealy Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
 
         if self.current_state is None:

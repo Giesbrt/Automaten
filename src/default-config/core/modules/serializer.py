@@ -32,9 +32,63 @@ DCGDictT = dict[str, str  # name, author, uuid, custom_python
 ]
 
 
-def _verify_dcg_dict(target: DCGDictT) -> bool:
-    """TBA, returns true if everything is okay, otherwise false"""
-    return True  # TODO: Verify contents
+def _verify_dcg_dict(target: dict[str, _ty.Any]) -> bool:
+    """Verifies the given dictionary matches the specified rules."""
+    rules = {  # Validation rules
+        "name": str,
+        "author": str,
+        "uuid": str,
+        "token_lsts": [[str]],  # list[list[str]]
+        "is_custom_token_lst": [bool],  # list[bool]
+        "abs_transition_idxs": [int],  # list[int]
+        "types": {
+            str: {
+                "design": str
+            }
+        },
+        "content_root_idx": int,
+        "content": [
+            {
+                "name": str,
+                "type": str,
+                "position": (float, float),  # tuple[float, float]
+                "transitions": [(int, [int])],  # list[tuple[int, list[int]]]
+                "background_color": str,
+            }
+        ],
+        "custom_python": str,
+    }
+    def validate(value: _ty.Any, rule: _ty.Any) -> bool:
+        """Recursively validates a value against a rule."""
+        if isinstance(rule, type):  # Base type
+            return isinstance(value, rule)
+        elif isinstance(rule, list):  # List of specific structure
+            if not isinstance(value, list):
+                return False
+            element_rule = rule[0]
+            return all(validate(item, element_rule) for item in value)
+        elif isinstance(rule, tuple):  # Tuple of specific structure
+            if not isinstance(value, tuple) or len(value) != len(rule):
+                return False
+            return all(validate(value[i], rule[i]) for i in range(len(rule)))
+        elif isinstance(rule, dict):  # Dictionary with specific structure
+            if not isinstance(value, dict):
+                return False
+            for key_rule, val_rule in rule.items():
+                if isinstance(key_rule, type):  # Dynamic keys (e.g., str)
+                    if not all(isinstance(k, key_rule) and validate(v, val_rule) for k, v in value.items()):
+                        return False
+                elif key_rule not in value or not validate(value[key_rule], val_rule):
+                    return False
+            return True
+        else:
+            return False
+
+    for key, key_rule in rules.items():
+        if key not in target or not validate(target[key], key_rule):
+            print(f"Validation failed for key '{key}': {target.get(key)}")
+            return False
+    return True
 
 
 def encode_str_or_int_iterable(str_iter: _a.Iterable[str | int]) -> bytes:
@@ -125,19 +179,19 @@ def _serialize_to_binary(serialisation_target: DCGDictT) -> bytes:
 
 
 def serialize(
-        automaton_name: str, automaton_author: str, uuid: str, token_lsts: list[list[str]],
-        is_custom_token_lst: list[bool], abs_transition_idxs: list[int], types: dict[str, dict[str, str]],
-        automaton: IUiAutomaton, custom_python: str = "", format_: _ty.Literal["json", "yaml", "binary"] = "json"
+        automaton_name: str, uuid: str, types: dict[str, dict[str, str]],
+        automaton: IUiAutomaton, custom_python: str = "",
+        format_: _ty.Literal["json", "yaml", "binary"] = "json"
     ) -> bytes:
     """TBA"""
     # TODO: Remove all arguments that can be gotten from automaton
     dcg_dict: DCGDictT = {
         "name": automaton_name,
-        "author": automaton_author,
+        "author": automaton.get_author(),
         "uuid": uuid,
-        "token_lsts": token_lsts,
-        "is_custom_token_lst": is_custom_token_lst,
-        "abs_transition_idxs": abs_transition_idxs,
+        "token_lsts": automaton.get_token_lists(),
+        "is_custom_token_lst": automaton.get_changeable_token_lists(),  # TODO: Please use a better name
+        "abs_transition_idxs": automaton.get_transition_pattern(),
         "types": types,
 	    "content_root_idx": 0,
         "content": [],
@@ -156,7 +210,9 @@ def serialize(
         "transitions": [],
         "background_color": content_root.get_colour()
     })
-    transition_tokens: list[list[str]] = [token_lsts[i] for i in abs_transition_idxs]
+    transition_tokens: list[list[str]] = [
+        dcg_dict["token_lsts"][i]  # type: ignore
+        for i in dcg_dict["abs_transition_idxs"]]  # type: ignore
 
     while not stack.empty():
         current_node = stack.get()
@@ -182,8 +238,8 @@ def serialize(
             # Append the connection using the index of the connected node
             current_data["transitions"].append(  # type: ignore
                 (counted_nodes[connected_node], [transition_tokens[i].index(x[0])
-                                                 for i, x in enumerate(transition_tokens)])
-            )  # TODO: Fix when the actual transition tokens become available
+                                                 for i, x in enumerate(transition.get_condition())])
+            )
     if not _verify_dcg_dict(dcg_dict):
         raise RuntimeError("DCG Dict could not be verified")
     return {

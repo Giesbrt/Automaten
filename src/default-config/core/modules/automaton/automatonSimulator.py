@@ -141,6 +141,7 @@ class AutomatonSimulator:
         serialised_update["automaton"]["input"] = list(self.automaton.get_input())
         serialised_update["automaton"]["pointer_index"] = self.automaton.get_current_index()
         serialised_update["automaton"]["output"] = self.automaton.get_current_return_value()
+        serialised_update["type"] = "SIMULATION_UPDATE"
 
         if "state" not in serialised_update or "transition" not in serialised_update:
             return
@@ -154,6 +155,7 @@ class AutomatonSimulator:
         if automaton_result is None:
             return
 
+        serialisation_update["type"] = "SIMULATION_RESULT"
         serialisation_update["success"] = isinstance(automaton_result, _result.Success)
         serialisation_update["message"] = automaton_result._inner_value or "No message provided!"
         self._simulation_result_callback(serialisation_update)

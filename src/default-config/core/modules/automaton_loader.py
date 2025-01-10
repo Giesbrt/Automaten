@@ -3,6 +3,7 @@ import threading
 
 from core.modules.storage import JSONAppStorage, MultiUserDBStorage
 from .abstract import BackendInterface
+from core.modules.automaton.simulationLoader import SimulationLoader
 
 # Whatever
 
@@ -19,10 +20,14 @@ class _Backend(BackendInterface):
         while not backend_stop_event.is_set():
             time.sleep(0.1)
             if 1 == 0:
-                print("WE ARE HERE")
+                print("WE ARE HERE")  # @Adalfarus, brauchst du das?
+
+            if False:  # Deactivated
+                simulation_loader: SimulationLoader = SimulationLoader(simple_storage)  # TODO: is simple_storage None?
+                simulation_loader.handle_bridge()
 
     def __new__(cls, *args, **kwargs):
-        return object.__new__(cls, *args, **kwargs)
+        return object.__new__(cls)
 
 
 def start(simple_stor: JSONAppStorage, extended_stor: MultiUserDBStorage) -> BackendInterface:

@@ -1,4 +1,5 @@
 {
+    "action": "SIMULATION",
     "id": "giesbrt:dfa",
     "input": ["a", "b", "b", ...],
     "content": [

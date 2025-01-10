@@ -11,6 +11,8 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 
+# Comments generated with Chat-GPT
+
 class TMTransition(BaseTransition):
     """
     Represents a transition between two states in a Turing Machine (TM).

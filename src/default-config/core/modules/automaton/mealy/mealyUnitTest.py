@@ -11,7 +11,7 @@ import unittest
 class TestMealyAutomaton(unittest.TestCase):
 
     def setUp(self):
-        # Initialisierung der Turing-Maschine und Zustände
+        # Initialisierung der Mealy-Maschine und Zustände
         self.state_q0 = MealyState("q0")
         self.state_q1 = MealyState("q1")
 

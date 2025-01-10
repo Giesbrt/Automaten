@@ -11,6 +11,7 @@ import types as _ts
 from mealyState import MealyState
 from automaton import Automaton as BaseAutomaton
 
+# Comments generated with Chat-GPT
 
 class MealyAutomaton(BaseAutomaton):
     """

@@ -14,6 +14,7 @@ from TMState import TMState
 from automaton import Automaton as BaseAutomaton
 from transition import Transition as BaseTransition
 
+# Comments generated with Chat-GPT
 
 class TMAutomaton(BaseAutomaton):
     """

@@ -11,13 +11,13 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 
-class TMState(BaseState):
+class MealyState(BaseState):
     """
-    Represents a state in a Turing Machine (TM).
+    Represents a state in a Mealy Machine.
 
     This class extends the base `State` class, providing additional functionality
-    to handle transitions in the context of a Turing Machine. It supports determining
-    valid transitions based on the current input character.
+    to handle transitions in the context of a Mealy Machine. It supports determining
+    valid transitions based on the current input symbol.
 
     Attributes:
         Inherits all attributes from the `BaseState` class, including:
@@ -28,48 +28,48 @@ class TMState(BaseState):
 
     def __init__(self, name: str) -> None:
         """
-        Initializes a state for the Turing Machine with a given name.
+        Initializes a state for the Mealy Machine with a given name.
 
         Args:
             name (str): The name of the state.
         """
         super().__init__(name)
 
-    def find_transition(self, current_input_char: str) -> _result.Result:
+    def find_transition(self, current_input: any) -> _result.Result:
         """
-        Identifies a valid transition based on the current input character.
+        Identifies a valid transition based on the current input symbol.
 
         This method iterates through the transitions associated with the state,
-        checks which transition can process the given input character, and resolves
+        checks which transition can process the given input symbol, and resolves
         deterministically to one valid transition.
 
         Args:
-            current_input_char (str): The character currently being processed by the Turing Machine.
+            current_input (any): The symbol currently being processed by the Mealy Machine.
 
         Returns:
             _result.Result:
-                - Success: Contains the target state of a valid transition and any associated condition.
-                - Failure: If no valid transition exists for the given input character.
+                - Success: Contains the target state of a valid transition and any associated output.
+                - Failure: If no valid transition exists for the given input symbol.
 
         Behavior:
-            - If a transition is valid for the input character, it is activated (optional behavior),
-              and the target state is returned.
+            - If a transition is valid for the input symbol, it is activated (optional behavior),
+              and the target state along with the output is returned.
             - If no valid transitions are found, a failure result is returned.
         """
         transition_functions: _ty.Set[BaseTransition] = self.get_transitions()
 
         for function in transition_functions:
-            # Check if the transition is valid for the current input character
-            if not isinstance(function.canTransition(current_input_char), _result.Success):
+            # Check if the transition is valid for the current input symbol
+            if not isinstance(function.canTransition(current_input), _result.Success):
                 continue
 
             # Activate the transition (if applicable)
             function.activate()
-            result_condition = function.canTransition(current_input_char)
-            condition = result_condition.unwrap()
+            result_output = function.canTransition(current_input)
+            output = result_output.unwrap()
 
-            # Return the target state and the condition
-            return _result.Success((function.get_transition_target(), condition))
+            # Return the target state and the output
+            return _result.Success((function.get_transition_target(), output))
 
         # If no valid transitions exist, return a failure result
         return _result.Failure(f"No transition found for state {self.get_name()}!")

@@ -1,8 +1,10 @@
 from returns import result as _result
-
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
-from core.modules.automaton.base.state import State as BaseState
-from core.modules.automaton.base.transition import Transition as BaseTransition
+from state import State as BaseState
+from transition import Transition as BaseTransition
 
 # Standard typing imports for advanced functionality
 import collections.abc as _a
@@ -61,8 +63,9 @@ class TMTransition(BaseTransition):
                     - `head_move` (str): The direction to move the head ("L", "R", or "H").
                 - Failure: If the transition is invalid, returns an error message.
         """
+
         condition_parts = self.condition_char.split('|')
-        if condition_parts[0] == current_input:
+        if condition_parts[0] == current_input or condition_parts[0] == "_":
             to_write = condition_parts[1]  # Character to write
             head_move = condition_parts[2]  # Direction to move the head
             return _result.Success((to_write, head_move))  # Transition can occur

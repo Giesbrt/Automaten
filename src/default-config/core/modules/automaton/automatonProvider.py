@@ -1,7 +1,7 @@
 """TBA"""
 
 # Abstract Machine related imports
-from core.modules.automaton.dfa import DFAAutomaton, DFAState, DFATransition
+from core.extensions.DFA import DFAAutomaton, DFAState, DFATransition
 from core.modules.automaton.TM import TMAutomaton, TMState, TMTransition
 
 from aplustools.io import ActLogger
@@ -20,7 +20,7 @@ class AutomatonProvider:
         self.automaton_type: str = automaton_type
 
         # registered Automatons
-        self.register_automaton('dfa', DFAAutomaton.DFAAutomaton, DFAState.DFAState, DFATransition.DFATransition)
+        self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
         self.register_automaton('tm', TMAutomaton.TMAutomaton, TMState.TMState, TMTransition.TMTransition)
 
     def set_automaton_type(self, new_type: str) -> None:

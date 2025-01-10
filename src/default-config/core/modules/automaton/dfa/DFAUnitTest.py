@@ -6,7 +6,7 @@ import returns.result as _result
 # from DFATransition import DFATransition
 # from DFAAutomaton import DFAAutomaton
 
-from core.utils.DFA import DFATransition, DFAState, DFAAutomaton
+from core.extensions.DFA import DFATransition, DFAState, DFAAutomaton
 
 from core.modules.automaton.serializer import Serializer
 

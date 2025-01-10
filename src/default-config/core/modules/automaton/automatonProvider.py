@@ -3,6 +3,7 @@
 # Abstract Machine related imports
 from core.extensions.DFA import DFAAutomaton, DFAState, DFATransition
 from core.modules.automaton.TM import TMAutomaton, TMState, TMTransition
+from core.modules.automaton.mealy import mealyAutomaton, mealyState, mealyTransition
 
 from aplustools.io import ActLogger
 
@@ -22,6 +23,7 @@ class AutomatonProvider:
         # registered Automatons
         self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
         self.register_automaton('tm', TMAutomaton.TMAutomaton, TMState.TMState, TMTransition.TMTransition)
+        self.register_automaton("mealy", mealyAutomaton.MealyAutomaton, mealyState.MealyState, mealyTransition.MealyTransition)
 
     def set_automaton_type(self, new_type: str) -> None:
         self.automaton_type = new_type

@@ -1,13 +1,15 @@
 import sys
 import os
 
+# Modulpfad konfigurieren
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from core.modules.automaton.TM.TMAutomaton import TMAutomaton
 from core.modules.automaton.TM.TMState import TMState
 from core.modules.automaton.TM.TMTransition import TMTransition
 from returns import result as _result
 
 import unittest
-
 
 class TestTMAutomaton(unittest.TestCase):
 
@@ -55,7 +57,6 @@ class TestTMAutomaton(unittest.TestCase):
         self.assertIsInstance(result, _result.Success)
         self.assertEqual(self.tm.get_current_state(), self.state_q2)
         self.assertEqual(self.tm.get_input(), "XY")
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,7 @@
 from returns import result as _result
 import sys
 import os
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
@@ -9,7 +10,6 @@ from core.modules.automaton.base.transition import Transition as BaseTransition
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-
 
 # Comments generated with Chat-GPT
 
@@ -44,7 +44,7 @@ class TMTransition(BaseTransition):
                 A string in the format `input|write|move` specifying the input condition, 
                 character to write, and head movement direction.
         """
-        super().__init__(start_state, transition_target_state)
+        super().__init__(start_state, transition_target_state, condition_char)
         self.condition_char: str = condition_char
 
     def canTransition(self, current_input: _ty.Any) -> _result.Result:
@@ -71,5 +71,5 @@ class TMTransition(BaseTransition):
             to_write = condition_parts[1]  # Character to write
             head_move = condition_parts[2]  # Direction to move the head
             return _result.Success((to_write, head_move))  # Transition can occur
-
+        
         return _result.Failure(f"Cannot transition with input {str(current_input)}!")  # Invalid transition

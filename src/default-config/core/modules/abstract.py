@@ -126,11 +126,11 @@ class GuiInstructionManager:
 
 class IUiState(_abc.ABC):
 
-    def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, automaton_type: str):
+    def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, node_type: str):
         self._colour: str = colour
         self._position: _ty.Tuple[float, float] = position
         self._display_text: str = display_text
-        self._type: str = automaton_type
+        self._type: str = node_type
         self._is_active: bool = False
 
     @_abc.abstractmethod
@@ -267,7 +267,7 @@ class IUiTransition(_abc.ABC):
 
 class IUiAutomaton(_abc.ABC):
 
-    def __init__(self, automaton_type: str, author: str):
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, str]):
         self._type: str = automaton_type
 
         self._states: _ty.Set[IUiState] = set()
@@ -281,6 +281,8 @@ class IUiAutomaton(_abc.ABC):
         self._token_lists: _ty.List[_ty.List[str]] = []
         self._changeable_token_lists: _ty.List[bool] = []
         self._transition_pattern: _ty.List[int] = []
+
+        self._state_types_with_design: _ty.Dict[str, str] = state_types_with_design
 
     @_abc.abstractmethod
     def get_author(self) -> str:

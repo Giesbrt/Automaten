@@ -18,12 +18,12 @@ import types as _ts
 
 
 class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type Any
-    def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, automaton_type: str):
-        super().__init__(colour, position, display_text, automaton_type)
+    def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, node_type: str):
+        super().__init__(colour, position, display_text, node_type)
         self._colour: str = colour
         self._position: _ty.Tuple[float, float] = position
         self._display_text: str = display_text
-        self._type: str = automaton_type
+        self._type: str = node_type
         self._is_active: bool = False
 
     def __new__(cls, *args, **kwargs):
@@ -117,8 +117,8 @@ class UiTransition(IUiTransition):
 
 class UiAutomaton(IUiAutomaton):
 
-    def __init__(self, automaton_type: str, author: str):
-        super().__init__(automaton_type, author)
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, str]):
+        super().__init__(automaton_type, author, state_types_with_design)
 
         self._type: str = automaton_type
 

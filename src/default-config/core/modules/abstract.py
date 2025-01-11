@@ -267,7 +267,8 @@ class IUiTransition(_abc.ABC):
 
 class IUiAutomaton(_abc.ABC):
 
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, str], uuid: str = None):
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any], uuid: str = None):
+        # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
         self._type: str = automaton_type
         self._uuid: str = uuid
 
@@ -283,7 +284,7 @@ class IUiAutomaton(_abc.ABC):
         self._changeable_token_lists: _ty.List[bool] = []
         self._transition_pattern: _ty.List[int] = []
 
-        self._state_types_with_design: _ty.Dict[str, str] = state_types_with_design
+        self._state_types_with_design: _ty.Dict[str, _ty.Any] = state_types_with_design
     
     @_abc.abstractmethod
     def get_uuid(self) -> str:
@@ -294,11 +295,11 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
     
     @_abc.abstractmethod
-    def get_state_types_with_design(self) -> _ty.Dict[str, str]:
+    def get_state_types_with_design(self) -> _ty.Dict[str, _ty.Any]:
         raise NotImplementedError("This method must be implemented by subclasses.")
     
     @_abc.abstractmethod
-    def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, str]) -> None:
+    def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, _ty.Any]) -> None:
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod

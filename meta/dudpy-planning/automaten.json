@@ -29,7 +29,7 @@
 			"type": "end",
 			"position": [1, 20],
 			"transitions": [
-				[1, [0, 0, 0]]
+				[1, ["west", "east"], [0, 0, 0]]
 			],
 			"background_color": "#ffffff"
 		},
@@ -38,7 +38,7 @@
 			"type": "default",
 			"position": [21, 20],
 			"transitions": [
-				[0, [2, 1, 1]]
+				[0, ["south", "north"], [2, 1, 1]]
 			],
 			"background_color": "#ffffff"
 		}

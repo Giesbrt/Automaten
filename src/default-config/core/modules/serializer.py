@@ -34,6 +34,7 @@ DCGDictT = dict[str, str  # name, author, uuid, custom_python
 
 def _verify_dcg_dict(target: dict[str, _ty.Any]) -> bool:
     """Verifies the given dictionary matches the specified rules."""
+    # TODO: Verify max and min length for coordinates, ...
     rules = {  # Validation rules
         "name": str,
         "author": str,
@@ -179,14 +180,14 @@ def _serialize_to_binary(serialisation_target: DCGDictT) -> bytes:
 
 
 def serialize(
-        automaton_name: str, uuid: str, types: dict[str, dict[str, str]],
+        uuid: str, types: dict[str, dict[str, str]],
         automaton: IUiAutomaton, custom_python: str = "",
         format_: _ty.Literal["json", "yaml", "binary"] = "json"
     ) -> bytes:
     """TBA"""
     # TODO: Remove all arguments that can be gotten from automaton
     dcg_dict: DCGDictT = {
-        "name": automaton_name,
+        "name": automaton.get_type(),  # TODO: Please use a better name
         "author": automaton.get_author(),
         "uuid": uuid,
         "token_lsts": automaton.get_token_lists(),
@@ -265,8 +266,43 @@ def _deserialize_from_binary(bytes_like: bytes) -> DCGDictT:
     return {}
 
 
-def deserialize_from(bytes_like: bytes) -> IUiAutomaton:
+def deserialize_from(bytes_like: bytes,
+                     format_: _ty.Literal["json", "yaml", "binary"] = "json") -> IUiAutomaton:
     """TBA"""
-    raise NotImplementedError("The bytes method is not implemented yet")
+    dcg_dict: DCGDictT = {"json": _deserialize_from_json,
+                          "yaml": _deserialize_from_yaml,
+                          "binary": _deserialize_from_binary}[format_](bytes_like)
     if not _verify_dcg_dict(dcg_dict):
         raise RuntimeError("DCG Dict could not be verified")
+
+    name: bytes = serialisation_target["name"]  # type: ignore
+    author: bytes = serialisation_target["author"]  # type: ignore
+    uuid: bytes = serialisation_target["uuid"]  # type: ignore
+    token_lsts: list[list[str]] = serialisation_target["token_lsts"]  # type: ignore
+    is_custom_token_lst: list[bool] = serialisation_target["is_custom_token_lst"]  # type: ignore
+    abs_transition_idxs: list[int] = serialisation_target["abs_transition_idxs"]  # type: ignore
+    types: dict[str, dict[str, str]] = serialisation_target["types"]  # type: ignore
+    content_root_idx: int = serialisation_target["content_root_idx"]  # type: ignore
+    content: list[dict[str, str | list[tuple[int, list[int]]]]] = serialisation_target["content"]  # type: ignore
+    custom_python: bytes = serialisation_target["custom_python"]  # type: ignore
+
+    automaton: IUiAutomaton = UiAutomaton(name, author)
+    automaton.set_token_lists(token_lsts)
+    automaton.set_changeable_token_lists(is_custom_token_lst)
+    automaton.set_transition_pattern(abs_transition_idxs)
+
+    for i, node in enumerate(content):
+        content_node_name: bytes = content_node["name"]  # type: ignore
+        content_node_type: bytes = content_node["type"]  # type: ignore
+        content_node_position: tuple[float, float] = content_node["position"]  # type: ignore
+        content_node_transitions: list[tuple[int, list[int]]] = content_node["transitions"]  # type: ignore
+        content_node_background_color: bytes = content_node["background_color"]  # type: ignore
+
+        node_obj: IUiState = UiState(content_node_background_color, content_node_position, content_node_name,
+                                     content_node_type)
+        if i == content_root_idx:
+            node_obj.set_is_root()  # TODO: Please make this possible
+
+        for transition in content_node_transitions:
+            transition_obj: IUiTransition = UiTransition()
+            automaton.add_transition()

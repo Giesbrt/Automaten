@@ -1,7 +1,7 @@
 from returns import result as _result
 import sys
 import os
-
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
@@ -10,7 +10,6 @@ from core.modules.automaton.base.transition import Transition as BaseTransition
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-
 
 # Comments generated with Chat-GPT
 
@@ -42,7 +41,7 @@ class MealyTransition(BaseTransition):
             condition (any): The condition required for the transition to occur.
             output (any): The output produced when the transition is taken.
         """
-        super().__init__(start_state, transition_target_state)
+        super().__init__(start_state, transition_target_state, condition)
         self.condition_input: any = condition
         self.output: any = output
 
@@ -74,5 +73,5 @@ class MealyTransition(BaseTransition):
         if self.condition_input == current_input or self.condition_input == "_":
             output = self.output  # Output
             return _result.Success(output)  # Transition can occur
-
+        
         return _result.Failure(f"Cannot transition with input {str(current_input)}!")  # Invalid transition

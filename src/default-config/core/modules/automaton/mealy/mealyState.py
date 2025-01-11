@@ -1,7 +1,7 @@
 from returns import result as _result
 import sys
 import os
-
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
@@ -10,7 +10,6 @@ from core.modules.automaton.base.transition import Transition as BaseTransition
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-
 
 # Comments generated with Chat-GPT
 

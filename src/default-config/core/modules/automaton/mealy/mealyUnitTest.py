@@ -8,7 +8,6 @@ from returns import result as _result
 
 import unittest
 
-
 class TestMealyAutomaton(unittest.TestCase):
 
     def setUp(self):
@@ -45,7 +44,6 @@ class TestMealyAutomaton(unittest.TestCase):
         self.assertIsInstance(result, _result.Success)
         self.assertEqual(self.M.get_current_state(), self.state_q0)
         self.assertEqual(self.M.get_output(), "Obst")
-
 
 if __name__ == '__main__':
     unittest.main()

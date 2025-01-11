@@ -17,6 +17,13 @@ import typing as _ty
 import types as _ts
 
 
+class CardinalDirection:
+    North = 0
+    East = 1
+    South = 2
+    West = 3
+
+
 class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type Any
     def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, node_type: str):
         super().__init__(colour, position, display_text, node_type)
@@ -200,6 +207,9 @@ class UiAutomaton(IUiAutomaton):
 
         bridge.add_backend_item(delete_statement)
 
+    def get_start_state(self) -> UiState | None:
+        return self._start_state
+
     def get_states(self) -> _ty.Set[UiState]:
         return self._states
 
@@ -212,7 +222,7 @@ class UiAutomaton(IUiAutomaton):
     def add_transition(self, transition: UiTransition) -> None:
         self._transitions.add(transition)
 
-    def get_type(self) -> str:
+    def get_name(self) -> str:
         return self._type
 
     def set_start_state(self, state: UiState) -> None:
@@ -303,7 +313,7 @@ class UiAutomaton(IUiAutomaton):
     def get_token_lists(self) -> _ty.List[_ty.List[str]]:
         return self._token_lists
 
-    def get_changeable_token_lists(self) -> _ty.List[bool]:
+    def get_is_changeable_token_list(self) -> _ty.List[bool]:
         return self._changeable_token_lists
 
     def get_transition_pattern(self) -> _ty.List[int]:

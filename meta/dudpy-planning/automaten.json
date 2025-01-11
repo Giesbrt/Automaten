@@ -7,41 +7,39 @@
 		["L", "R", "H"]
 	],
 	"is_custom_token_lst": [
-		true, 
+		true,
 		false
 	],
 	"abs_transition_idxs": [0, 1, 1],
 	"types": {
-		"default": {
-			"design": "..."
-		},
-		"end": {
-			"design": "..."
-		},
-		"fehler": {
-			"design": "..."
-		}
+		"default": "...",
+		"end": "...",
+		"fehler": "..."
 	},
 	"content_root_idx": 0,
 	"content": [
 		{
 			"name": "q0",
 			"type": "end",
-			"position": [1, 20],
-			"transitions": [
-				[1, ["west", "east"], [0, 0, 0]]
-			],
+			"position": [1.0, 20.0],
 			"background_color": "#ffffff"
 		},
 		{
 			"name": "q1",
 			"type": "default",
-			"position": [21, 20],
-			"transitions": [
-				[0, ["south", "north"], [2, 1, 1]]
-			],
+			"position": [21.0, 20.0],
 			"background_color": "#ffffff"
 		}
+	],
+	"content_transitions": [
+		{
+			"connecting_idxs": [0, 1],
+			"connecting_sides": [3, 1],
+			"transition_idxs": [0, 0, 0]
+		},
+		[[0, 1], [3, 1], [0, 0, 0]],
+		[[1, 1], [1, 2], [1, 2, 2]],
+		[[1, 0], [2, 0], [2, 1, 1]]
 	],
 	"custom_python": "..."
 }

@@ -289,7 +289,11 @@ class IUiAutomaton(_abc.ABC):
     @_abc.abstractmethod
     def get_uuid(self) -> str:
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
+    @_abc.abstractmethod
+    def get_start_state(self) -> IUiState | None:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
     @_abc.abstractmethod
     def set_uuid(self, uuid: str) -> None:
         raise NotImplementedError("This method must be implemented by subclasses.")
@@ -313,7 +317,7 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
     
     @_abc.abstractmethod
-    def get_changeable_token_lists(self) -> _ty.List[bool]:
+    def get_is_changeable_token_list(self) -> _ty.List[bool]:
         """Returns the changeable token lists of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
     
@@ -369,7 +373,7 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
-    def get_type(self) -> str:
+    def get_name(self) -> str:
         """Returns the type of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 

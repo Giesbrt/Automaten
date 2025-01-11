@@ -180,26 +180,23 @@ def _serialize_to_binary(serialisation_target: DCGDictT) -> bytes:
 
 
 def serialize(
-        uuid: str, types: dict[str, dict[str, str]],
         automaton: IUiAutomaton, custom_python: str = "",
         format_: _ty.Literal["json", "yaml", "binary"] = "json"
     ) -> bytes:
     """TBA"""
-    # TODO: Remove all arguments that can be gotten from automaton
     dcg_dict: DCGDictT = {
-        "name": automaton.get_type(),  # TODO: Please use a better name
+        "name": automaton.get_name(),
         "author": automaton.get_author(),
-        "uuid": uuid,
+        "uuid": automaton.get_uuid(),
         "token_lsts": automaton.get_token_lists(),
-        "is_custom_token_lst": automaton.get_changeable_token_lists(),  # TODO: Please use a better name
+        "is_custom_token_lst": automaton.get_is_changeable_token_list(),
         "abs_transition_idxs": automaton.get_transition_pattern(),
-        "types": types,
+        "types": automaton.get_state_types_with_design(),
 	    "content_root_idx": 0,
         "content": [],
         "custom_python": custom_python
     }
-    # TODO: Fix when we can get the actual content root
-    content_root: IUiState = next(iter(automaton.get_states()))
+    content_root: IUiState = automaton.get_start_state()
     counted_nodes: dict[IUiState, int] = {content_root: 0}
     stack: Queue[IUiState] = Queue(maxsize=100)  # Stack for traversal
     stack.put(content_root)
@@ -301,7 +298,7 @@ def deserialize_from(bytes_like: bytes,
         node_obj: IUiState = UiState(content_node_background_color, content_node_position, content_node_name,
                                      content_node_type)
         if i == content_root_idx:
-            node_obj.set_is_root()  # TODO: Please make this possible
+            automaton.set_start_state(node_obj)
 
         for transition in content_node_transitions:
             transition_obj: IUiTransition = UiTransition()

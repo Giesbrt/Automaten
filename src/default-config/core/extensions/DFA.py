@@ -10,7 +10,6 @@ from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 
-
 from core.modules.automaton.base.state import State
 
 
@@ -192,9 +191,6 @@ class DFAAutomaton(BaseAutomaton):
         self.char_index: int = 0
         self.current_char: str = ""
 
-        self._input_alphabet = []
-        self._output_alphabet = []
-
     def set_input(self, automaton_input: _ty.Any) -> None:
         """
         Sets a new input word for the DFA to process.
@@ -331,18 +327,6 @@ class DFAAutomaton(BaseAutomaton):
 
         self.next_char()  # Move to the next character in the input.
         self.current_state.activate()  # Activate the current state (if such behavior is defined).
-
-    def set_input_alphabet(self, alphabet: _ty.Any) -> None:
-        self._input_alphabet = alphabet
-
-    def set_output_alphabet(self, alphabet: _ty.Any) -> None:
-        self._output_alphabet = alphabet
-
-    def get_input_alphabet(self) -> _ty.Any:
-        return self._input_alphabet
-
-    def get_output_alphabet(self) -> _ty.Any:
-        return self._output_alphabet
 
     def get_current_return_value(self) -> _ty.Any:
         """

@@ -287,46 +287,6 @@ class Automaton(_abc.ABC):
         """
         raise NotImplementedError("get_input must be implemented in a subclass.")
 
-    @_abc.abstractmethod
-    def set_input_alphabet(self, alphabet: _ty.Any) -> None:
-        """
-        Abstract method to set the input alphabet for the automaton.
-
-        Args:
-            alphabet (_ty.Any): The input alphabet to be set for the automaton.
-        """
-        raise NotImplementedError("set_input_alphabet must be implemented in a subclass.")
-
-    @_abc.abstractmethod
-    def set_output_alphabet(self, alphabet: _ty.Any) -> None:
-        """
-        Abstract method to set the output alphabet for the automaton.
-
-        Args:
-            alphabet (_ty.Any): The output alphabet to be set for the automaton.
-        """
-        raise NotImplementedError("set_output_alphabet must be implemented in a subclass.")
-
-    @_abc.abstractmethod
-    def get_input_alphabet(self) -> _ty.Any:
-        """
-        Abstract method to get the input alphabet for the automaton.
-
-        Returns:
-            _ty.Any: The input alphabet for the automaton.
-        """
-        raise NotImplementedError("get_input_alphabet must be implemented in a subclass.")
-
-    @_abc.abstractmethod
-    def get_output_alphabet(self) -> _ty.Any:
-        """
-        Abstract method to get the output alphabet for the automaton.
-
-        Returns:
-            _ty.Any: The output alphabet for the automaton.
-        """
-        raise NotImplementedError("get_output_alphabet must be implemented in a subclass.")
-
     def get_state_index(self, state: State) -> int:
         for i, s in enumerate(self.get_states()):
             if s is not state:

@@ -117,8 +117,8 @@ class UiTransition(IUiTransition):
 
 class UiAutomaton(IUiAutomaton):
 
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, str]):
-        super().__init__(automaton_type, author, state_types_with_design)
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, str], uuid: str = None):
+        super().__init__(automaton_type, author, state_types_with_design, uuid)
 
         self._type: str = automaton_type
 
@@ -316,5 +316,19 @@ class UiAutomaton(IUiAutomaton):
 
     def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
         self._transition_pattern = transition_pattern
+
+    def get_uuid(self) -> str:
+        return self._uuid
+
+    def set_uuid(self, uuid: str) -> None:
+        self._uuid = uuid
+
+    def get_state_types_with_design(self) -> _ty.Dict[str, str]:
+        return self._state_types_with_design
+
+    def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, str]) -> None:
+        self._state_types_with_design = state_types_with_design
+
+
 
 

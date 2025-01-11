@@ -267,8 +267,9 @@ class IUiTransition(_abc.ABC):
 
 class IUiAutomaton(_abc.ABC):
 
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, str]):
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, str], uuid: str = None):
         self._type: str = automaton_type
+        self._uuid: str = uuid
 
         self._states: _ty.Set[IUiState] = set()
         self._transitions: _ty.Set[IUiTransition] = set()
@@ -283,6 +284,22 @@ class IUiAutomaton(_abc.ABC):
         self._transition_pattern: _ty.List[int] = []
 
         self._state_types_with_design: _ty.Dict[str, str] = state_types_with_design
+    
+    @_abc.abstractmethod
+    def get_uuid(self) -> str:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def set_uuid(self, uuid: str) -> None:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def get_state_types_with_design(self) -> _ty.Dict[str, str]:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+    
+    @_abc.abstractmethod
+    def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, str]) -> None:
+        raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
     def get_author(self) -> str:

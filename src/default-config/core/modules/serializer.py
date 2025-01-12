@@ -265,10 +265,10 @@ def decode_str_iterable(bytes_like: bytes, length: int) -> list[str]:
             The byte sequence to be decoded.
 
     Returns:
-        list[str | int]:
+        list[str]:
             A list of decoded strings and integers.
     """
-    output: list[str | int] = []
+    output: list[str] = []
     io = BytesIO(bytes_like)
     for _ in range(length):
         output.append(read_variable_bytes_like(io).decode("utf-8"))
@@ -284,10 +284,10 @@ def decode_int_iterable(bytes_like: bytes, length: int) -> list[int]:
             The byte sequence to be decoded.
 
     Returns:
-        list[str | int]:
+        list[int]:
             A list of decoded strings and integers.
     """
-    output: list[str | int] = []
+    output: list[int] = []
     io = BytesIO(bytes_like)
     for _ in range(length):
         output.append(decode_integer(read_variable_bytes_like(io)))

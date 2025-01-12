@@ -1,5 +1,6 @@
 """TBA"""
 import config
+import core.modules.serializer
 
 # Standard imports
 from pathlib import Path as PLPath

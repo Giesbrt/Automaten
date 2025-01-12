@@ -332,7 +332,7 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
-    def set_changeable_token_lists(self, changeable_token_lists: _ty.List[bool]) -> None:
+    def set_is_changeable_token_list(self, changeable_token_lists: _ty.List[bool]) -> None:
         """Sets the changeable token lists of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
     

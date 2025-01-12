@@ -10,6 +10,9 @@ from core.modules.abstract import IUiState
 from core.modules.abstract import IUiTransition
 from core.modules.abstract import IUiAutomaton
 
+
+from aplustools.io.env import auto_repr_with_privates
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
@@ -18,12 +21,13 @@ import types as _ts
 
 
 class CardinalDirection:
-    North = 0
-    East = 1
-    South = 2
-    West = 3
+    North = "n"
+    East = "e"
+    South = "s"
+    West = "w"
 
 
+@auto_repr_with_privates
 class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type Any
     def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, node_type: str):
         super().__init__(colour, position, display_text, node_type)
@@ -66,7 +70,18 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
     def _deactivate(self) -> None:
         self._is_active = False
 
+    def __eq__(self, other: _ty.Self):
+        return (self._colour == other.get_colour()
+                and self._position == other.get_position()
+                and self._display_text == other.get_display_text()
+                and self._type == other.get_type()
+                and self._is_active == other.is_active())
 
+    def __hash__(self):
+        return hash(repr(self))
+
+
+@auto_repr_with_privates
 class UiTransition(IUiTransition):
     def __init__(self, from_state: UiState, from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'],
                  to_state: UiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w']
@@ -121,7 +136,18 @@ class UiTransition(IUiTransition):
     def get_condition(self) -> _ty.List[str]:
         return self._condition
 
+    def __eq__(self, other: _ty.Self):
+        return (self._from_state == other.get_from_state()
+                and self._from_state_connecting_point == other.get_from_state_connecting_point()
+                and self._to_state == other.get_to_state()
+                and self._to_state_connecting_point == other.get_to_state_connecting_point()
+                and self._is_active == other.is_active())
 
+    def __hash__(self):
+        return hash(repr(self))
+
+
+@auto_repr_with_privates
 class UiAutomaton(IUiAutomaton):
 
     def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any], uuid: str = None):
@@ -322,7 +348,7 @@ class UiAutomaton(IUiAutomaton):
     def set_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
         self._token_lists = token_lists
 
-    def set_changeable_token_lists(self, changeable_token_lists: _ty.List[bool]) -> None:
+    def set_is_changeable_token_list(self, changeable_token_lists: _ty.List[bool]) -> None:
         self._changeable_token_lists = changeable_token_lists
 
     def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
@@ -340,6 +366,9 @@ class UiAutomaton(IUiAutomaton):
     def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, _ty.Any]) -> None:
         self._state_types_with_design = state_types_with_design
 
-
-
-
+    def __eq__(self, other: _ty.Self):
+        return (self._type == other.get_name()
+                and self._states == other.get_states()
+                and self._transitions == other.get_transitions()
+                and self._start_state == other.get_start_state()
+                and self._state_types_with_design == other.get_state_types_with_design())

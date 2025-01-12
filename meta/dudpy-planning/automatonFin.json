@@ -1,7 +1,6 @@
 {
 	"name": "DFA",
 	"author": "Giesbrt",
-	"uuid": "...",
 	"token_lsts": [
 		["a", "b", "c", "d"],
 		["L", "R", "H"]

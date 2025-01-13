@@ -38,6 +38,9 @@ class OrderedSet(_ty.Generic[T]):
     def get_index(self, item: T) -> int:
         return self._items.index(item)
 
+    def get_by_index(self, index: int) -> T:
+        return self._items[index]
+
     def to_list(self) -> list[T]:
         return self._items
 

@@ -10,8 +10,9 @@ from core.modules.abstract import IUiState
 from core.modules.abstract import IUiTransition
 from core.modules.abstract import IUiAutomaton
 
-
 from aplustools.io.env import auto_repr_with_privates
+from aplustools.io import ActLogger
+from core.utils.OrderedSet import OrderedSet
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -150,14 +151,15 @@ class UiTransition(IUiTransition):
 @auto_repr_with_privates
 class UiAutomaton(IUiAutomaton):
 
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any], uuid: str = None):
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
+                 uuid: str = None):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
         super().__init__(automaton_type, author, state_types_with_design, uuid)
 
         self._type: str = automaton_type
 
-        self._states: _ty.Set[UiState] = set()
-        self._transitions: _ty.Set[UiTransition] = set()
+        self._states: OrderedSet[UiState] = OrderedSet()
+        self._transitions: OrderedSet[UiTransition] = OrderedSet()
 
         self._start_state: UiState | None = None
         self._input: _ty.List[_ty.Any] = []
@@ -166,80 +168,13 @@ class UiAutomaton(IUiAutomaton):
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)
 
-    def delete_state(self, state: UiState) -> None:
-        # Convert state into index of _states and send to bridge
-        if state not in self.get_states():
-            return
-
-        if state == self._start_state:
-            self._start_state = None
-
-        # Get index of state in _states
-        state_index: int = 0
-        for i, s in enumerate(self._states):
-            if s != state:
-                continue
-
-            state_index = i
-            break
-
-        # Note: state_index can not be None here, as state is in _states
-
-        # Pack state_index into json/dict format
-        task_list: _ty.List[_ty.Dict[str, _ty.Any]] = []
-
-        delete_statement: _ty.Dict[str, _ty.Any] = {}
-        delete_statement["type"] = "DELETE_STATE"
-        delete_statement["state_index"] = state_index
-        task_list.append(delete_statement)
-
-        # remove all transitions that are connected to this state
-        for i, t in enumerate(self._transitions):
-            if t.get_from_state() == state or t.get_to_state() == state:
-                delete_statement: _ty.Dict[str, _ty.Any] = {}
-                delete_statement["type"] = "DELETE_TRANSITION"
-                delete_statement["transition_index"] = i
-                task_list.append(delete_statement)
-
-        # Send delete_statement to bridge
-        bridge: UiBridge = UiBridge()
-
-        for task in task_list:
-            bridge.add_backend_item(task)
-
-    def delete_transition(self, transition: UiTransition) -> None:
-        # Convert into index and send to bridge
-        if transition not in self.get_transitions():
-            return
-
-        # Get index of transition in _transitions
-        transition_index: int = None
-        for i, t in enumerate(self._transitions):
-            if t != transition:
-                continue
-
-            transition_index = i
-            break
-
-        # Note: transition_index can not be None here, as transition is in _transitions
-
-        # Pack transition_index into json/dict format
-        delete_statement: _ty.Dict[str, _ty.Any] = {}
-        delete_statement["type"] = "DELETE_TRANSITION"
-        delete_statement["transition_index"] = transition_index
-
-        # Send delete_statement to bridge
-        bridge: UiBridge = UiBridge()
-
-        bridge.add_backend_item(delete_statement)
-
     def get_start_state(self) -> UiState | None:
         return self._start_state
 
-    def get_states(self) -> _ty.Set[UiState]:
+    def get_states(self) -> OrderedSet[UiState]:
         return self._states
 
-    def get_transitions(self) -> _ty.Set[UiTransition]:
+    def get_transitions(self) -> OrderedSet[UiTransition]:
         return self._transitions
 
     def add_state(self, state: UiState) -> None:
@@ -267,22 +202,60 @@ class UiAutomaton(IUiAutomaton):
         pass  # Todo: implement as needed
 
     def get_state_by_id(self, state_id: int) -> UiState:
-        for i, state in enumerate(self._states):
-            if i != state_id:
-                continue
+        return self._states.get_by_index(state_id)
 
-            return state
+    def get_state_index(self, state: UiState) -> int:
+        return self._states.get_index(state)
 
     def get_transition_by_id(self, transition_id: int) -> UiTransition:
-        for i, transition in enumerate(self._transitions):
-            if i != transition_id:
-                continue
+        return self._transitions.get_by_index(transition_id)
 
-            return transition
+    def get_transition_index(self, transition: UiTransition) -> int:
+        return self._transitions.get_index(transition)
+
+    def _serialise_structure_for_simulation(self) -> _ty.List[_ty.Dict[str, _ty.Any]]:  # TODO testing
+        """Serialises the automaton into a format the backend can understand"""
+        serialised_structure: _ty.List[_ty.Dict[str, _ty.Any]] = []
+
+        for state in self._states:
+            data: _ty.Dict[str, _ty.Any] = {}
+            data["name"] = state.get_display_text()
+            data["type"] = state.get_type()
+
+            # Transitions
+            transitions_list: _ty.List[_ty.Dict[str, _ty.Any]] = []
+            for transition in self._transitions:
+                if transition.get_from_state() != state:
+                    continue
+
+                transition_data: _ty.Dict[str, _ty.Any] = {}
+                transition_to_state: UiState = transition.get_to_state()
+
+                transition_data["to"] = self.get_state_index(transition_to_state)
+                transition_data["condition"] = "|".join(transition.get_condition())
+
+                transitions_list.append(transition_data)
+
+            data["transitions"] = transitions_list
+            serialised_structure.append(data)
+
+        return serialised_structure
 
     def simulate(self, input: _ty.List[_ty.Any]) -> None:
-        # bridge hey ich will simulieren mit input "input"
-        pass  # Todo
+        """Simulates the automaton with a given input."""
+        structure: _ty.Dict[str, _ty.Any] = {}
+        structure["action"] = "SIMULATION"
+        structure["id"] = f"{self.get_author().lower()}:{self.get_name().lower()}"
+        structure["input"] = input
+        structure["content"] = self._serialise_structure_for_simulation()
+
+        if not structure["content"]:
+            ActLogger().error("No structure found for simulation")
+            return
+
+        # send to bridge
+        bridge: UiBridge = UiBridge()
+        bridge.add_backend_item(structure)
 
     def handle_simulation_updates(self) -> _result.Result or None:
         """

@@ -6,6 +6,8 @@ from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
+from core.utils.OrderedSet import OrderedSet
+
 # Standard typing imports for aps
 import abc as _abc
 import collections.abc as _a
@@ -343,12 +345,12 @@ class IUiAutomaton(_abc.ABC):
 
 
     @_abc.abstractmethod
-    def get_states(self) -> _ty.Set['IUiState']:
+    def get_states(self) -> OrderedSet['IUiState']:
         """Returns all states in the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
-    def get_transitions(self) -> _ty.Set['IUiTransition']:
+    def get_transitions(self) -> OrderedSet['IUiTransition']:
         """Returns all transitions in the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
@@ -360,16 +362,6 @@ class IUiAutomaton(_abc.ABC):
     @_abc.abstractmethod
     def add_transition(self, transition: 'IUiTransition') -> None:
         """Adds a transition to the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def delete_state(self, state: 'IUiState') -> None:
-        """Deletes a state from the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def delete_transition(self, transition: 'IUiTransition') -> None:
-        """Deletes a transition from the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
@@ -388,8 +380,21 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
+    def get_state_index(self, state: 'IUiState') -> int:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def get_transition_index(self, transition: 'IUiTransition') -> int:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
     def get_transition_by_id(self, transition_id: int) -> 'IUiTransition':
         """Fetches a transition by its ID."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def _serialise_structure_for_simulation(self) -> _ty.Dict[str, _ty.Any]:
+        """Serialises the automaton into a format the backend can understand"""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod

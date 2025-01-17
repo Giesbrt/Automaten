@@ -8,6 +8,8 @@ from PySide6.QtCore import Qt
 
 from core.utils.OrderedSet import OrderedSet
 
+from aplustools.io.env import Interface
+
 # Standard typing imports for aps
 import abc as _abc
 import collections.abc as _a
@@ -15,11 +17,29 @@ import typing as _ty
 import types as _ts
 
 
-class MainWindowInterface:
+T = _ty.TypeVar("T")
+class ISignal(_ty.Generic[T], Interface):
+    """A generic interface for signals."""
+
+    def connect(self, func: _a.Callable[[T], None]) -> None:
+        """
+        Connects a function to the signal.
+
+        Args:
+            func: A callable that accepts a single argument of type T.
+        """
+        ...
+
+    def disconnect(self) -> None:
+        ...
+
+
+class IMainWindow(Interface):
     """TBA"""
     icons_folder: str = ""
     popups: list[_ty.Any] = []  # Basically anything that isn't the main window, but a window
     app: QApplication | None = None
+    someSignal: ISignal[str] = None
 
     class AppStyle:
         """QApp Styles"""
@@ -28,9 +48,6 @@ class MainWindowInterface:
         Windows = 'Windows'
         Fusion = 'Fusion'
         Default = None
-
-    def __new__(cls, *args, **kwargs):
-        raise Exception("This class can't be initialized; it is just an Interface.")
 
     def setup_gui(self) -> None:
         """
@@ -89,7 +106,7 @@ class MainWindowInterface:
         raise NotImplementedError
 
 
-class BackendInterface:
+class IBackend:
     """The backend entry point"""
 
     def __new__(cls, *args, **kwargs):

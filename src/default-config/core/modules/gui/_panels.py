@@ -183,7 +183,7 @@ class SettingsPanel(Panel):
     """The settings panel"""
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33);")
+        self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33); font-size: 16pt;")
 
         self.setLayout(QQuickBoxLayout(QBoxDirection.TopToBottom))
 
@@ -199,28 +199,92 @@ class SettingsPanel(Panel):
         main_content = QQuickBoxLayout(QBoxDirection.LeftToRight)
         self.list_widget = QListWidget()
         self.list_widget.setFixedWidth(200)  # Example width, ~1/5 of the width
-        self.list_widget.addItems(["General", "Display", "Network", "Privacy", "About"])
+        self.list_widget.addItems(["General", "Design", "Security", "Privacy"])
         main_content.addWidget(self.list_widget)
 
         # Stacked layout for settings pages
         self.stacked_layout = QStackedLayout()
 
-        # Example settings panels
-        self.general_panel = QLabel("General Settings Panel")
-        self.display_panel = QLabel("Display Settings Panel")
-        self.network_panel = QLabel("Network Settings Panel")
-        self.privacy_panel = QLabel("Privacy Settings Panel")
-        self.about_panel = QLabel("About Panel")
+        # Create pages with titles and vertical layouts (slots)
+        self.general_panel = self.create_settings_page("General")
+        self.display_panel = self.create_settings_page("Design", extra_widgets=self.create_display_page_widgets())
+        self.network_panel = self.create_settings_page("Security")
+        self.privacy_panel = self.create_settings_page("Privacy")
 
         # Add panels to the stacked layout
         self.stacked_layout.addWidget(self.general_panel)
         self.stacked_layout.addWidget(self.display_panel)
         self.stacked_layout.addWidget(self.network_panel)
         self.stacked_layout.addWidget(self.privacy_panel)
-        self.stacked_layout.addWidget(self.about_panel)
 
         main_content.addLayout(self.stacked_layout)
         self.layout().addLayout(main_content)
 
         self.list_widget.currentRowChanged.connect(self.stacked_layout.setCurrentIndex)
         self.list_widget.setCurrentRow(0)  # So an item is selected by default
+
+    def create_settings_page(self, title: str, extra_widgets: list[QWidget] = None) -> QWidget:
+        """Creates a settings page with a title and vertical layout."""
+        page = QWidget()
+        layout = QQuickBoxLayout(QBoxDirection.TopToBottom)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Add title
+        title_label = QLabel(title)
+        title_label.setStyleSheet("font-size: 18pt;")
+        layout.addWidget(title_label)
+
+        # Add extra widgets if provided
+        if extra_widgets:
+            for widget in extra_widgets:
+                frame = QFrame()
+                frame.setStyleSheet("""
+                    QFrame {
+                        border: 2px solid #00289E;
+                        border-radius: 8px;
+                        margin: 10px;
+                        padding: 10px;
+                        background-color: white;
+                    }
+                """)
+                frame_layout = QQuickBoxLayout(QBoxDirection.TopToBottom)
+                frame_layout.addWidget(widget)
+                frame.setLayout(frame_layout)
+                layout.addWidget(frame)
+
+        page.setLayout(layout)
+        return page
+
+    def create_display_page_widgets(self) -> list[QWidget]:
+        """Creates specific widgets for the display settings page."""
+        widgets = []
+
+        # App Icon setting
+        app_icon_label = QLabel("App Icon:")
+        app_icon_label.setStyleSheet("font-size: 14pt;")
+        app_icon_input = QLineEdit()
+        app_icon_input.setPlaceholderText("Enter app icon path or URL")
+        app_icon_layout = QQuickBoxLayout(QBoxDirection.TopToBottom)
+        app_icon_layout.addWidget(app_icon_label)
+        app_icon_layout.addWidget(app_icon_input)
+
+        app_icon_widget = QWidget()
+        app_icon_widget.setLayout(app_icon_layout)
+        widgets.append(app_icon_widget)
+
+        # Item Scale setting
+        item_scale_label = QLabel("Item Scale:")
+        item_scale_label.setStyleSheet("font-size: 14pt;")
+        item_scale_slider = QSlider(Qt.Orientation.Horizontal)
+        item_scale_slider.setMinimum(1)
+        item_scale_slider.setMaximum(100)
+        item_scale_slider.setValue(50)  # Default value
+        item_scale_layout = QQuickBoxLayout(QBoxDirection.TopToBottom)
+        item_scale_layout.addWidget(item_scale_label)
+        item_scale_layout.addWidget(item_scale_slider)
+
+        item_scale_widget = QWidget()
+        item_scale_widget.setLayout(item_scale_layout)
+        widgets.append(item_scale_widget)
+
+        return widgets

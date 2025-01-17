@@ -1,6 +1,5 @@
 """TBA"""
 import config
-import core.modules.serializer
 
 # Standard imports
 from pathlib import Path as PLPath
@@ -36,7 +35,7 @@ import requests
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
-from core.modules.abstract import MainWindowInterface, BackendInterface
+from core.modules.abstract import IMainWindow, IBackend
 from core.modules.automaton_loader import start
 
 # Standard typing imports for aps
@@ -50,7 +49,7 @@ multiprocessing.freeze_support()
 
 class App:  # The main logic and gui are separated
     """TBA"""
-    window: MainWindowInterface | None = None
+    window: IMainWindow | None = None
     qapp: QApplication | None = None
     linked: bool = False
 
@@ -84,7 +83,7 @@ class App:  # The main logic and gui are separated
         self.configure_settings()
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 
-        self.backend: BackendInterface = start(self.app_settings, self.user_settings)
+        self.backend: IBackend = start(self.app_settings, self.user_settings)
         self.backend_stop_event: threading.Event = threading.Event()
         self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                  args=(self.backend_stop_event,))
@@ -471,7 +470,7 @@ if __name__ == "__main__":
         1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)
     }
     qapp: QApplication | None = None
-    qgui: MainWindowInterface | None = None
+    qgui: IMainWindow | None = None
     dp_app: App | None = None
     current_exit_code: int = -1
 

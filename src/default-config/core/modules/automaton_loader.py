@@ -2,7 +2,7 @@
 import threading
 
 from core.modules.storage import JSONAppStorage, MultiUserDBStorage
-from .abstract import BackendInterface
+from .abstract import IBackend
 from core.modules.automaton.simulationLoader import SimulationLoader
 
 # Whatever
@@ -11,7 +11,7 @@ simple_storage: JSONAppStorage or None = None
 extended_storage: MultiUserDBStorage or None = None
 
 
-class _Backend(BackendInterface):
+class _Backend(IBackend):
     def run_infinite(self, backend_stop_event: threading.Event) -> None:
         """
         Used to actually start the backend. The gui will launch this in a separate thread.
@@ -30,7 +30,7 @@ class _Backend(BackendInterface):
         return object.__new__(cls)
 
 
-def start(simple_stor: JSONAppStorage, extended_stor: MultiUserDBStorage) -> BackendInterface:
+def start(simple_stor: JSONAppStorage, extended_stor: MultiUserDBStorage) -> IBackend:
     global simple_storage
     global extended_storage
 

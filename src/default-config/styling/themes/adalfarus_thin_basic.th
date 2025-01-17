@@ -104,6 +104,18 @@ QSlider {
     background: $background_tertiary;
     //background: none;
 }
+QMenuBar, QMenu {
+    padding: 5px;
+    background-color: $background_secondary;
+    border-radius: 10px;
+}
+QMenuBar::item, QMenu::item {
+    padding: 1px 10px;
+    border-radius: 5px;
+}
+QMenuBar::item:selected, QMenu::item:selected {
+    background-color: $selection_background;
+}
 /* End of QSS */
 
 ph:

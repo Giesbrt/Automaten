@@ -1,11 +1,12 @@
 """TBA"""
-from PySide6.QtWidgets import QWidget, QMainWindow, QMessageBox, QPushButton, QCheckBox
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup
+from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox
+from PySide6.QtGui import QIcon, QAction, QDesktopServices
+from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl
 
 from aplustools.io.qtquick import QQuickMessageBox
+from aplustools.io.env import ImplInterface
 
-from ..abstract import MainWindowInterface
+from ..abstract import IMainWindow
 from ._panels import Panel, UserPanel, SettingsPanel
 
 # Standard typing imports for aps
@@ -14,11 +15,11 @@ import typing as _ty
 import types as _ts
 
 
-class MainWindow(MainWindowInterface, QMainWindow):
+class MainWindow(QMainWindow, IMainWindow, ImplInterface):
     linked: bool = False
 
-    def __new__(cls, *args, **kwargs):
-        return QMainWindow.__new__(cls,)
+    # def __new__(cls, *args, **kwargs):
+    #     return QMainWindow.__new__(cls,)
 
     def __init__(self) -> None:
         self.user_panel: UserPanel | None = None
@@ -46,6 +47,58 @@ class MainWindow(MainWindowInterface, QMainWindow):
         self.settings_panel.back_button.clicked.connect(self.switch_panel)
         self.switch_panel_simple()  # So they are ordered correctly
 
+        file_menu = self.menuBar().addMenu("File")
+        open_action = QAction("Open", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_file)
+        file_menu.addAction(open_action)
+        save_action = QAction("Save", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.save_file)
+        file_menu.addAction(save_action)
+        exit_action = QAction("Close", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        edit_menu = self.menuBar().addMenu("Edit")
+        cut_action = QAction("Cut", self)
+        cut_action.setShortcut("Ctrl+X")
+        edit_menu.addAction(cut_action)
+        copy_action = QAction("Copy", self)
+        copy_action.setShortcut("Ctrl+C")
+        edit_menu.addAction(copy_action)
+        paste_action = QAction("Paste", self)
+        paste_action.setShortcut("Ctrl+V")
+        edit_menu.addAction(paste_action)
+
+        help_menu = self.menuBar().addMenu("Help")
+        report_action = QAction("Report Issue", self)
+        report_action.triggered.connect(self.report_issue)
+        help_menu.addAction(report_action)
+        about_action = QAction("About", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+        self.menuBar().setFixedHeight(30)
+
+    def open_file(self):
+        file_dialog = QFileDialog(self)
+        file_path, _ = file_dialog.getOpenFileName(self, "Open File")
+        if file_path:
+            QMessageBox.information(self, "File Opened", f"You opened: {file_path}")
+
+    def save_file(self):
+        file_dialog = QFileDialog(self)
+        file_path, _ = file_dialog.getSaveFileName(self, "Save File")
+        if file_path:
+            QMessageBox.information(self, "File Saved", f"File saved to: {file_path}")
+
+    def show_about(self):
+        QMessageBox.about(self, "About", "This is a PySide6 Menu Bar Example.")
+
+    def report_issue(self):
+        QDesktopServices.openUrl(QUrl("https://github.com/Giesbrt/Automaten/issues/new?template=Blank%20issue"))
+
     def set_window_icon(self, absolute_path_to_icon: str) -> None:
         self.setWindowIcon(QIcon(absolute_path_to_icon))
 
@@ -59,12 +112,14 @@ class MainWindow(MainWindowInterface, QMainWindow):
         self.resize(QSize(height, width))
 
     def switch_panel_simple(self):
+        menubar_bottom = self.menuBar().height()
         width = self.width()
-        height = self.height()
+        height = self.height() - menubar_bottom
+        top = menubar_bottom
 
-        user_panel_hidden_value = QRect(-width, 0, width, height)
-        shown_panel_end_value = QRect(0, 0, width, height)
-        settings_panel_hidden_value = QRect(width, 0, width, height)
+        user_panel_hidden_value = QRect(-width, top, width, height)
+        shown_panel_end_value = QRect(0, top, width, height)
+        settings_panel_hidden_value = QRect(width, top, width, height)
 
         if self.settings_panel.x() == 0:
             self.user_panel.setGeometry(shown_panel_end_value)
@@ -74,12 +129,14 @@ class MainWindow(MainWindowInterface, QMainWindow):
             self.settings_panel.setGeometry(shown_panel_end_value)
 
     def reload_panels(self) -> None:
+        menubar_bottom = self.menuBar().height()
         width = self.width()
-        height = self.height()
+        height = self.height() - menubar_bottom
+        top = menubar_bottom
 
-        user_panel_hidden_value = QRect(-width, 0, width, height)
-        shown_panel_end_value = QRect(0, 0, width, height)
-        settings_panel_hidden_value = QRect(width, 0, width, height)
+        user_panel_hidden_value = QRect(-width, top, width, height)
+        shown_panel_end_value = QRect(0, top, width, height)
+        settings_panel_hidden_value = QRect(width, top, width, height)
 
         if self.settings_panel.x() == 0:
             self.user_panel.setGeometry(user_panel_hidden_value)
@@ -94,12 +151,14 @@ class MainWindow(MainWindowInterface, QMainWindow):
             self.app.setStyle(base)
 
     def switch_panel(self):
+        menubar_bottom = self.menuBar().height()
         width = self.width()
-        height = self.height()
+        height = self.height() - menubar_bottom
+        top = menubar_bottom
 
-        user_panel_hidden_value = QRect(-width, 0, width, height)
-        shown_panel_end_value = QRect(0, 0, width, height)
-        settings_panel_hidden_value = QRect(width, 0, width, height)
+        user_panel_hidden_value = QRect(-width, top, width, height)
+        shown_panel_end_value = QRect(0, top, width, height)
+        settings_panel_hidden_value = QRect(width, top, width, height)
 
         if self.settings_panel.x() == 0:
             self.user_panel_animation.setStartValue(user_panel_hidden_value)

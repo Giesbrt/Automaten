@@ -92,6 +92,14 @@ class OrderedSet(_ty.Generic[T]):
         """
         return self._seen
 
+    @staticmethod
+    def from_list(lst: _ty.List[T]) -> 'OrderedSet':
+        return OrderedSet(lst)
+
+    @staticmethod
+    def from_set(st: _ty.Set[T]) -> 'OrderedSet':
+        return OrderedSet(st)
+
     def __len__(self):
         """
         Returns the number of items in the OrderedSet.

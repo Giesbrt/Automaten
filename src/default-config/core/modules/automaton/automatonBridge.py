@@ -7,6 +7,8 @@ from core.modules.automaton.base.state import State
 from core.modules.automaton.base.transition import Transition
 from core.modules.automaton.base.automaton import Automaton
 
+from core.utils.OrderedSet import OrderedSet
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
@@ -31,7 +33,7 @@ class AutomatonBridge:
         class_name: str = class_type.__name__
         return class_name
 
-    def get_states(self) -> _ty.Set:
+    def get_states(self) -> OrderedSet:
         """
         Returns the set of all states in the automaton.
 
@@ -40,7 +42,7 @@ class AutomatonBridge:
         """
         return self.automaton_impl.get_states()
 
-    def get_transitions(self, scrape_transition: bool = True) -> _ty.Set:
+    def get_transitions(self, scrape_transition: bool = True) -> OrderedSet:
         """
         Returns the set of all transitions in the automaton.
 
@@ -83,7 +85,7 @@ class AutomatonBridge:
         """
         self.automaton_impl.set_start_state(new_start_state)
 
-    def set_states(self, new_states: _ty.Set) -> None:
+    def set_states(self, new_states: OrderedSet) -> None:
         """
         Sets a new set of states for the automaton.
 
@@ -95,7 +97,7 @@ class AutomatonBridge:
         """
         self.automaton_impl.set_states(new_states)
 
-    def set_transitions(self, new_transitions: _ty.Set) -> None:
+    def set_transitions(self, new_transitions: OrderedSet) -> None:
         """
         Sets a new set of transitions for the automaton.
 

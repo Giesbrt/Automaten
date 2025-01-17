@@ -5,6 +5,8 @@ import json
 from core.modules.automaton.base.state import State
 from core.modules.automaton.base.transition import Transition
 
+from core.utils.OrderedSet import OrderedSet
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
@@ -98,7 +100,7 @@ class Automaton(_abc.ABC):
             Abstract method to get the output alphabet for the automaton.
     """
 
-    def __init__(self, author: str ) -> None:
+    def __init__(self, author: str) -> None:
         """
         Initializes an automaton with no states, transitions, or current state.
 
@@ -106,8 +108,11 @@ class Automaton(_abc.ABC):
         states to `None`. These will need to be populated through methods like `set_states`, `set_transitions`,
         and `set_start_state` before the automaton can be executed.
         """
-        self.states: _ty.Set[State] = set()
-        self.transitions: _ty.Set = set()
+        # self.states: _ty.Set[State] = set()
+        # self.transitions: _ty.Set = set()
+
+        self.states: OrderedSet[State] = OrderedSet()
+        self.transitions: OrderedSet[Transition] = OrderedSet()
 
         self.current_state: State = None
         self.start_state: State = None
@@ -136,7 +141,7 @@ class Automaton(_abc.ABC):
         """
         self.end_states = new_end_states
 
-    def get_states(self) -> _ty.Set:
+    def get_states(self) -> OrderedSet[State]:
         """
         Returns the set of all states in the automaton.
 
@@ -145,7 +150,7 @@ class Automaton(_abc.ABC):
         """
         return self.states
 
-    def get_transitions(self, scrape_transitions: bool = True) -> _ty.Set:
+    def get_transitions(self, scrape_transitions: bool = True) -> OrderedSet[Transition]:
         """
         Returns the set of all transitions in the automaton. If `scrape_transitions` is set to True, it will
         scrape transitions from the states.
@@ -164,7 +169,7 @@ class Automaton(_abc.ABC):
         """
         Scrapes all transitions from the states and stores them in the automaton's transitions set.
         """
-        transition_set: _ty.Set[Transition] = set()
+        transition_set: OrderedSet[Transition] = OrderedSet()
 
         for state in self.get_states():
             for transition in state.get_transitions():
@@ -198,7 +203,7 @@ class Automaton(_abc.ABC):
         """
         self.start_state = new_start_state
 
-    def set_states(self, new_states: _ty.Set) -> None:
+    def set_states(self, new_states: OrderedSet[State]) -> None:
         """
         Sets a new set of states for the automaton.
 
@@ -225,7 +230,7 @@ class Automaton(_abc.ABC):
 
             return transition
 
-    def set_transitions(self, new_transitions: _ty.Set) -> None:
+    def set_transitions(self, new_transitions: OrderedSet[Transition]) -> None:
         """
         Sets a new set of transitions for the automaton.
 
@@ -331,7 +336,7 @@ class Automaton(_abc.ABC):
             return
         self.states.remove(state)
 
-        _transition_copy: _ty.Set = self.get_transitions()
+        _transition_copy: OrderedSet[Transition] = self.get_transitions()
         for transition in _transition_copy:
             if not transition.get_start_state() == state and not transition.get_transition_target() == state:
                 continue

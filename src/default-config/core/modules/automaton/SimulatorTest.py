@@ -17,84 +17,35 @@ def simulation_step_result(step):
 
 
 if __name__ == '__main__':
-    data = {
-        "id": "giesbrt:dfa",
-        "input": ["a", "b", "b", 'a'],
-        "content": [
-            {
-                "name": "q0",  # Index 0 ist immer die Start-Status
-                "type": "default",
-                "transitions": [
-                    {
-                        "to": 1,
-                        "condition": "a"  # Für TM und Mealy die Argumente mit '|' trennen
-                    }
-                    ,
-                    {
-                        "to": 0,
-                        "condition": "b"
-                    }
-                ]
-            },
-            {
-                "name": "q1",
-                "type": "end",
-                "transitions": [
-                    {
-                        "to": 1,
-                        "condition": "a"
-                    },
-                    {
-                        "to": 0,
-                        "condition": "b"
-                    }
-                ]
-            }
-        ]
-    }
-
     # data = {
-    #     "id": "custom:dfa",
-    #     "input": list(str(input("input >> ")).split(",")),
+    #     "id": "giesbrt:dfa",
+    #     "input": ["a", "b", "b", 'a'],
     #     "content": [
     #         {
-    #             "name": "q0",  # Start-Zustand
+    #             "name": "q0",  # Index 0 ist immer die Start-Status
     #             "type": "default",
     #             "transitions": [
     #                 {
     #                     "to": 1,
-    #                     "condition": "a"
-    #                 },
+    #                     "condition": "a"  # Für TM und Mealy die Argumente mit '|' trennen
+    #                 }
+    #                 ,
     #                 {
-    #                     "to": 2,
+    #                     "to": 0,
     #                     "condition": "b"
     #                 }
     #             ]
     #         },
     #         {
     #             "name": "q1",
-    #             "type": "default",
+    #             "type": "end",
     #             "transitions": [
-    #                 {
-    #                     "to": 2,
-    #                     "condition": "a"
-    #                 },
-    #                 {
-    #                     "to": 0,
-    #                     "condition": "b"
-    #                 }
-    #             ]
-    #         },
-    #         {
-    #             "name": "q2",
-    #             "type": "end",  # End-Zustand
-    #             "transitions": [
-    #                 {
-    #                     "to": 0,
-    #                     "condition": "a"
-    #                 },
     #                 {
     #                     "to": 1,
+    #                     "condition": "a"
+    #                 },
+    #                 {
+    #                     "to": 0,
     #                     "condition": "b"
     #                 }
     #             ]
@@ -102,12 +53,63 @@ if __name__ == '__main__':
     #     ]
     # }
 
+    data = {
+        "id": "custom:dfa",
+        "input": list(str(input("input >> ")).split(",")),
+        "content": [
+            {
+                "name": "XYZ",  # Start-Zustand
+                "type": "default",
+                "transitions": [
+                    {
+                        "to": 1,
+                        "condition": "a"
+                    },
+                    {
+                        "to": 2,
+                        "condition": "b"
+                    }
+                ]
+            },
+            {
+                "name": "q1",
+                "type": "default",
+                "transitions": [
+                    {
+                        "to": 2,
+                        "condition": "a"
+                    },
+                    {
+                        "to": 0,
+                        "condition": "b"
+                    }
+                ]
+            },
+            {
+                "name": "End",
+                "type": "end",  # End-Zustand
+                "transitions": [
+                    {
+                        "to": 0,
+                        "condition": "a"
+                    },
+                    {
+                        "to": 1,
+                        "condition": "b"
+                    }
+                ]
+            }
+        ]
+    }
+
     i = 0
 
     while i < 1:
         i += 1
         simulator = AutomatonSimulator(data, simulation_step_result, 2, error)
         result = simulator.run()
+        print([i.get_name() for i in simulator.automaton.get_states()], "s")
+        print(simulator.automaton.get_implementation().current_state.get_name())
         print(result)
         if isinstance(result, _result.Failure):
             print("BREAK")

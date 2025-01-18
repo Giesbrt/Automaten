@@ -4,7 +4,6 @@ from PySide6.QtGui import QIcon, QAction, QDesktopServices
 from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl
 
 from aplustools.io.qtquick import QQuickMessageBox
-from aplustools.io.env import ImplInterface
 
 from ..abstract import IMainWindow
 from ._panels import Panel, UserPanel, SettingsPanel
@@ -15,7 +14,7 @@ import typing as _ty
 import types as _ts
 
 
-class MainWindow(QMainWindow, IMainWindow, ImplInterface):
+class MainWindow(QMainWindow, IMainWindow):
     linked: bool = False
 
     # def __new__(cls, *args, **kwargs):

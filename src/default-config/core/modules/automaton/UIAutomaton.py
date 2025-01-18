@@ -38,9 +38,6 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
         self._type: str = node_type
         self._is_active: bool = False
 
-    def __new__(cls, *args, **kwargs):
-        return object.__new__(cls)
-
     def set_colour(self, colour: str) -> None:
         self._colour = colour
 

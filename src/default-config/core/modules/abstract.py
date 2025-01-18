@@ -31,6 +31,7 @@ class ISignal(_ty.Generic[T], Interface):
         ...
 
     def disconnect(self) -> None:
+        """Disconnects all functions currently connected to the signal"""
         ...
 
 
@@ -39,7 +40,10 @@ class IMainWindow(Interface):
     icons_folder: str = ""
     popups: list[_ty.Any] = []  # Basically anything that isn't the main window, but a window
     app: QApplication | None = None
-    someSignal: ISignal[str] = None
+    file_opened: ISignal[str]
+    file_saved: ISignal[str]
+    file_closed: ISignal[None]
+
 
     class AppStyle:
         """QApp Styles"""

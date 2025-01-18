@@ -101,20 +101,61 @@ QScrollBar::corner {
 }
 QSlider {
     border-radius: 5px;
+    padding: 0px;
     background: $background_tertiary;
-    //background: none;
 }
-QMenuBar, QMenu {
+QSlider::groove:horizontal {
+    border-radius: 3px;
+    background: #007bff;
+    height: 6px;
+    margin: 2px 10px;
+}
+QSlider::add-page:horizontal {
+    border-radius: 3px;
+    background: $background_secondary;
+    height: 6px;
+    margin: 2px 10px 2px 2px; /* top, right, bottom, left */
+}
+QSlider::handle:horizontal {
+    background: $selection_background;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    margin: -5px 0px;
+}
+QMenuBar {
+    padding: 5px;
+    background-color: $background_secondary;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+QMenu {
     padding: 5px;
     background-color: $background_secondary;
     border-radius: 10px;
 }
 QMenuBar::item, QMenu::item {
-    padding: 1px 10px;
+    padding: 2px 10px;
+    margin: 2px 2px; /* Space between items without affecting background */
     border-radius: 5px;
+    background-color: $background_tertiary;
 }
 QMenuBar::item:selected, QMenu::item:selected {
     background-color: $selection_background;
+}
+QMenu::indicator {
+    width: 12px;
+    height: 12px;
+    background-color: $background_secondary;
+    border-radius: 3px;
+}
+QMenu::indicator:checked {
+    background-color: $background_secondary;
+    image: $checkbox_image;
+}
+QMenu::indicator:unchecked {
+    background-color: $background_secondary;
+    image: none;
 }
 /* End of QSS */
 
@@ -128,4 +169,5 @@ background_secondary~=QPalette.ToolTipBase;
 selection_background~=QPalette.Mid;
 background_tertiary~=QPalette.ToolTipBase;
 background_scrollbar~=transparent; // Stays
-dropdown_image~=url()
+dropdown_image~=url();
+checkbox_image~=url();

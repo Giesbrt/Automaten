@@ -22,7 +22,7 @@ if __name__ == '__main__':
         "input": ["a", "b", "b", 'a'],
         "content": [
             {
-                "name": "q0",  # Index 0 ist immer die Start-Status
+                "name": "XYZ",  # Index 0 ist immer die Start-Status
                 "type": "default",
                 "transitions": [
                     {
@@ -37,7 +37,7 @@ if __name__ == '__main__':
                 ]
             },
             {
-                "name": "q1",
+                "name": "AAA",
                 "type": "end",
                 "transitions": [
                     {
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     #     "input": list(str(input("input >> ")).split(",")),
     #     "content": [
     #         {
-    #             "name": "q0",  # Start-Zustand
+    #             "name": "XYZ",  # Start-Zustand
     #             "type": "default",
     #             "transitions": [
     #                 {
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     #             ]
     #         },
     #         {
-    #             "name": "q2",
+    #             "name": "End",
     #             "type": "end",  # End-Zustand
     #             "transitions": [
     #                 {
@@ -108,9 +108,10 @@ if __name__ == '__main__':
         i += 1
         simulator = AutomatonSimulator(data, simulation_step_result, 2, error)
         result = simulator.run()
+        state_list = [i.get_name() for i in simulator.automaton.get_states()]
         print(result)
-        if isinstance(result, _result.Failure):
-            print("BREAK")
+        if isinstance(result, _result.Failure) or state_list != ['XYZ', 'AAA']:
+            print("BREAK", state_list)
             break
 
     print(i)

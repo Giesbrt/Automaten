@@ -128,14 +128,14 @@ class AutomatonSimulator:
             serialised_update["state"]["id"] = self.automaton.get_state_index(state)
             serialised_update["state"]["is_active"] = state.is_active()
 
-        for transition in self.automaton.get_transitions():
-            transition: Transition = transition
-            if not transition.is_active():
-                continue
-
-            serialised_update["transition"] = {}
-            serialised_update["transition"]["id"] = self.automaton.get_transition_index(transition)
-            serialised_update["transition"]["is_active"] = transition.is_active()
+        # for transition in self.automaton.get_transitions():
+        #     transition: Transition = transition
+        #     if not transition.is_active():
+        #         continue
+        #
+        #     serialised_update["transition"] = {}
+        #     serialised_update["transition"]["id"] = self.automaton.get_transition_index(transition)
+        #     serialised_update["transition"]["is_active"] = transition.is_active()
 
         serialised_update["automaton"] = {}
         serialised_update["automaton"]["input"] = list(self.automaton.get_input())
@@ -143,7 +143,7 @@ class AutomatonSimulator:
         serialised_update["automaton"]["output"] = self.automaton.get_current_return_value()
         serialised_update["type"] = "SIMULATION_UPDATE"
 
-        if "state" not in serialised_update or "transition" not in serialised_update:
+        if "state" not in serialised_update:  # or "transition" not in serialised_update:
             return
 
         # push to bridge
@@ -162,6 +162,7 @@ class AutomatonSimulator:
 
     def _simulate(self) -> _result.Result:
         try:
+            self._serialise_automaton_to_bridge()
             return_result = self.automaton.simulate_one_step()
             self._serialise_automaton_to_bridge()
 

@@ -281,7 +281,7 @@ class UiAutomaton(IUiAutomaton):
         simulation_task: _ty.Dict[str, _ty.Any] = bridge.get_simulation_task()
 
         state_data: _ty.Dict[str, _ty.Any] = simulation_task["state"]
-        transition_data: _ty.Dict[str, _ty.Any] = simulation_task["transition"]
+        # transition_data: _ty.Dict[str, _ty.Any] = simulation_task["transition"]
         automaton_data: _ty.Dict[str, _ty.Any] = simulation_task["automaton"]
 
         # State data
@@ -293,12 +293,12 @@ class UiAutomaton(IUiAutomaton):
         state._activate()
 
         # Transition data
-        transition_index: int = transition_data["id"]
-
-        transition: UiTransition = self.get_transition_by_id(transition_index)
-        if transition is None:
-            return _result.Failure(f"Transition with index {transition_index} not found.")
-        transition._activate()
+        # transition_index: int = transition_data["id"]
+        #
+        # transition: UiTransition = self.get_transition_by_id(transition_index)
+        # if transition is None:
+        #     return _result.Failure(f"Transition with index {transition_index} not found.")
+        # transition._activate()
 
         # Automaton data
         self._input = automaton_data["input"]

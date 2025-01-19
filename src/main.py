@@ -55,7 +55,7 @@ class App:  # The main logic and gui are separated
     qapp: QApplication | None = None
     linked: bool = False
 
-    def __init__(self, input_path: str, output_path: str, logging_level: int | None = None) -> None:
+    def __init__(self, input_path: str, logging_level: int | None = None) -> None:
         self.base_app_dir: str = config.base_app_dir
         self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
@@ -85,12 +85,13 @@ class App:  # The main logic and gui are separated
         self.configure_settings()
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 
-        self.ui_bridge: UiBridge = UiBridge()
-        self.backend: IBackend = start(self.app_settings, self.user_settings, self.ui_bridge)
+        # self.ui_bridge: UiBridge = UiBridge()
+        self.backend: IBackend = start(self.app_settings, self.user_settings)
         self.backend_stop_event: threading.Event = threading.Event()
         self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                  args=(self.backend_stop_event,))
         self.backend_thread.start()
+        # self.backend = Backend(self.backend_thread, self.window)
 
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
@@ -479,8 +480,6 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description=f"{config.PROGRAM_NAME}")
     parser.add_argument("input", nargs="?", default="", help="Path to the input file.")
-    parser.add_argument("output", nargs="?", default="", help="Path to the output file.")
-    parser.add_argument("-o", nargs="?", default="", help="Path to the output file")
     parser.add_argument("--logging-mode", choices=["DEBUG", "INFO", "WARN", "ERROR"], default=None,
                         help="Logging mode (default: None)")
     args = parser.parse_args()
@@ -494,19 +493,18 @@ if __name__ == "__main__":
         sys.exit(1)
 
     input_path = os.path.abspath(args.input)
-    output_path = os.path.abspath(args.o or args.output)
 
     if not os.path.exists(input_path):
         logging.error(f"The input file ({input_path}) needs to exist")
         sys.exit(1)
-    config.exported_logs += f"Reading {input_path}, writing {output_path}\n"
+    config.exported_logs += f"Reading {input_path}\n"
 
     try:
         qapp = QApplication(sys.argv)
         qgui = MainWindow()
         App.window = qgui
         App.qapp = qapp
-        dp_app = App(input_path, output_path, logging_level)  # Shows gui
+        dp_app = App(input_path, logging_level)  # Shows gui
         current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()

@@ -1,5 +1,6 @@
 """TBA"""
 import config
+import core.modules.serializer  # So we know the backend still works
 
 # Standard imports
 from pathlib import Path as PLPath
@@ -37,6 +38,7 @@ from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
 from core.modules.abstract import IMainWindow, IBackend
 from core.modules.automaton_loader import start
+from core.modules.automaton.UiBridge import UiBridge
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -83,7 +85,8 @@ class App:  # The main logic and gui are separated
         self.configure_settings()
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 
-        self.backend: IBackend = start(self.app_settings, self.user_settings)
+        self.ui_bridge: UiBridge = UiBridge()
+        self.backend: IBackend = start(self.app_settings, self.user_settings, self.ui_bridge)
         self.backend_stop_event: threading.Event = threading.Event()
         self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                  args=(self.backend_stop_event,))

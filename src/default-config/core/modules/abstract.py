@@ -3,12 +3,9 @@ import math
 import threading
 
 from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
-from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
 from core.utils.OrderedSet import OrderedSet
-
-from aplustools.io.env import Interface
 
 # Standard typing imports for aps
 import abc as _abc
@@ -18,7 +15,7 @@ import types as _ts
 
 
 T = _ty.TypeVar("T")
-class ISignal(_ty.Generic[T], Interface):
+class ISignal(_ty.Generic[T], _abc.ABC):
     """A generic interface for signals."""
 
     def connect(self, func: _a.Callable[[T], None]) -> None:
@@ -31,15 +28,23 @@ class ISignal(_ty.Generic[T], Interface):
         ...
 
     def disconnect(self) -> None:
+        """Disconnects all functions currently connected to the signal"""
         ...
 
 
-class IMainWindow(Interface):
+class IMainWindow:
     """TBA"""
     icons_folder: str = ""
     popups: list[_ty.Any] = []  # Basically anything that isn't the main window, but a window
     app: QApplication | None = None
-    someSignal: ISignal[str] = None
+    file_opened: ISignal[str]  # Maybe combine into one?
+    file_saved: ISignal[str]  # Maybe combine into one?
+    file_closed: ISignal[None]  # Maybe combine into one?
+    settings_changed: ISignal[dict[str, dict[str, str]]]  # {"general": {"font": "", ...}, ...}
+    start_simulation: ISignal[None]  # Maybe combine into one?  --> Backend can use .get() methods for automaton, ...
+    step_simulation: ISignal[None]  # Maybe combine into one?   right?
+    stop_simulation: ISignal[None]  # Maybe combine into one?
+    update_single_step: ISignal[bool]
 
     class AppStyle:
         """QApp Styles"""
@@ -106,12 +111,8 @@ class IMainWindow(Interface):
         raise NotImplementedError
 
 
-class IBackend:
+class IBackend(_abc.ABC):
     """The backend entry point"""
-
-    def __new__(cls, *args, **kwargs):
-        raise Exception("This class can't be initialized; it is just an Interface.")
-
     def run_infinite(self, backend_stop_event: threading.Event) -> None:
         """
         Used to actually start the backend. The gui will launch this in a separate thread.
@@ -201,12 +202,8 @@ class IUiState(_abc.ABC):
         """Deactivates the state."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
-    def __new__(cls, *args, **kwargs):
-        raise Exception("This class can't be initialized; it is just an Interface.")
-
 
 class IUiTransition(_abc.ABC):
-
     def __init__(self, from_state: IUiState, from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'],
                  to_state: IUiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'], condition: _ty.List[str]):
         self._from_state: IUiState = from_state
@@ -280,12 +277,8 @@ class IUiTransition(_abc.ABC):
         """Deactivates the transition."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
-    def __new__(cls, *args, **kwargs):
-        raise Exception("This class can't be initialized; it is just an Interface.")
-
 
 class IUiAutomaton(_abc.ABC):
-
     def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any], uuid: str = None):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
         self._type: str = automaton_type
@@ -360,7 +353,6 @@ class IUiAutomaton(_abc.ABC):
         """Sets the transition pattern of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
-
     @_abc.abstractmethod
     def get_states(self) -> OrderedSet['IUiState']:
         """Returns all states in the automaton."""
@@ -434,6 +426,3 @@ class IUiAutomaton(_abc.ABC):
     def handle_bridge_updates(self) -> None:
         """Handles updates from the UI bridge."""
         raise NotImplementedError("This method must be implemented by subclasses.")
-
-    def __new__(cls, *args, **kwargs):
-        raise Exception("This class can't be initialized; it is just an Interface.")

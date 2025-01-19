@@ -19,7 +19,7 @@ import types as _ts
 
 class SimulationLoader:
 
-    def __init__(self, json_app_storage: JSONAppStorage):
+    def __init__(self, json_app_storage: JSONAppStorage, bridge: UiBridge):
         super().__init__()
         # App storage access
         self._app_storage: JSONAppStorage = json_app_storage
@@ -30,7 +30,7 @@ class SimulationLoader:
 
         self._max_restart_counter: int = loaded_max_restart_counter or 5  # set default of 5 if the config could not be read
 
-        self._bridge: UiBridge = UiBridge()
+        self._bridge: UiBridge = bridge
 
     def _push_simulation_to_bridge(self, item: _ty.Dict[str, _ty.Any]) -> None:
         ActLogger().info("Pushed simulation packet to bridge.")

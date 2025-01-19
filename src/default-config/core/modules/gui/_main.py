@@ -4,7 +4,6 @@ from PySide6.QtGui import QIcon, QAction, QDesktopServices
 from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl
 
 from aplustools.io.qtquick import QQuickMessageBox
-from aplustools.io.env import ImplInterface
 
 from ..abstract import IMainWindow
 from ._panels import Panel, UserPanel, SettingsPanel
@@ -15,7 +14,7 @@ import typing as _ty
 import types as _ts
 
 
-class MainWindow(QMainWindow, IMainWindow, ImplInterface):
+class MainWindow(QMainWindow, IMainWindow):
     linked: bool = False
 
     # def __new__(cls, *args, **kwargs):
@@ -61,6 +60,20 @@ class MainWindow(QMainWindow, IMainWindow, ImplInterface):
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
+        simulation_menu = self.menuBar().addMenu("Simulation")
+        start_action = QAction("Start", self)
+        start_action.setShortcut("Ctrl+G")
+        simulation_menu.addAction(start_action)
+        single_step_action = QAction("Single Step", self)
+        single_step_action.setCheckable(True)
+        simulation_menu.addAction(single_step_action)
+        step_action = QAction("Step", self)
+        step_action.setShortcut("Ctrl+T")
+        simulation_menu.addAction(step_action)
+        stop_action = QAction("Stop", self)
+        stop_action.setShortcut("Ctrl+Y")
+        simulation_menu.addAction(stop_action)
+
         edit_menu = self.menuBar().addMenu("Edit")
         cut_action = QAction("Cut", self)
         cut_action.setShortcut("Ctrl+X")
@@ -83,13 +96,16 @@ class MainWindow(QMainWindow, IMainWindow, ImplInterface):
 
     def open_file(self):
         file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getOpenFileName(self, "Open File")
+        file_path, _ = file_dialog.getOpenFileName(
+            self, "Open File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au);;All Files (*)"
+        )
         if file_path:
             QMessageBox.information(self, "File Opened", f"You opened: {file_path}")
 
     def save_file(self):
         file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getSaveFileName(self, "Save File")
+        file_path, _ = file_dialog.getSaveFileName(
+            self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
         if file_path:
             QMessageBox.information(self, "File Saved", f"File saved to: {file_path}")
 

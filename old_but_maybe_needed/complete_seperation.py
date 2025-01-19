@@ -55,6 +55,7 @@ class App:  # The main logic and gui are separated
     """TBA"""
     window: IMainWindow
     qapp: QApplication
+    linked: bool = False
 
     def __init__(self, input_path: str, logging_level: int | None = None) -> None:
         self.base_app_dir: str = config.base_app_dir
@@ -64,6 +65,8 @@ class App:  # The main logic and gui are separated
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
         self.styling_folder: str = os.path.join(self.base_app_dir, "styling")  # App styling
 
+        # TODO: remove dependency on self.window.icons_dir
+        # self.window.icons_dir = os.path.join(self.data_folder, "icons")
         self.window.setup_gui()
         # self.window.repaint()
 
@@ -95,6 +98,7 @@ class App:  # The main logic and gui are separated
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
         self.window.app = self.qapp
+        self.apply_theme()
 
         # Setup window
         if self.abs_window_icon_path.startswith("#"):
@@ -102,7 +106,6 @@ class App:  # The main logic and gui are separated
         self.window.set_window_icon(self.abs_window_icon_path)
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
-        self.apply_theme()
 
         self.update_title()
         x, y, height, width = self.user_settings.retrieve("auto_configs", "geometry", "tuple")
@@ -111,9 +114,10 @@ class App:  # The main logic and gui are separated
             width = 1050
         if self.user_settings.retrieve("user_configs_advanced", "save_window_position", "bool"):
             self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
-        else:  # I guess windows does some weird shit with the title bar
+        else:                                                  # I guess windows does some weird shit with the title bar
             self.window.set_window_dimensions(height, width)
         assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
+        self.link_gui()
 
         # Setup values, signals, ...
         # TODO: self.window.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
@@ -126,7 +130,6 @@ class App:  # The main logic and gui are separated
         self.timer: QtTimidTimer = QtTimidTimer()
         self.timer.timeout.connect(self.timer_tick)
         self.timer.start(500, 0)
-        self.timer_number: int = 1
         # self.timer.start(1500, 1)  # 1.5 second timer
 
     @staticmethod
@@ -208,9 +211,8 @@ class App:  # The main logic and gui are separated
         do_popup: bool = True
 
         try:  # Get update content
-            response: requests.Response = requests.get(
-                "https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
-                timeout=self.app_settings.retrieve("update_check_request_timeout", float))
+            response: requests.Response = requests.get("https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
+                                                       timeout=self.app_settings.retrieve("update_check_request_timeout", float))
         except requests.exceptions.Timeout:
             title, text, description = "Update Info", ("The request timed out.\n"
                                                        "Please check your internet connection, "
@@ -317,13 +319,6 @@ class App:  # The main logic and gui are separated
             if checkbox is not None and checkbox_checked:
                 self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
 
-    def update_title(self) -> None:
-        """Updates the window title with data from the settings"""
-        raw_title: Template = Template(
-            self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))
-        formatted_title: str = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
-        self.window.set_window_title(formatted_title)
-
     def configure_settings(self) -> None:
         self.user_settings.set_default_settings("auto_configs", {
             "geometry": "(100, 100, 1050, 640)",
@@ -335,8 +330,8 @@ class App:  # The main logic and gui are separated
             "recent_files": "()"
         })
         self.user_settings.set_default_settings("user_configs_design", {
-            "light_theming": "adalfarus::thin/colored_summer_sky",  # thin_light_dark
-            "dark_theming": "adalfarus::thin/colored_evening_sky",
+            "light_theme": "adalfarus::thin::light_icons",
+            "dark_theme": "adalfarus::thin::dark_icons",
             "font": "Segoe UI",
             "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + " [INDEV]" if config.INDEV else ""
         })
@@ -358,8 +353,94 @@ class App:  # The main logic and gui are separated
             "simulation_loader_max_restart_counter": "5"
         })
 
+    def closeEvent(self, event: QCloseEvent) -> None:
+        ...
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self.window.reload_panels()
+
+    def moveEvent(self, event: QMoveEvent) -> None:
+        ...
+
+    def focusInEvent(self, event: QFocusEvent) -> None:
+        ...
+
+    def focusOutEvent(self, event: QFocusEvent) -> None:
+        ...
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        ...
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        ...
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        ...
+
+    def enterEvent(self, event: QEnterEvent) -> None:
+        ...
+
+    def leaveEvent(self, event: QEvent) -> None:
+        ...
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        ...
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        ...
+
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        ...
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        ...
+
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        ...
+
+    def showEvent(self, event: QShowEvent) -> None:
+        ...
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        ...
+
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
+        ...
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        ...
+
+    def tabletEvent(self, event: QTabletEvent) -> None:
+        ...
+
+    def timerEvent(self, event: QTimerEvent) -> None:
+        ...
+
+    def _create_link_event(self, event_handler, eventFunc) -> _a.Callable:
+        return lambda e: (event_handler(e), getattr(self, eventFunc)(e))
+
+    def link_gui(self):
+        """Links the gui events to this class."""
+        if not self.linked:
+            self.linked = True
+            for eventFunc in ("closeEvent", "resizeEvent", "moveEvent", "focusInEvent", "focusOutEvent",
+                              "keyPressEvent", "keyReleaseEvent", "mousePressEvent", "mouseReleaseEvent",
+                              "mouseDoubleClickEvent", "mouseMoveEvent", "enterEvent", "leaveEvent", "paintEvent",
+                              "dragEnterEvent", "dragMoveEvent", "dropEvent", "dragLeaveEvent", "showEvent",
+                              "hideEvent", "contextMenuEvent", "wheelEvent", "tabletEvent", "timerEvent"):
+                event_handler = getattr(self.window, eventFunc)
+                setattr(self.window, eventFunc, self._create_link_event(event_handler, eventFunc))
+
     def load_themes(self, theme_folder: str, clear: bool = False) -> None:
-        """Loads all theme files from styling/themes"""
         if clear:
             Theme.clear_loaded_themes()
         for file in os.listdir(theme_folder):
@@ -371,7 +452,6 @@ class App:  # The main logic and gui are separated
             raise RuntimeError(f"Base theme is not present")
 
     def load_styles(self, style_folder: str, clear: bool = False) -> None:
-        """Loads all styles from styling/styles"""
         if clear:
             Style.clear_loaded_styles()
         for file in os.listdir(style_folder):
@@ -384,36 +464,25 @@ class App:  # The main logic and gui are separated
             raise RuntimeError(f"Default light and/or dark style are/is not present")
 
     def apply_theme(self) -> None:
-        theming_str: str = self.user_settings.retrieve("user_configs_design",
-                                                       {SystemTheme.LIGHT: "light_theming",
-                                                        SystemTheme.DARK: "dark_theming"}[self.os_theme],
-                                                       "string")
-        theme_str, style_str = theming_str.split("/", maxsplit=1)
-        theme = Theme.get_loaded_theme(theme_str)
+        theme = Theme.get_loaded_theme("adalfarus::thin")  # TODO: Get from settings
 
         if theme is None:  # TODO: Popup
-            self.logger.warning(f"Specified theme '{theme}' is not available")
+            self.logger.warning(f"Specified theme '{'adalfarus::thin'}' is not available")  # TODO: Get from settings
             return
-        style = theme.get_compatible_style(style_str.replace("_", " ").title())
-        theme_str, palette = theme.apply_style(style, self.qapp.palette(),
-                                               transparency_mode="none")  # TODO: Get from settings
+        # TODO: Get from settings
+        style = theme.get_compatible_style("Thin Light Dark")  # "Colored Evening Sky"
+        theme_str, palette = theme.apply_style(style, self.qapp.palette(), transparency_mode="none")  # TODO: Get from s
         self.qapp.setPalette(palette)
         self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base_styling()))
 
-    def check_theme_change(self):
-        if self.timer_number & 1 == 1:
-            current_os_theme = self.get_os_theme()
-            if current_os_theme != self.os_theme:
-                self.os_theme = current_os_theme
-                self.apply_theme()
+    def update_title(self) -> None:
+        raw_title = Template(self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))
+        formatted_title = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
+        self.window.set_window_title(formatted_title)
 
     def timer_tick(self, index: int) -> None:
         if index == 0:  # Default 500ms timer
             self.update_title()
-            self.check_theme_change()
-            self.timer_number += 1
-            if self.timer_number > 999:
-                self.timer_number = 1
         else:
             print("Tock")
         # if not self.threading:
@@ -473,7 +542,7 @@ if __name__ == "__main__":
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         error_title = "Info"
         error_text = (f"There was an error while running the app {config.PROGRAM_NAME}.\n"
-                      "This error is unrecoverable.\nPlease submit the details to our GitHub issues page.")
+                "This error is unrecoverable.\nPlease submit the details to our GitHub issues page.")
         error_description = format_exc()
         msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning, error_title, error_text, error_description,
                                    standard_buttons=QMessageBox.StandardButton.Ok,

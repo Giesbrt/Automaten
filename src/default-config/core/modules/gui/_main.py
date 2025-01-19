@@ -222,6 +222,9 @@ class MainWindow(QMainWindow, IMainWindow):
     def internal_obj(self) -> QMainWindow:
         return self
 
+    def resizeEvent(self, event):
+        self.reload_panels()
+
     def start(self) -> None:
         self.show()
         self.raise_()

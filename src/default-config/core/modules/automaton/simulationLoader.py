@@ -44,7 +44,7 @@ class SimulationLoader:
         if not self._bridge.has_backend_items():
             return
 
-        bridge_data: _ty.Dict[str, _ty.Any] = self._bridge.get_ui_task()
+        bridge_data: _ty.Dict[str, _ty.Any] = self._bridge.get_backend_task()
 
         try:
             match (str(bridge_data["action"]).lower()):

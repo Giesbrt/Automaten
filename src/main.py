@@ -35,6 +35,7 @@ from packaging.version import Version, InvalidVersion
 import stdlib_list
 import requests
 
+from core.modules.automaton.UIAutomaton import UiAutomaton
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
@@ -84,13 +85,12 @@ class App:  # The main logic and gui are separated
         self.configure_settings()
         self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 
-        # self.ui_bridge: UiBridge = UiBridge()
         self.backend: IBackend = start(self.app_settings, self.user_settings)
         self.backend_stop_event: threading.Event = threading.Event()
         self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                  args=(self.backend_stop_event,))
         self.backend_thread.start()
-        # self.backend = Backend(self.backend_thread, self.window)
+        self.ui_automaton: UiAutomaton = UiAutomaton()  # TODO: er
 
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))

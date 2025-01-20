@@ -22,7 +22,7 @@ class _Backend(IBackend):
         simulation_loader: SimulationLoader = SimulationLoader(simple_storage)
         while not backend_stop_event.is_set():
             time.sleep(0.1)
-            simulation_loader.handle_bridge()  # TODO: Try to yield so we can check if the thread should terminate
+            simulation_loader.handle_bridge()
 
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)

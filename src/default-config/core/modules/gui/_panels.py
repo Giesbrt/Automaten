@@ -117,6 +117,8 @@ class UserPanel(Panel):
         # Connect signals
         self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
+        # TODO: SETTINGS
+        # - Automaton loader settings
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:

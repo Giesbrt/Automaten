@@ -279,10 +279,9 @@ class IUiTransition(_abc.ABC):
 
 
 class IUiAutomaton(_abc.ABC):
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any], uuid: str = None):
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any]):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
         self._type: str = automaton_type
-        self._uuid: str = uuid
 
         self._states: _ty.Set[IUiState] = set()
         self._transitions: _ty.Set[IUiTransition] = set()
@@ -297,17 +296,9 @@ class IUiAutomaton(_abc.ABC):
         self._transition_pattern: _ty.List[int] = []
 
         self._state_types_with_design: _ty.Dict[str, _ty.Any] = state_types_with_design
-    
-    @_abc.abstractmethod
-    def get_uuid(self) -> str:
-        raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
     def get_start_state(self) -> IUiState | None:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_uuid(self, uuid: str) -> None:
         raise NotImplementedError("This method must be implemented by subclasses.")
     
     @_abc.abstractmethod

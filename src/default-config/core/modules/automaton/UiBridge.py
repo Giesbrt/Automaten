@@ -70,7 +70,7 @@ class UiBridge:
         Returns:
             bool: True if the Simulation queue is empty, False otherwise.
         """
-        return self._ui_queue.empty()
+        return not self._ui_queue.empty()
 
     # Simulation-related methods
     def get_simulation_queue(self) -> Queue[_ty.Dict[str, str]]:
@@ -115,7 +115,7 @@ class UiBridge:
         Returns:
             bool: True if the Simulation queue is empty, False otherwise.
         """
-        return self._simulation_queue.empty()
+        return not self._simulation_queue.empty()
     
     def clear_simulation_queue(self) -> None:
         """
@@ -166,4 +166,4 @@ class UiBridge:
         Returns:
             bool: True if the backend queue is empty, False otherwise.
         """
-        return self._backend_queue.empty()
+        return not self._backend_queue.empty()

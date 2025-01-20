@@ -10,3 +10,5 @@ background_secondary: #3B4C60;  // Same as focus background for buttons
 selection_background: #34495E;  // A slightly lighter blue
 background_tertiary: #34495E;  // A slightly lighter blue
 background_scrollbar: transparent; // Stays
+dropdown_image: url(data/assets/icons/arrow-down-light.png);
+checkbox_image: url("data/assets/icons/check-mark-light.png");

@@ -118,6 +118,7 @@ QSlider::add-page:horizontal {
 }
 QSlider::handle:horizontal {
     background: $selection_background;
+    border: 1px solid $border_primary;
     width: 14px;
     height: 14px;
     border-radius: 7px;

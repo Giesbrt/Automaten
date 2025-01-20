@@ -10,3 +10,5 @@ background_secondary: #FFDAA5;  // Light orange for buttons
 selection_background: #FFF5D1;  // Light sunny cream
 background_tertiary: #FFF5D1;  // Light sunny cream
 background_scrollbar: transparent; // Stays
+dropdown_image: url(data/assets/icons/arrow-down-dark.png);
+checkbox_image: url("data/assets/icons/check-mark-dark.png");

@@ -144,7 +144,10 @@ class AutomatonSimulator:
         serialised_update["type"] = "SIMULATION_UPDATE"
 
         if "state" not in serialised_update:  # or "transition" not in serialised_update:
-            return
+            # return
+            serialised_update["state"] = {}
+            serialised_update["state"]["id"] = 0  # assume that index 0 is the start state
+            serialised_update["state"]["is_active"] = True
 
         # push to bridge
         self._simulation_result_callback(serialised_update)
@@ -162,13 +165,11 @@ class AutomatonSimulator:
 
     def _simulate(self) -> _result.Result:
         try:
-            self._serialise_automaton_to_bridge()
-            return_result = self.automaton.simulate_one_step()
-            self._serialise_automaton_to_bridge()
 
+            return_result = None
             while return_result is None:
-                return_result = self.automaton.simulate_one_step()
                 self._serialise_automaton_to_bridge()
+                return_result = self.automaton.simulate_one_step()
 
             self._serialise_simulation_result(return_result)
             return return_result

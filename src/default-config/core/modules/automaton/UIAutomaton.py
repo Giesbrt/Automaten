@@ -148,10 +148,9 @@ class UiTransition(IUiTransition):
 @auto_repr_with_privates
 class UiAutomaton(IUiAutomaton):
 
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
-                 uuid: str = None):
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any]):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
-        super().__init__(automaton_type, author, state_types_with_design, uuid)
+        super().__init__(automaton_type, author, state_types_with_design)
 
         self._type: str = automaton_type
 
@@ -323,12 +322,6 @@ class UiAutomaton(IUiAutomaton):
 
     def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
         self._transition_pattern = transition_pattern
-
-    def get_uuid(self) -> str:
-        return self._uuid
-
-    def set_uuid(self, uuid: str) -> None:
-        self._uuid = uuid
 
     def get_state_types_with_design(self) -> _ty.Dict[str, _ty.Any]:
         return self._state_types_with_design

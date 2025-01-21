@@ -35,6 +35,7 @@ class Transition(_abc.ABC):
         Args:
             start_state (State): The state from which this transition starts.
             transition_target_state (State): The state this transition leads to.
+            condition (_ty.Any): The condition that must be met for this transition to be valid.
         """
         self.start_state: State = start_state
         self.transition_target_state: State = transition_target_state
@@ -86,9 +87,21 @@ class Transition(_abc.ABC):
         return self.start_state
 
     def get_condition(self) -> _ty.Any:
+        """
+        Retrieves the condition for the transition.
+        
+        Returns:
+            _ty.Any: The condition for the transition.
+        """
         return self._condition
 
     def set_condition(self, new_condition: _ty.Any) -> None:
+        """
+        Sets a new condition for the transition.
+        
+        Args:
+            new_condition (_ty.Any): The new condition for the transition.
+        """
         self._condition = new_condition
 
     def set_activation_callback(self, callback: _ty.Callable) -> None:
@@ -118,14 +131,16 @@ class Transition(_abc.ABC):
         self._is_active = True
 
     def deactivate(self) -> None:
+        """
+        Deactivates the transition.
+        """
         self._is_active = False
 
     def is_active(self) -> bool:
+        """
+        Checks if the transition is currently active.
+        
+        Returns:
+            bool: True if the transition is active, False otherwise.
+        """
         return self._is_active
-
-    def serialise_to_json(self, flags: _ty.List[str] = None) -> _ty.Dict[str, _ty.Any]:
-        """
-        Serialises the Transition into json format to send via the bridge
-        """
-        raise NotImplementedError("serialise_to_json must be implemented in a subclass.")
-

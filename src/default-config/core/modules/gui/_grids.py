@@ -24,7 +24,6 @@ class StaticGridView(QGraphicsView):
         super().__init__(parent=parent)
         self.setCacheMode(QGraphicsView.CacheModeFlag.CacheBackground)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.SmartViewportUpdate)
 
         if scene is not None:
@@ -70,6 +69,7 @@ class InteractiveGridView(StaticGridView):
                  zoom_level: float = 1.0, zoom_step: float = 0.1, min_zoom: float = 0.2, max_zoom: float = 5.0,
                  parent: QWidget | None = None) -> None:
         super().__init__(grid_size, None, parent)
+        self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.setScene(QGraphicsScene(self))
         self.scene().setSceneRect(QRect(*scene_rect))
 
@@ -175,10 +175,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 # Zeige das Menü an
                 context_menu.exec(event.globalPos())
 
-        if event.button() == Qt.MouseButton.MiddleButton:
+        if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
             self._is_panning = True
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
+            return
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.button() == Qt.MouseButton.LeftButton:
             clicked_point = self.mapToScene(event.pos())
 

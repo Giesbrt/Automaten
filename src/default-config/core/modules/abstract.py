@@ -48,10 +48,10 @@ class IMainWindow:
 
     class AppStyle:
         """QApp Styles"""
-        Windows11 = 'windows11'
-        WindowsVista = 'windowsvista'
-        Windows = 'Windows'
-        Fusion = 'Fusion'
+        Windows11 = "windows11"
+        WindowsVista = "windowsvista"
+        Windows = "Windows"
+        Fusion = "Fusion"
         Default = None
 
     def setup_gui(self) -> None:
@@ -88,6 +88,14 @@ class IMainWindow:
 
     def destroy_popup(self, index) -> None:  # Remove popup by index
         raise NotImplementedError
+
+    def set_hide_titlebar(self, switch: bool) -> None:
+        raise NotImplementedError
+
+    def set_stay_on_top(self, switch: bool) -> None:
+        raise NotImplementedError
+
+    # def set_hide_scrollbar
 
     def button_popup(self, title: str, text: str, description: str,
                      icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"],

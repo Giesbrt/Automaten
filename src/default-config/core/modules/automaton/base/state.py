@@ -58,6 +58,12 @@ class State(_abc.ABC):
 
         activate() -> None:
             Executes the activation callback function, if it exists.
+        
+        deactivate() -> None:
+            Deactivates the state.
+        
+        is_active() -> bool:
+            Returns whether the state is currently active.
     """
 
     def __init__(self, name: str) -> None:
@@ -106,9 +112,21 @@ class State(_abc.ABC):
         return self._transitions
 
     def add_transition(self, new_transition: "Transition") -> None:
+        """
+        Adds a new transition to the state.
+        
+        Args:
+            new_transition (Transition): The new transition to add.
+        """
         self._transitions.add(new_transition)
 
     def remove_transition(self, old_transition: "Transition") -> None:
+        """
+        Removes a transition from the state.
+        
+        Args:
+            old_transition (Transition): The transition to remove.
+        """
         self._transitions.remove(old_transition)
 
     @_abc.abstractmethod
@@ -164,8 +182,14 @@ class State(_abc.ABC):
         self._is_active = True
 
     def deactivate(self) -> None:
+        """
+        Deactivates the state.
+        """
         self._is_active = False
 
     def is_active(self) -> bool:
+        """
+        Returns whether the state is currently active.
+        """
         return self._is_active
 

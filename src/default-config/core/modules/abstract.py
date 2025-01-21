@@ -154,8 +154,8 @@ class GuiInstructionManager:
 
 class IUiState(_abc.ABC):
 
-    def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, node_type: str):
-        self._colour: str = colour
+    def __init__(self, colour: Qt.GlobalColor, position: _ty.Tuple[float, float], display_text: str, node_type: str):
+        self._colour: Qt.GlobalColor = colour
         self._position: _ty.Tuple[float, float] = position
         self._display_text: str = display_text
         self._type: str = node_type

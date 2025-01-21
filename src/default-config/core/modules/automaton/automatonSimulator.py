@@ -11,6 +11,8 @@ import abc as _abc
 import typing as _ty
 import types as _ts
 
+# Docs generated with Github Copilot
+
 
 class AutomatonSimulator:
     def __init__(self, simulation_request: _ty.Dict[str, _ty.Any],
@@ -28,6 +30,9 @@ class AutomatonSimulator:
         self.automaton: AutomatonBridge | None = None
 
     def run(self) -> _result.Result:
+        """Run the automaton simulation
+        
+        :return: The result of the simulation"""
         self._build_automaton()
 
         automaton_input: _ty.List[_ty.Any] = self._simulation_request["input"]
@@ -37,6 +42,11 @@ class AutomatonSimulator:
         return self._simulate()
 
     def _init_automaton(self, automaton_type: str) -> bool:
+        """Initialise the automaton
+        
+        :param automaton_type: The type of automaton to initialise
+        :return: True if the automaton was initialised successfully, False otherwise
+        """
         automaton_provider: AutomatonProvider = AutomatonProvider(automaton_type)
         if not automaton_provider.is_automaton():
             ActLogger().error(f"Could not recognise automaton of type {automaton_type}")
@@ -48,6 +58,10 @@ class AutomatonSimulator:
         return True
 
     def _build_automaton(self) -> _result.Result:
+        """Build the automaton
+        
+        :return: The result of the build
+        """
         serialised_automaton: _ty.Dict[str, _ty.Any] = self._simulation_request
 
         # Accepts format, displayed in automaten.json
@@ -113,14 +127,14 @@ class AutomatonSimulator:
             self.automaton.set_transitions(automaton_transition_set)
 
     def _serialise_automaton_to_bridge(self) -> None:
-        from core.modules.automaton.base.state import State
-        from core.modules.automaton.base.transition import Transition
-
+        """Serialise the automaton to the bridge
+        
+        :return: None
+        """
         serialised_update: _ty.Dict[str, _ty.Any] = {}
 
         # serialisation
         for state in self.automaton.get_states():
-            state: State = state
             if not state.is_active():
                 continue
 
@@ -129,7 +143,6 @@ class AutomatonSimulator:
             serialised_update["state"]["is_active"] = state.is_active()
 
         # for transition in self.automaton.get_transitions():
-        #     transition: Transition = transition
         #     if not transition.is_active():
         #         continue
         #
@@ -153,6 +166,11 @@ class AutomatonSimulator:
         self._simulation_result_callback(serialised_update)
 
     def _serialise_simulation_result(self, automaton_result: _result.Result) -> None:
+        """Serialise the simulation result
+        
+        :param automaton_result: The result of the simulation
+        :return: None
+        """
         serialisation_update: _ty.Dict[str, _ty.Any] = {}
 
         if automaton_result is None:
@@ -164,6 +182,10 @@ class AutomatonSimulator:
         self._simulation_result_callback(serialisation_update)
 
     def _simulate(self) -> _result.Result:
+        """Simulate the automaton
+        
+        :return: The result of the simulation
+        """
         try:
 
             return_result = None
@@ -180,7 +202,13 @@ class AutomatonSimulator:
             self.__handle_failure(log_message, self._simulate)
             return _result.Failure(log_message)
 
-    def __handle_failure(self, log_message: str, action: _ty.Callable = None) -> None:
+    def __handle_failure(self, log_message: str, action: _ty.Callable = None) -> None:  # Todo: is this really needed?
+        """Handle a failure
+        
+        :param log_message: The message to log
+        :param action: The action to take
+        :return: None
+        """
         self._restart_counter += 1
         ActLogger().error(log_message)
 

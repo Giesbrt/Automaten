@@ -9,7 +9,7 @@ uiAutomaton = UiAutomaton("dfa", "Giesbrt", states_with_design)
 
 # States
 stateA = UiState(None, None, "q0", "default")
-stateB = UiState(None, None, "q0", "end")
+stateB = UiState(None, None, "q1", "end")
 uiAutomaton.add_state(stateA)
 uiAutomaton.add_state(stateB)
 

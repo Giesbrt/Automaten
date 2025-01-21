@@ -108,8 +108,6 @@ class Automaton(_abc.ABC):
         states to `None`. These will need to be populated through methods like `set_states`, `set_transitions`,
         and `set_start_state` before the automaton can be executed.
         """
-        # self.states: _ty.Set[State] = set()
-        # self.transitions: _ty.Set = set()
 
         self.states: OrderedSet[State] = OrderedSet()
         self.transitions: OrderedSet[Transition] = OrderedSet()
@@ -214,9 +212,28 @@ class Automaton(_abc.ABC):
 
     @_abc.abstractmethod
     def add_state(self, state: State, state_type: str) -> None:
+        """
+        Abstract method to add a new state to the automaton.
+
+        This Method should add a new state to the automaton, according to the state type.
+        E.g. you add a new state to the automaton with the type "end". This state should be added to the end states.
+        
+        Args:
+            state (State): The new state to be added.
+            state_type (str): The type of the state being added.
+        """
         raise NotImplementedError("add_state must be implemented in a subclass.")
 
     def get_state_by_id(self, state_id: int) -> State:
+        """
+        Returns the state with the given ID.
+        
+        Args:
+            state_id (int): The ID of the state to retrieve.
+            
+        Returns:
+            State: The state with the given ID.
+        """
         for i, state in enumerate(self.states):
             if i != state_id:
                 continue
@@ -224,6 +241,15 @@ class Automaton(_abc.ABC):
             return state
 
     def get_transition_by_id(self, transition_id: int) -> Transition:
+        """
+        Returns the transition with the given ID.
+        
+        Args:
+            transition_id (int): The ID of the transition to retrieve.
+        
+        Returns:
+            Transition: The transition with the given ID.
+        """
         for i, transition in enumerate(self.transitions):
             if i != transition_id:
                 continue
@@ -244,6 +270,8 @@ class Automaton(_abc.ABC):
     @DeprecationWarning
     def simulate(self) -> _result.Result:
         """
+        WARNING: This method is deprecated and may be removed in a future release. Use `simulate_one_step` instead.
+
         Abstract method that must be implemented in subclasses to simulate the automaton's behavior.
 
         The simulation behavior depends on the type of automaton. For example:
@@ -298,6 +326,15 @@ class Automaton(_abc.ABC):
         raise NotImplementedError("get_input must be implemented in a subclass.")
 
     def get_state_index(self, state: State) -> int:
+        """
+        Returns the index of the state in the automaton.
+        
+        Args:
+            state (State): The state to find the index of.
+            
+        Returns:
+            int: The index of the state in the automaton.
+        """
         for i, s in enumerate(self.get_states()):
             if s is not state:
                 continue
@@ -305,6 +342,15 @@ class Automaton(_abc.ABC):
         return 0
 
     def get_transition_index(self, transition: Transition) -> int:
+        """
+        Returns the index of the transition in the automaton.
+        
+        Args:
+            transition (Transition): The transition to find the index of.
+            
+        Returns:
+            int: The index of the transition in the automaton.
+        """
         for i, t in enumerate(self.get_transitions()):
             if t is not transition:
                 continue
@@ -332,6 +378,12 @@ class Automaton(_abc.ABC):
         raise NotImplementedError("get_current_return_value must be implemented in a subclass.")
 
     def delete_state(self, state: "State") -> None:
+        """
+        Deletes a state from the automaton.
+        
+        Args:
+            state (State): The state to delete.
+        """
         if state not in self.states:
             return
         self.states.remove(state)
@@ -346,6 +398,12 @@ class Automaton(_abc.ABC):
         self.get_transitions(True)  # Update the Transitions set
 
     def delete_transition(self, transition: "Transition") -> None:
+        """
+        Deletes a transition from the automaton.
+        
+        Args:
+            transition (Transition): The transition to delete.
+        """
         if transition not in self.get_transitions():
             return
 

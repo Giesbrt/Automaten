@@ -16,6 +16,8 @@ import abc as _abc
 import typing as _ty
 import types as _ts
 
+# Docs generated with Github Copilot
+
 
 class SimulationLoader:
 
@@ -33,14 +35,28 @@ class SimulationLoader:
         self._bridge: UiBridge = UiBridge()
 
     def _push_simulation_to_bridge(self, item: _ty.Dict[str, _ty.Any]) -> None:
+        """Push a simulation item to the bridge
+        
+        :param item: The item to push
+        :return: None
+        """
         ActLogger().info("Pushed simulation packet to bridge.")
         self._bridge.add_simulation_item(item)
 
     def _push_error_to_bridge(self, error: _ty.Dict[str, _ty.Any]) -> None:
+        """Push an error to the bridge
+        
+        :param error: The error to push
+        :return: None
+        """
         # Todo
         ActLogger().error("Received an Error from automaton simulation, can not push to bridge due to it being not implemented. Error: " + str(error))
 
-    def handle_bridge(self) -> None:  # Todo get data from bridge and handle it
+    def handle_bridge(self) -> None:
+        """Handle the bridge requests
+        
+        :return: None
+        """
         if not self._bridge.has_backend_items():
             return
 

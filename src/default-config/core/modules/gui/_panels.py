@@ -7,7 +7,7 @@ from PySide6.QtGui import QColor, QIcon
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
-from ._grid_items import ConditionGroup
+from ._grid_items import StateGroup
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -31,11 +31,11 @@ class ConditionEditMenu(QFrame):
         self.setAutoFillBackground(True)
 
         self.condition = None
-
         # Layout für das Menü
         self.layout = QFormLayout(self)
 
         self.close_button = QPushButton('Close', self)
+        # self.close_button.connect()
 
         self.name_input = QLineEdit(self)
         self.name_input.setText('q0')
@@ -43,7 +43,7 @@ class ConditionEditMenu(QFrame):
 
         # Beispiel: Eingabefelder für Einstellungen
         self.color_input = QComboBox(self)
-        self.color_input.addItems(('Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Cyan'))
+        self.color_input.addItems(('None', 'Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Cyan'))
         self.color_input.currentTextChanged.connect(self.on_color_changed)
 
         self.size_input = QSlider(Qt.Orientation.Horizontal, self)
@@ -52,14 +52,15 @@ class ConditionEditMenu(QFrame):
         self.size_input.valueChanged.connect(self.on_size_changed)
 
         # Füge Widgets zum Layout hinzu
+        self.add_row_fixed_width('Name:', self.name_input)
+        self.add_row_fixed_width('Color:', self.color_input)
+        self.add_row_fixed_width('Size:', self.size_input)
         self.layout.addRow(self.close_button)
-        self.layout.addRow('Name:', self.name_input)
-        self.layout.addRow('Color:', self.color_input)
-        self.layout.addRow('Size:', self.size_input)
 
         self.setLayout(self.layout)
 
         self.color_mapping = {
+            "None": Qt.GlobalColor.gray,
             "Red": Qt.GlobalColor.red,
             "Green": Qt.GlobalColor.green,
             "Blue": Qt.GlobalColor.blue,
@@ -69,7 +70,81 @@ class ConditionEditMenu(QFrame):
             "Cyan": Qt.GlobalColor.cyan
         }
 
-    def set_condition(self, condition: ConditionGroup) -> None:
+        self.setStyleSheet("""
+            QFrame {
+                border-radius: 10px;
+                padding: 5px;
+            }
+
+            QLineEdit {
+                background-color: #333;      /* Dunkelgrauer Hintergrund für das Eingabefeld */
+                border: 1px solid #444;      /* Dünner Rand */
+                border-radius: 5px;          /* Abgerundete Ecken */
+                color: white;                /* Weiße Schrift */
+                padding: 5px;
+                min-width: 150px;
+            }
+
+            QLineEdit:focus {
+                border: 1px solid #0078d4;   /* Blaue Umrandung, wenn fokussiert */
+            }
+
+            QComboBox {
+                background-color: #333;
+                border: 1px solid #444;
+                border-radius: 5px;
+                color: white;
+                padding: 5px;
+                min-width: 150px;
+            }
+
+            QComboBox:focus {
+                border: 1px solid #0078d4;
+            }
+
+            QSlider {
+                background-color: #555;      /* Dunkler Hintergrund */
+                border-color: #333;
+                border-radius: 5px;
+            }
+
+            QSlider::handle:horizontal {
+                background: #0078d4;         /* Blaue Schieberegler */
+                border-radius: 5px;
+                width: 15px;
+                margin-top: -5px;
+                margin-bottom: -5px;
+            }
+
+            QPushButton {
+                background-color: #0078d4;    /* Blaue Hintergrundfarbe */
+                color: white;                 /* Weiße Schrift */
+                border: none;                 /* Kein Rand */
+                border-radius: 5px;           /* Abgerundete Ecken */
+                padding: 10px 20px;
+            }
+
+            QPushButton:hover {
+                background-color: #005bb5;    /* Dunkleres Blau beim Hover */
+            }
+
+            QPushButton:pressed {
+                background-color: #003f87;    /* Noch dunkleres Blau, wenn der Button gedrückt wird */
+            }
+
+            QFormLayout {
+                row-wrap: true;
+                spacing: 5px;
+            }
+        """)
+
+    def add_row_fixed_width(self, name: str, widget: QWidget):
+        label = QLabel(name, self)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setFixedWidth(min(50, 100))
+        self.layout.addRow(label, widget)
+
+    def set_condition(self, condition: StateGroup) -> None:
         self.condition = condition
 
     def on_name_changed(self, name: str) -> None:
@@ -171,10 +246,13 @@ class UserPanel(Panel):
         else:
             self.side_menu.setGeometry(0, 0, width, height)
             self.menu_button.move(40, 20)  # Update the position of the menu button
-        if self.condition_edit_menu.x() + width < self.width():
+        if self.condition_edit_menu.x() + width <= self.width():
             self.condition_edit_menu.setGeometry(self.width() - width, 0, width, height)
         else:
-            self.condition_edit_menu.setGeometry(self.width() - width, 0, width, height)
+            new_x = self.width() - width
+            if new_x < 0:
+                new_x = 0
+            self.condition_edit_menu.setGeometry(new_x, 0, width, height)
         self.update_menu_button_position()
         self.settings_button.move(self.width() - 60, 20)
 

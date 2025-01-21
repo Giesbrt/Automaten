@@ -1,9 +1,14 @@
 """Everything regarding the infinite grid"""
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem
-from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent
+import numpy as np
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu
+from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QAction
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint
 
-from ._grid_items import Condition, ConditionGroup, Label
+from core.modules.automaton.base.transition import Transition
+from core.modules.automaton.base.state import State
+from core.modules.automaton.UIAutomaton import UiState, UiTransition, UiAutomaton
+
+from ._grid_items import State, StateGroup, Label, ConnectionPoint, TempTransition, Transition
 from ._panels import UserPanel
 
 # Standard typing imports for aps
@@ -130,24 +135,47 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     def __init__(self) -> None:  # TODO: Please remember to type hint :)
         super().__init__()
         self._counter: int = 0
-        self._last_active: Condition | None = None
+        self._last_active: State | None = None
+        self._temp_line: TempTransition | None = None
+        self._start_ellipse: ConnectionPoint | None = None
 
-    def newCondition(self, pos: QPointF) -> None:
-        """TBA"""
-        new_condition = ConditionGroup(pos.x() - self.grid_size / 2,
-                                       pos.y() - self.grid_size / 2,
-                                       self.grid_size, self.grid_size,
-                                       self._counter, Qt.GlobalColor.lightGray)
-        self.scene().addItem(new_condition)
-        self._counter += 1
+    def get_mapped_position(self, item: QGraphicsItem) -> any:
+        scene_pos = item.mapToScene(item.boundingRect().center())
+        return self.mapFromScene(scene_pos)
 
     def get_item_at(self, pos: QPoint) -> QGraphicsItem:
         scene_pos: QPointF = self.mapToScene(pos)
         return self.scene().itemAt(scene_pos, self.transform())
 
+    def new_state(self, pos: QPointF) -> None:
+        """TBA"""
+        new_state = StateGroup(pos.x() - self.grid_size / 2,
+                               pos.y() - self.grid_size / 2,
+                               self.grid_size, self.grid_size,
+                               self._counter, Qt.GlobalColor.lightGray)
+        self.scene().addItem(new_state)
+        self._counter += 1
+
+    def delete_item(self):
+        print('delete')
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Start panning on right or middle mouse button click."""
-        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+        if event.button() == Qt.MouseButton.RightButton:
+            if self._temp_line:
+                self.scene().removeItem(self._temp_line)
+                self._start_ellipse, self._temp_line = None, None
+            if isinstance(self.get_item_at(event.pos()), (State, Label)):
+                # Erstelle das Kontextmenü
+                context_menu = QMenu(self)
+                delete_action = QAction("Löschen", self)
+                delete_action.triggered.connect(self.delete_item)
+                context_menu.addAction(delete_action)
+
+                # Zeige das Menü an
+                context_menu.exec(event.globalPos())
+
+        if event.button() == Qt.MouseButton.MiddleButton:
             self._is_panning = True
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
@@ -155,40 +183,75 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             clicked_point = self.mapToScene(event.pos())
 
             item = self.get_item_at(QPoint(int(clicked_point.x()), int(clicked_point.y())))
-            if isinstance(item, Condition | Label):
+            if isinstance(item, State | Label):
                 if item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable:
                     item.setSelected(not item.isSelected())
         elif event.button() == Qt.MouseButton.LeftButton:
-            item = self.get_item_at(event.pos())
-            parent: QWidget = self.parent()
-            if not isinstance(parent, UserPanel):
-                return
-            parent: UserPanel = parent
-            if isinstance(item, Condition | Label):
-                parent_item: ConditionGroup = item.parentItem()
-                parent.toggle_condition_edit_menu(True)  # TODO: Please get typed reference to parent and use that
-                parent.condition_edit_menu.set_condition(item)
-                print(self._last_active)
-                if self._last_active:
-                    parent.condition_edit_menu.name_changed.disconnect()
-                    parent.condition_edit_menu.color_changed.disconnect()
-                    parent.condition_edit_menu.size_changed.disconnect()
-                    item = self._last_active.parentItem()
-                    if item is not None:
-                        item.deactivate()
-                parent.condition_edit_menu.name_changed.connect(parent_item.set_name)
-                parent.condition_edit_menu.color_changed.connect(parent_item.set_color)
-                parent.condition_edit_menu.size_changed.connect(parent_item.set_size)
-                parent_item.activate()  # TODO: As said please type all this
-            else:
-                if parent.condition_edit_menu.x() < parent.width():
-                    parent.toggle_condition_edit_menu(False)
-                    if self._last_active is not None:
-                        item = self._last_active.parentItem()
-                        if item is not None:
-                            item.deactivate()
-            self._last_active = item
+            self.left_button_click(event)
         super().mousePressEvent(event)
+
+    def left_button_click(self, event: QMouseEvent):
+        item = self.get_item_at(event.pos())
+        parent: QWidget = self.parent()
+        if not isinstance(parent, UserPanel):
+            return
+
+        current_parent_item = None
+        if isinstance(item, (State, Label, StateGroup)):
+            item.parentItem().setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+            if isinstance(item, StateGroup):
+                current_parent_item = item
+            elif item.parentItem() and isinstance(item.parentItem(), StateGroup):
+                current_parent_item = item.parentItem()
+
+        if isinstance(item, ConnectionPoint):
+            # print('Rot' if item.brush().color() == Qt.GlobalColor.darkRed and isinstance(item, AnchorPoint) else 'Grün')
+            if item.brush().color() == Qt.GlobalColor.darkGreen:
+                item.parentItem().setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+                self._start_ellipse = item
+                return
+
+        if isinstance(item, (State, Label, StateGroup)):
+            if self._start_ellipse and self._temp_line:
+                start_point: ConnectionPoint = self._start_ellipse
+                min_distance = float('inf')
+                closest_point: ConnectionPoint | None = None
+                for point in current_parent_item.connection_points:
+                    if point.flow == 'in':
+                        distance = np.sqrt((self.get_mapped_position(point).x() - self.get_mapped_position(start_point).x()) ** 2
+                                           + (self.get_mapped_position(point).y() - self.get_mapped_position(start_point).y()) ** 2)
+                        if distance < min_distance:
+                            min_distance: float = distance
+                            closest_point = point
+                if closest_point:
+                    self.scene().removeItem(self._temp_line)
+                    self._start_ellipse, self._temp_line = None, None
+                    transition = Transition(start_point, closest_point, start_point)
+                    print(transition.get_ui_transition())
+                return
+
+        if self._last_active is not None:
+            last_parent_item = (self._last_active if isinstance(self._last_active, StateGroup)
+                                else self._last_active.parentItem())
+            if last_parent_item is not None and isinstance(last_parent_item,
+                                                           StateGroup) and last_parent_item != current_parent_item:
+                parent.condition_edit_menu.name_changed.disconnect()
+                parent.condition_edit_menu.color_changed.disconnect()
+                parent.condition_edit_menu.size_changed.disconnect()
+                last_parent_item.deactivate()
+
+        if isinstance(current_parent_item, (StateGroup)):
+            parent.toggle_condition_edit_menu(True)
+            parent.condition_edit_menu.set_condition(item)
+            parent.condition_edit_menu.name_changed.connect(current_parent_item.set_name)
+            parent.condition_edit_menu.color_changed.connect(current_parent_item.set_color)
+            parent.condition_edit_menu.size_changed.connect(current_parent_item.set_size)
+            current_parent_item.activate()
+        else:
+            if parent.condition_edit_menu.x() < parent.width():
+                parent.toggle_condition_edit_menu(False)
+
+        self._last_active = current_parent_item if current_parent_item else item
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         """TBA"""
@@ -196,5 +259,26 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             if not self.get_item_at(event.pos()):
                 global_pos: QPoint = event.pos()
                 scene_pos: QPointF = self.mapToScene(global_pos)
-                self.newCondition(scene_pos)
+                self.new_state(scene_pos)
         super().mouseDoubleClickEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._start_ellipse:
+            mouse_pos = self.mapToScene(event.pos())
+            if not self._temp_line:
+                self._temp_line = TempTransition(self._start_ellipse, mouse_pos, self._start_ellipse)
+            mouse_x = mouse_pos.x()
+            mouse_y = mouse_pos.y()
+            ell_x = self.get_mapped_position(self._start_ellipse).x()
+            ell_y = self.get_mapped_position(self._start_ellipse).y()
+            if ell_x < mouse_x:
+                mouse_x -= 2
+            elif ell_x > mouse_x:
+                mouse_x += 2
+            if ell_y < mouse_y:
+                mouse_y -= 2
+            elif ell_y > mouse_y:
+                mouse_y += 2
+            self._temp_line.update_transition(QPointF(mouse_x, mouse_y))
+        super().mouseMoveEvent(event)
+

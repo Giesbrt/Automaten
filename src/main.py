@@ -83,23 +83,23 @@ class App:  # The main logic and gui are separated
                                                                      "user_configs_advanced"))
         self.app_settings: JSONAppStorage = JSONAppStorage(f"{self.config_folder}/app_settings.json")
         self.configure_settings()
-        self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
+        # TODO: self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 
         self.backend: IBackend = start(self.app_settings, self.user_settings)
         self.backend_stop_event: threading.Event = threading.Event()
         self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                  args=(self.backend_stop_event,))
         self.backend_thread.start()
-        self.ui_automaton: UiAutomaton = UiAutomaton()  # TODO: er
+        # TODO: self.ui_automaton: UiAutomaton = UiAutomaton()  # TODO: er
 
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
         self.window.app = self.qapp
 
         # Setup window
-        if self.abs_window_icon_path.startswith("#"):
-            self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
-        self.window.set_window_icon(self.abs_window_icon_path)
+        # TODO: if self.abs_window_icon_path.startswith("#"):
+        # TODO:     self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
+        # TODO: self.window.set_window_icon(self.abs_window_icon_path)
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
         self.apply_theme()
@@ -216,6 +216,10 @@ class App:  # The main logic and gui are separated
                                                        "Please check your internet connection, "
                                                        "and try again."), format_exc()
             standard_buttons, default_button = ["Ok"], "Ok"
+            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_update_timeout")
+            show_update_timeout: bool = self.user_settings.retrieve("auto_configs", "show_update_timeout", "bool")
+            if not show_update_timeout:
+                do_popup = False
             return (do_popup,
                     (icon, title, text, description),
                     (checkbox, checkbox_setting),
@@ -270,7 +274,7 @@ class App:  # The main logic and gui are separated
             text = (f"There is a newer version ({found_version}) "
                     f"available.\nDo you want to open the link to the update?")
             description = str(found_release.get("description"))  # type: ignore
-            checkbox, checkbox_setting = "Do not show again", ("configs", "update_info")
+            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_update_info")
             standard_buttons, default_button = ["Yes", "No"], "Yes"
 
             def retval_func(button: str) -> None:
@@ -287,13 +291,13 @@ class App:  # The main logic and gui are separated
             text = (f"No new updates available.\nChecklist last updated "
                     f"{update_json['metadata']['lastUpdated'].replace('-', '.')}.")
             description = f" --- v{found_version} --- \n{found_release.get('description')}"  # type: ignore
-            checkbox, checkbox_setting = "Do not show again", ("configs", "no_update_info")
+            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_no_update_info")
         elif show_no_update_info and found_push:
             title = "Info"
             text = (f"New version available, but not recommended {found_version}.\n"
                     f"Checklist last updated {update_json['metadata']['lastUpdated'].replace('-', '.')}.")
             description = str(found_release.get("description"))  # type: ignore
-            checkbox, checkbox_setting = "Do not show again", ("configs", "no_update_info")
+            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_no_update_info")
         else:
             title, text, description = "Update Info", "There was a logic-error when checking for updates.", ""
             do_popup = False
@@ -329,7 +333,8 @@ class App:  # The main logic and gui are separated
             "geometry": "(100, 100, 1050, 640)",
             "show_no_update_info": "False",
             "show_update_info": "True",
-            "last_scroll_positions": "(0, 0, 0, 0)",
+            "show_update_timeout": "True",
+            # "last_scroll_positions": "(0, 0, 0, 0)",
             "scrolling_sensitivity": "4.0",
             "ask_to_reopen_last_opened_file": "True",
             "recent_files": "()"
@@ -342,7 +347,7 @@ class App:  # The main logic and gui are separated
         })
         self.user_settings.set_default_settings("user_configs_advanced", {
             "hide_titlebar": "False",
-            "hide_scrollbar": "True",
+            # "hide_scrollbar": "True",
             "stay_on_top": "False",
             "settings_backup_file_path": "",
             "settings_backup_file_mode": "overwrite",
@@ -351,10 +356,8 @@ class App:  # The main logic and gui are separated
             "save_window_position": "False"
         })
         self.app_settings.set_default_settings({
-            "update_check_request_timeout": "0.2",
-            "titlebox_rotation_reset_delay_seconds": "5",
-            "titlebox_rotation_rate": "1",
-            "window_icon_abs_path": "#/data/assets/logo-nobg.png",
+            "update_check_request_timeout": "0.4",
+            "window_icon_pack": ":/data/assets/app_icons/shelline",
             "simulation_loader_max_restart_counter": "5"
         })
 

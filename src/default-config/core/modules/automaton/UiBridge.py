@@ -10,7 +10,7 @@ import types as _ts
 
 # Docs generated with Chat-GPT
 
-class UiBridge:
+class   UiBridge:
     """
     UiBridge is a queue provider that acts as an interface between the Simulation and the backend.
     It facilitates the exchange of JSON-formatted data (represented as Python dictionaries) between these components.

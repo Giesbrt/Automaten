@@ -1,4 +1,5 @@
 """TBA"""
+from PySide6.QtGui import Qt
 
 from returns import result as _result
 
@@ -34,15 +35,15 @@ class CardinalDirection:
 @auto_repr_with_privates
 class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type Any
     """A class representing a state in the automaton."""
-    def __init__(self, colour: str, position: _ty.Tuple[float, float], display_text: str, node_type: str):
+    def __init__(self, colour: Qt.GlobalColor, position: _ty.Tuple[float, float], display_text: str, node_type: str) -> None:
         super().__init__(colour, position, display_text, node_type)
-        self._colour: str = colour
+        self._colour: Qt.GlobalColor = colour
         self._position: _ty.Tuple[float, float] = position
         self._display_text: str = display_text
         self._type: str = node_type
         self._is_active: bool = False
 
-    def set_colour(self, colour: str) -> None:
+    def set_colour(self, colour: Qt.GlobalColor) -> None:
         """Sets the colour of the state.
 
         :param colour: The colour of the state.
@@ -66,7 +67,7 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
         """
         self._display_text = display_text
 
-    def get_colour(self) -> str:
+    def get_colour(self) -> Qt.GlobalColor:
         """Gets the colour of the state.
         
         :return: The colour of the state.

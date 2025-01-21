@@ -421,6 +421,15 @@ class UiAutomaton(IUiAutomaton):
         # Handle bridge
         simulation_task: _ty.Dict[str, _ty.Any] = bridge.get_simulation_task()
 
+        if simulation_task["type"].upper() != "SIMULATION_UPDATE":
+            if simulation_task["type"].upper() != "SIMULATION_RESULT":
+                return
+
+            success = simulation_task["success"]
+            if success:
+                return _result.Success(simulation_task["message"])
+            return _result.Failure(simulation_task["message"])
+
         state_data: _ty.Dict[str, _ty.Any] = simulation_task["state"]
         # transition_data: _ty.Dict[str, _ty.Any] = simulation_task["transition"]
         automaton_data: _ty.Dict[str, _ty.Any] = simulation_task["automaton"]

@@ -82,7 +82,7 @@ class AutomatonSimulator:
 
         content: _ty.List[_ty.Dict[str, _ty.Any]] = serialised_automaton['content']
 
-        transitions: _ty.List[_ty.Dict[str, _ty.Any]] = []
+        transitions: _ty.List[_ty.Tuple[int, _ty.Dict[str, _ty.Any]]] = []
 
         temp_states: _ty.Dict[int, _ty.Any] = {}
 
@@ -107,12 +107,14 @@ class AutomatonSimulator:
                 # Copy the transition and add a field "from" which is the id of the current node
                 modified: _ty.Dict[str, _ty.Any] = transition
                 modified["from"] = i
-                # print(modified, "mod")
-                transitions.append(modified.copy())
+                transitions.append((modified["id"], modified.copy()))
 
         # Create transitions
         raw_transition = automaton_provider.get_automaton_transition()
-        for transition in transitions:
+
+        # sort transitions
+        transitions = sorted(transitions, key=lambda x: x[0])
+        for i, transition in transitions:
             to_state: int = transition["to"]
             from_state: int = transition["from"]
             condition: str = transition["condition"]
@@ -142,13 +144,13 @@ class AutomatonSimulator:
             serialised_update["state"]["id"] = self.automaton.get_state_index(state)
             serialised_update["state"]["is_active"] = state.is_active()
 
-        # for transition in self.automaton.get_transitions():
-        #     if not transition.is_active():
-        #         continue
-        #
-        #     serialised_update["transition"] = {}
-        #     serialised_update["transition"]["id"] = self.automaton.get_transition_index(transition)
-        #     serialised_update["transition"]["is_active"] = transition.is_active()
+        for transition in self.automaton.get_transitions():
+            if not transition.is_active():
+                continue
+
+            serialised_update["transition"] = {}
+            serialised_update["transition"]["id"] = self.automaton.get_transition_index(transition)
+            serialised_update["transition"]["is_active"] = transition.is_active()
 
         serialised_update["automaton"] = {}
         serialised_update["automaton"]["input"] = list(self.automaton.get_input())

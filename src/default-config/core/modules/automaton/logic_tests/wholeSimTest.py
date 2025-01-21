@@ -31,8 +31,8 @@ if __name__ == '__main__':
     transitionBA = UiTransition(stateB, "n", stateA, "n", ["b", ])
     transitionBB = UiTransition(stateB, "n", stateB, "n", ["a", ])
 
-    uiAutomaton.add_transition(transitionAA)
     uiAutomaton.add_transition(transitionAB)
+    uiAutomaton.add_transition(transitionAA)
     uiAutomaton.add_transition(transitionBA)
     uiAutomaton.add_transition(transitionBB)
 
@@ -47,7 +47,12 @@ if __name__ == '__main__':
         for i in uiAutomaton.get_states():
             if not i.is_active():
                 continue
-            print("Actually active:", i.get_display_text())
+            print("(state) Actually active:", i.get_display_text())
+
+        for i in uiAutomaton.get_transitions():
+            if not i.is_active():
+                continue
+            print("(transition) Actually active:", uiAutomaton.get_transition_index(i))
 
     backend_stop_event.set()
     exit(0)

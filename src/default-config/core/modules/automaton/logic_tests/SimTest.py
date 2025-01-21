@@ -21,12 +21,14 @@ data = {
             "transitions": [
                 {
                     "to": 1,
-                    "condition": "a"  # Für TM und Mealy die Argumente mit '|' trennen
+                    "condition": "a",  # Für TM und Mealy die Argumente mit '|' trennen
+                    "id": 0
                 }
                 ,
                 {
                     "to": 0,
-                    "condition": "b"
+                    "condition": "b",
+                    "id": 1
                 }
             ]
         },
@@ -36,11 +38,13 @@ data = {
             "transitions": [
                 {
                     "to": 1,
-                    "condition": "a"
+                    "condition": "a",
+                    "id": 2
                 },
                 {
                     "to": 0,
-                    "condition": "b"
+                    "condition": "b",
+                    "id": 3
                 }
             ]
         }

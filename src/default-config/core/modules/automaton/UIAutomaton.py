@@ -21,6 +21,7 @@ import abc as _abc
 import typing as _ty
 import types as _ts
 
+
 # Docs generated with Github Copilot
 
 
@@ -35,7 +36,9 @@ class CardinalDirection:
 @auto_repr_with_privates
 class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type Any
     """A class representing a state in the automaton."""
-    def __init__(self, colour: Qt.GlobalColor, position: _ty.Tuple[float, float], display_text: str, node_type: str) -> None:
+
+    def __init__(self, colour: Qt.GlobalColor, position: _ty.Tuple[float, float], display_text: str,
+                 node_type: str) -> None:
         super().__init__(colour, position, display_text, node_type)
         self._colour: Qt.GlobalColor = colour
         self._position: _ty.Tuple[float, float] = position
@@ -376,6 +379,7 @@ class UiAutomaton(IUiAutomaton):
 
                 transition_data["to"] = self.get_state_index(transition_to_state)
                 transition_data["condition"] = "|".join(transition.get_condition())
+                transition_data["id"] = self.get_transition_index(transition)
 
                 transitions_list.append(transition_data)
 
@@ -431,25 +435,27 @@ class UiAutomaton(IUiAutomaton):
                 return _result.Success(simulation_task["message"])
             return _result.Failure(simulation_task["message"])
 
-        state_data: _ty.Dict[str, _ty.Any] = simulation_task["state"]
-        # transition_data: _ty.Dict[str, _ty.Any] = simulation_task["transition"]
         automaton_data: _ty.Dict[str, _ty.Any] = simulation_task["automaton"]
 
         # State data
-        state_index: int = state_data["id"]
+        if "state" in simulation_task:
+            state_data: _ty.Dict[str, _ty.Any] = simulation_task["state"]
+            state_index: int = state_data["id"]
 
-        state: UiState = self.get_state_by_id(state_index)
-        if state is None:
-            return _result.Failure(f"State with index {state_index} not found.")
-        state._activate()
+            state: UiState = self.get_state_by_id(state_index)
+            if state is None:
+                return _result.Failure(f"State with index {state_index} not found.")
+            state._activate()
 
         # Transition data
-        # transition_index: int = transition_data["id"]
-        #
-        # transition: UiTransition = self.get_transition_by_id(transition_index)
-        # if transition is None:
-        #     return _result.Failure(f"Transition with index {transition_index} not found.")
-        # transition._activate()
+        if "transition" in simulation_task:
+            transition_data: _ty.Dict[str, _ty.Any] = simulation_task["transition"]
+            transition_index: int = transition_data["id"]
+
+            transition: UiTransition = self.get_transition_by_id(transition_index)
+            if transition is None:
+                return _result.Failure(f"Transition with index {transition_index} not found.")
+            transition._activate()
 
         # Automaton data
         self._input = automaton_data["input"]

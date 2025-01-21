@@ -9,11 +9,13 @@
             "transitions":[
                 {
                     "to": 1,
-                    "condition": "a"  -- for tm and mealy seperate the arguments with '|'
+                    "condition": "a",  -- for tm and mealy seperate the arguments with '|'
+                    "id": 0
                 },
                 {
                     "to": 0,
-                    "condition": "b"
+                    "condition": "b",
+                    "id": 1
                 }
             ]
         },
@@ -23,11 +25,13 @@
             "transitions":[
                 {
                     "to": 1,
-                    "condition": "a"
+                    "condition": "a",
+                    "id": 2
                 },
                 {
                     "to": 0,
-                    "condition": "b"
+                    "condition": "b",
+                    "id": 3
                 }
 
             ]

@@ -1,4 +1,4 @@
-from automatonSimulator import AutomatonSimulator
+from core.modules.automaton.automatonSimulator import AutomatonSimulator
 from returns import result as _result
 
 # Standard typing imports for aps
@@ -27,12 +27,14 @@ if __name__ == '__main__':
                 "transitions": [
                     {
                         "to": 1,
-                        "condition": "a"  # Für TM und Mealy die Argumente mit '|' trennen
+                        "condition": "a",  # Für TM und Mealy die Argumente mit '|' trennen
+                        "id": 0
                     }
                     ,
                     {
                         "to": 0,
-                        "condition": "b"
+                        "condition": "b",
+                        "id": 1
                     }
                 ]
             },
@@ -42,11 +44,13 @@ if __name__ == '__main__':
                 "transitions": [
                     {
                         "to": 1,
-                        "condition": "a"
+                        "condition": "a",
+                        "id": 2
                     },
                     {
                         "to": 0,
-                        "condition": "b"
+                        "condition": "b",
+                        "id": 3
                     }
                 ]
             }
@@ -63,11 +67,13 @@ if __name__ == '__main__':
     #             "transitions": [
     #                 {
     #                     "to": 1,
-    #                     "condition": "a"
+    #                     "condition": "a",
+    #                     "id": 0
     #                 },
     #                 {
     #                     "to": 2,
-    #                     "condition": "b"
+    #                     "condition": "b",
+    #                     "id": 1
     #                 }
     #             ]
     #         },
@@ -77,11 +83,13 @@ if __name__ == '__main__':
     #             "transitions": [
     #                 {
     #                     "to": 2,
-    #                     "condition": "a"
+    #                     "condition": "a",
+    #                     "id": 2
     #                 },
     #                 {
     #                     "to": 0,
-    #                     "condition": "b"
+    #                     "condition": "b",
+    #                     "id": 3
     #                 }
     #             ]
     #         },
@@ -91,11 +99,13 @@ if __name__ == '__main__':
     #             "transitions": [
     #                 {
     #                     "to": 0,
-    #                     "condition": "a"
+    #                     "condition": "a",
+    #                     "id": 4
     #                 },
     #                 {
     #                     "to": 1,
-    #                     "condition": "b"
+    #                     "condition": "b",
+    #                     "id": 5
     #                 }
     #             ]
     #         }

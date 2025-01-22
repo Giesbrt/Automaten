@@ -1,0 +1,10 @@
+Fabi8v -- Nearly done with dynamic automaton extension loader
+ -> Loading takes a while so results are cached
+ -> Prioritize a specific automaton when starting up
+=> Will upload progress
+TheCodeJak -- Nearly done with Automaton GUI for states and connections
+ - Except for two bugs
+=> Will upload progress
+Giesbrt -- Revealed the functionality of UiAutomaton
+ -> We don't have to make a Backend class
+adalfarus -- Nothing

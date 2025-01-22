@@ -388,11 +388,11 @@ class UiAutomaton(IUiAutomaton):
 
         return serialised_structure
 
-    def simulate(self, input: _ty.List[_ty.Any]) -> None:
+    def simulate(self, input: _ty.List[_ty.Any]) -> _result.Result:
         """Simulates the automaton with a given input.
         
         :param input: The input to the automaton.
-        :return: None"""
+        :return _result.Result: Returns success if the simulation request was successfully send to the backend"""
         structure: _ty.Dict[str, _ty.Any] = {}
         structure["action"] = "SIMULATION"
         structure["id"] = f"{self.get_author().lower()}:{self.get_name().lower()}"
@@ -400,12 +400,14 @@ class UiAutomaton(IUiAutomaton):
         structure["content"] = self._serialise_structure_for_simulation()
 
         if not structure["content"]:
-            ActLogger().error("No structure found for simulation")
-            return
+            log_message: str = "No structure found for simulation!"
+            ActLogger().error(log_message)
+            return _result.Failure(log_message)
 
         # send to bridge
         bridge: UiBridge = UiBridge()
         bridge.add_backend_item(structure)
+        return _result.Success("The simulation request was successfully send!")
 
     def handle_simulation_updates(self) -> _result.Result or None:
         """Handles updates from the simulation.
@@ -529,6 +531,10 @@ class UiAutomaton(IUiAutomaton):
         :return: None
         """
         self._state_types_with_design = state_types_with_design
+
+    def has_simulation_data(self) -> bool:
+        bridge: UiBridge = UiBridge()
+        return bridge.has_simulation_items()
 
     def __eq__(self, other: _ty.Self):
         return (self._type == other.get_name()

@@ -37,12 +37,12 @@ if __name__ == '__main__':
     uiAutomaton.add_transition(transitionBB)
 
     # Simulation
-    uiAutomaton.simulate(["a", "b", "b", "a"])
+    print(uiAutomaton.simulate(["a", "b", "b", "a"]))
     bridge = UiBridge()
 
     sleep(2)
 
-    while bridge.has_simulation_items():
+    while uiAutomaton.has_simulation_data():
         print("Output: ", uiAutomaton.handle_simulation_updates())
         for i in uiAutomaton.get_states():
             if not i.is_active():

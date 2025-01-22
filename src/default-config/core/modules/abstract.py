@@ -427,3 +427,8 @@ class IUiAutomaton(_abc.ABC):
     def handle_bridge_updates(self) -> None:
         """Handles updates from the UI bridge."""
         raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def has_simulation_data(self) -> bool:
+        """Returns True if the automaton has unstaged simulation data"""
+        raise NotImplementedError("This method must be implemented by subclasses.")

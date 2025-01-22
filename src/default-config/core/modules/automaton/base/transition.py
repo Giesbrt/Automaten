@@ -28,7 +28,7 @@ class Transition(_abc.ABC):
     """
 
     def __init__(self, start_state: State,
-                 transition_target_state: State, condition: _ty.Any) -> None:
+                 transition_target_state: State, condition: _ty.List[_ty.Any]) -> None:
         """
         Initializes a transition with a starting and a target state.
 
@@ -41,7 +41,7 @@ class Transition(_abc.ABC):
         self.transition_target_state: State = transition_target_state
         self.activation_callback: _ty.Callable or None = None
 
-        self._condition: _ty.Any = condition
+        self._condition: _ty.List[_ty.Any] = condition
         self._is_active: bool = False
 
         # Automatically adds this transition to the start state's set of transitions.
@@ -86,7 +86,7 @@ class Transition(_abc.ABC):
         """
         return self.start_state
 
-    def get_condition(self) -> _ty.Any:
+    def get_condition(self) -> _ty.List[_ty.Any]:
         """
         Retrieves the condition for the transition.
         
@@ -95,7 +95,7 @@ class Transition(_abc.ABC):
         """
         return self._condition
 
-    def set_condition(self, new_condition: _ty.Any) -> None:
+    def set_condition(self, new_condition: _ty.List[_ty.Any]) -> None:
         """
         Sets a new condition for the transition.
         

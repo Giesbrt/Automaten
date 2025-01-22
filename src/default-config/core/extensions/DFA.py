@@ -85,7 +85,7 @@ class DFATransition(BaseTransition):
         transition_target_state (BaseState): The state where the transition leads.
     """
 
-    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: str) -> None:
+    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: _ty.List[_ty.Any] | str) -> None:
         """
         Initializes a transition with the start state, target state, and the input character condition.
 
@@ -94,7 +94,7 @@ class DFATransition(BaseTransition):
             transition_target_state (BaseState): The state where the transition leads.
             condition (str): The input character that triggers this transition.
         """
-        super().__init__(start_state, transition_target_state, condition)
+        super().__init__(start_state, transition_target_state, list(condition))
 
     def canTransition(self, current_input: _ty.Any) -> _result.Result:
         """
@@ -111,7 +111,7 @@ class DFATransition(BaseTransition):
                 - Success: If the transition can occur (the input matches the condition).
                 - Failure: If the transition cannot occur (the input does not match the condition).
         """
-        if self.get_condition() == current_input:
+        if self.get_condition()[0] == current_input:
             return _result.Success(None)  # Transition can occur
         return _result.Failure(f"Can not transition with input {str(current_input)}!")  # Invalid transition
 

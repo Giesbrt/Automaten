@@ -8,8 +8,6 @@ import returns.result as _result
 
 from core.extensions.DFA import DFATransition, DFAState, DFAAutomaton
 
-from core.modules.automaton.serializer import Serializer
-
 # Standard typing imports for aps
 
 
@@ -28,11 +26,11 @@ class DFAUnitTest(unittest.TestCase):
         s1: DFAState = DFAState("q0")
         s2: DFAState = DFAState("q1")
 
-        s1f1: DFATransition = DFATransition(s1, s1, 'a')
-        s1f2: DFATransition = DFATransition(s1, s2, 'b')
+        s1f1: DFATransition = DFATransition(s1, s1, ['a'])
+        s1f2: DFATransition = DFATransition(s1, s2, ['b'])
 
-        s2f1: DFATransition = DFATransition(s2, s1, 'a')
-        s2f2: DFATransition = DFATransition(s2, s2, 'b')
+        s2f1: DFATransition = DFATransition(s2, s1, ['a'])
+        s2f2: DFATransition = DFATransition(s2, s2, ['b'])
 
         dfa.states.add(s1)
         dfa.states.add(s2)

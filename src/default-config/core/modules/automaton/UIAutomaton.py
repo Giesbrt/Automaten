@@ -378,7 +378,7 @@ class UiAutomaton(IUiAutomaton):
                 transition_to_state: UiState = transition.get_to_state()
 
                 transition_data["to"] = self.get_state_index(transition_to_state)
-                transition_data["condition"] = "|".join(transition.get_condition())
+                transition_data["condition"] = transition.get_condition()
                 transition_data["id"] = self.get_transition_index(transition)
 
                 transitions_list.append(transition_data)

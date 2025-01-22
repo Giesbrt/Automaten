@@ -117,7 +117,7 @@ class AutomatonSimulator:
         for i, transition in transitions:
             to_state: int = transition["to"]
             from_state: int = transition["from"]
-            condition: str = transition["condition"]
+            condition: _ty.List[_ty.Any] = transition["condition"]
 
             start_state = temp_states[from_state]
             end_state = temp_states[to_state]

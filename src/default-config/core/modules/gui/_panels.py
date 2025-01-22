@@ -286,15 +286,67 @@ class SettingsPanel(Panel):
         self.stacked_layout = QStackedLayout()
 
         # Create pages with titles and vertical layouts (slots)
+        # [Reset to Defaults on every page]
         self.general_panel = self.create_settings_page("General")
-        self.display_panel = self.create_settings_page("Design", extra_widgets=self.create_display_page_widgets())
-        self.network_panel = self.create_settings_page("Security")
+        #  - Clear Automaton testing cache
+        # Shortcuts:
+        #  - Change shortcuts
+        #  - Enable/Disable shortcuts
+        # Updates:
+        #  - Enable automatic updates
+        #  - Check for updates manually/ automatically
+        #  - Download updates in the background
+        # Language and Localization:
+        #  - Select app language
+        #  - Region specific formatting (e.g. date/time, number formats)?
+        # Notifications:
+        #  - Enable / disable system notifications
+        # Startup options:
+        #  - Open last used file on startup
+        #  - Launch at system startup
+        self.design_panel = self.create_settings_page("Design", extra_widgets=self.create_display_page_widgets())
+        # Themes:
+        #  - Select light, dark theme
+        #  - User created styles through gui with example of finished product visible as the color picker window
+        # Accessibility:
+        #  - High-contrast mode?
+        #  - Automaton scaling
+        #  - Ui Scaling (Font too)
+        #  - Larger icons?
+        # Font Options:
+        #  - Font Family
+        # Animations:
+        #  - Enable/Disable animations
+        # Scaling
+        #  - enable/disable automatic scaling
+        self.security_panel = self.create_settings_page("Security")
+        #  - Warn of new plugins
+        #  - Run plugin only in a separate process (Not as efficient)
+        # Save files:
+        #  - Use safe file access to prevent corruption
+        #  -> enable encryption of save files?
+        #   -> app password (auto logoff)?
         self.privacy_panel = self.create_settings_page("Privacy")
+        # Data Collection:
+        #  - Opt in or out of data collection
+        #  - View collected data
+        #  - Clear data collection cache
+        # Ad Preferences: --> Fake ads
+        #  - Disable personalized ads
+        #  - Clear ads cache
+        self.advanced_panel = self.create_settings_page("Advanced")
+        # Debugging:
+        #  - Set logging mode
+        #  - Open logs folder
+        # Developer Options:
+        #  - Experimental features
+        #  - Load selected plugin
+        #  -> Install plugins from e.g. Github
 
         # Add panels to the stacked layout
         self.stacked_layout.addWidget(self.general_panel)
-        self.stacked_layout.addWidget(self.display_panel)
-        self.stacked_layout.addWidget(self.network_panel)
+        self.stacked_layout.addWidget(self.design_panel)
+        self.stacked_layout.addWidget(self.security_panel)
         self.stacked_layout.addWidget(self.privacy_panel)
 
         main_content.addLayout(self.stacked_layout)

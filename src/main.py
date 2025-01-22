@@ -83,7 +83,6 @@ class App:  # The main logic and gui are separated
                                                                      "user_configs_advanced"))
         self.app_settings: JSONAppStorage = JSONAppStorage(f"{self.config_folder}/app_settings.json")
         self.configure_settings()
-        # TODO: self.abs_window_icon_path: str = self.app_settings.retrieve("window_icon_abs_path")
 
         self.backend: IBackend = start(self.app_settings, self.user_settings)
         self.backend_stop_event: threading.Event = threading.Event()
@@ -97,14 +96,13 @@ class App:  # The main logic and gui are separated
         self.window.app = self.qapp
 
         # Setup window
-        # TODO: if self.abs_window_icon_path.startswith("#"):
-        # TODO:     self.abs_window_icon_path = self.abs_window_icon_path.replace("#", self.base_app_dir, 1)
-        # TODO: self.window.set_window_icon(self.abs_window_icon_path)
         self.system: BaseSystemType = get_system()
         self.os_theme: SystemTheme = self.get_os_theme()
         self.apply_theme()
 
+        self.update_icon()
         self.update_title()
+        self.update_font()
         x, y, height, width = self.user_settings.retrieve("auto_configs", "geometry", "tuple")
         if not self.user_settings.retrieve("user_configs_advanced", "save_window_dimensions", "bool"):
             height = 640
@@ -321,12 +319,23 @@ class App:  # The main logic and gui are separated
             if checkbox is not None and checkbox_checked:
                 self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
 
+    def update_icon(self) -> None:
+        """Updates the window icon with data from the settings"""
+        window_icon_set_path: str = self.user_settings.retrieve("user_configs_design", "window_icon_set", "string")
+        if window_icon_set_path.startswith(":"):
+            window_icon_set_path = window_icon_set_path.replace(":", self.base_app_dir, 1)
+        self.window.set_window_icon(os.path.join(window_icon_set_path, "logo-nobg.png"))
+
     def update_title(self) -> None:
         """Updates the window title with data from the settings"""
         raw_title: Template = Template(
             self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))
         formatted_title: str = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
         self.window.set_window_title(formatted_title)
+
+    def update_font(self) -> None:
+        """Updates the window font with data from the settings. This is an expensive operation."""
+        self.window.set_font(self.user_settings.retrieve("user_configs_design", "font", "string"))
 
     def configure_settings(self) -> None:
         self.user_settings.set_default_settings("auto_configs", {
@@ -335,13 +344,14 @@ class App:  # The main logic and gui are separated
             "show_update_info": "True",
             "show_update_timeout": "True",
             # "last_scroll_positions": "(0, 0, 0, 0)",
-            "scrolling_sensitivity": "4.0",
+            # "scrolling_sensitivity": "4.0",
             "ask_to_reopen_last_opened_file": "True",
             "recent_files": "()"
         })
         self.user_settings.set_default_settings("user_configs_design", {
             "light_theming": "adalfarus::thin/colored_summer_sky",  # thin_light_dark
             "dark_theming": "adalfarus::thin/colored_evening_sky",
+            "window_icon_set": ":/data/assets/app_icons/shelline",
             "font": "Segoe UI",
             "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + " [INDEV]" if config.INDEV else ""
         })
@@ -357,7 +367,6 @@ class App:  # The main logic and gui are separated
         })
         self.app_settings.set_default_settings({
             "update_check_request_timeout": "0.4",
-            "window_icon_pack": ":/data/assets/app_icons/shelline",
             "simulation_loader_max_restart_counter": "5"
         })
 
@@ -412,7 +421,9 @@ class App:  # The main logic and gui are separated
 
     def timer_tick(self, index: int) -> None:
         if index == 0:  # Default 500ms timer
+            self.update_icon()
             self.update_title()
+            # self.update_font()
             self.check_theme_change()
             self.timer_number += 1
             if self.timer_number > 999:

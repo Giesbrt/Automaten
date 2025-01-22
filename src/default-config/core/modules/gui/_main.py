@@ -1,6 +1,6 @@
 """TBA"""
-from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox
-from PySide6.QtGui import QIcon, QAction, QDesktopServices
+from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget
+from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont
 from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl
 
 from aplustools.io.qtquick import QQuickMessageBox
@@ -218,6 +218,14 @@ class MainWindow(QMainWindow, IMainWindow):
 
     def set_scroll_speed(self, value: float) -> None:
         return
+
+    def set_font(self, font_str: str) -> None:
+        font = QFont(font_str)
+        self.setFont(font)
+        for child in self.findChildren(QWidget):
+            child.setFont(font)
+        self.update()
+        self.repaint()
 
     def internal_obj(self) -> QMainWindow:
         return self

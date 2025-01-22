@@ -1,5 +1,4 @@
 """Abstract api interfaces for everything"""
-import math
 import threading
 
 from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
@@ -96,6 +95,9 @@ class IMainWindow:
         raise NotImplementedError
 
     # def set_hide_scrollbar
+
+    def set_font(self, font_str: str) -> None:
+        raise NotImplementedError
 
     def button_popup(self, title: str, text: str, description: str,
                      icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"],

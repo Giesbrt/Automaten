@@ -1,0 +1,160 @@
+import os
+import glob
+import importlib
+import sys
+import json
+import inspect
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules', 'automaton', 'base')))
+
+from automaton import Automaton as BaseAutomaton
+from state import State
+from transition import Transition as BaseTransition
+import ast
+import unittest
+from threading import Thread
+sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
+
+class Extensions_Loader:
+    def __init__(self):
+        self.cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ext_cache")
+        if not os.path.exists(self.cache_path):
+            os.mkdir(self.cache_path)
+            with open(os.path.join(self.cache_path, "cache.json"), 'w') as file:
+                json.dump({"modules": []}, file, indent=4)
+        with open(os.path.join(self.cache_path, "cache.json"), 'r') as file:
+            self.data = json.load(file)
+        if "modules" not in self.data:
+            self.data["modules"] = []
+        self.content: dict = {}
+
+    def get_content(self):
+        return self.content
+
+    def clear_cache(self): 
+        with open(os.path.join(self.cache_path, "cache.json"), 'w') as file:
+                json.dump({"modules": []}, file, indent=4)
+
+    def check_module(self, module):
+        if self.static_analysis(module) and self.dynamic_analysis(module):
+            return True
+        else:
+            return False
+    
+    def static_analysis(self, module):
+        classes_in_module = []
+        classes = [(name, obj) for name, obj in inspect.getmembers(module, inspect.isclass)]
+        for name, element in classes:
+            if element.__module__ == module.__name__ : 
+                classes_in_module.append((name, element))
+        check = ["s","a","t"]
+        print(classes_in_module)
+        for name, element in classes_in_module:
+            print(f"Class: {name}, MRO: {inspect.getmro(element)}")
+            print(State)
+            print(inspect.getfile(State))
+            if name.endswith("State"):
+                if any(base == State for base in inspect.getmro(element)):
+                    if "s" in  check:
+                        check.remove("s")
+                    else:
+                        return False
+            elif name.endswith("Automaton"):
+                if any(base == BaseAutomaton for base in inspect.getmro(element)):
+                    if "a" in  check:
+                        check.remove("a")
+                    else:
+                        return False
+            elif name.endswith("Transition"):
+                if any(base == BaseTransition for base in inspect.getmro(element)):
+                    if "t" in  check:
+                        check.remove("t")
+                    else:
+                        return False
+            else:
+                return False
+        if check == []:
+            return True
+        else:
+            print(check)
+            return False
+
+    def dynamic_analysis(self, module):
+        #Implementierung erfolgt später (return ist provisorisch zum Testen der Funktionalität)
+        return True
+    
+    def prioritize(self, path):
+        return self.load_content(onestep = True)
+
+
+    def load_content(self, onestep = False):
+        modules = {}
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        extensions_path = os.path.join(base_dir, "extensions", '*.py')
+        dir_list = glob.glob(extensions_path)
+        for path in dir_list:
+            self.content[os.path.splitext(os.path.basename(path))[0]] = lambda: self.prioritise(path)
+
+        for path in dir_list:
+            rel_path = os.path.relpath(path, start=base_dir)
+            rel_path_m = os.path.splitext(rel_path)[0]
+            module_path = rel_path_m.replace(os.path.sep, ".")
+            modules[os.path.splitext(os.path.basename(path))[0]] = importlib.import_module(module_path)
+            last_change = os.path.getmtime(path)
+            print("modul", modules[os.path.splitext(os.path.basename(path))[0]])
+            for module in self.data["modules"]:
+                if path == module["path"] and last_change == module["last_change"]:
+                    if module["functioning"] == True:
+                        all_classes = [(name, obj) for name, obj in inspect.getmembers(modules[os.path.splitext(os.path.basename(path))[0]], inspect.isclass)]
+                        classes = []
+                        for name, element in all_classes:
+                            if element.__module__ == modules[os.path.splitext(os.path.basename(path))[0]].__name__ : 
+                                classes.append(element)
+                        #Hier muss ich die Klassen suchen also ...State, ...Transition, ...Automaton und dann in content einfügen.
+
+                        self.content[os.path.splitext(os.path.basename(path))[0]] = classes
+                        print(self.content)
+                    break
+                elif path == module["path"]:
+                    self.data["modules"] = [d for d in self.data["modules"] if d.get("path") != path]
+            else:
+                cache_module = {
+                                "path": path,
+                                "last_change": last_change,
+                                "functioning": self.check_module(modules[os.path.splitext(os.path.basename(path))[0]])
+                                }
+                print(f'Letzte Änderung: {last_change}')
+                self.data["modules"].append(cache_module)
+                with open(os.path.join(self.cache_path, "cache.json"), 'w') as file:
+                    json.dump(self.data, file, indent=4)
+        return self.content
+
+loader = Extensions_Loader()
+print(loader.load_content())
+
+
+
+
+
+"""cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ext_cache")
+if not os.path.exists(cache_path):
+    os.mkdir(cache_path)
+    with open(os.path.join(cache_path, "cache.json"), 'w') as file:
+        json.dump({"modules": []}, file, indent=4)
+
+with open(os.path.join(cache_path, "cache.json"), 'r') as file:
+    data = json.load(file)  # JSON wird zurück in ein Python-Dictionary umgewandelt
+
+
+data = {
+    "name": "Max",
+    "age": 25,
+    "courses": ["Mathematics", "Physics"]
+}
+
+# Serialisieren (Python-Objekt zu JSON)
+with open(os.path.join(cache_path, "cache.json"), 'a') as file:
+    json.dump(data, file, indent=4)
+
+print(data)"""
+
+        

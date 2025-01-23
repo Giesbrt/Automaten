@@ -130,31 +130,3 @@ class Extensions_Loader:
 
 loader = Extensions_Loader()
 print(loader.load_content())
-
-
-
-
-
-"""cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ext_cache")
-if not os.path.exists(cache_path):
-    os.mkdir(cache_path)
-    with open(os.path.join(cache_path, "cache.json"), 'w') as file:
-        json.dump({"modules": []}, file, indent=4)
-
-with open(os.path.join(cache_path, "cache.json"), 'r') as file:
-    data = json.load(file)  # JSON wird zurück in ein Python-Dictionary umgewandelt
-
-
-data = {
-    "name": "Max",
-    "age": 25,
-    "courses": ["Mathematics", "Physics"]
-}
-
-# Serialisieren (Python-Objekt zu JSON)
-with open(os.path.join(cache_path, "cache.json"), 'a') as file:
-    json.dump(data, file, indent=4)
-
-print(data)"""
-
-        

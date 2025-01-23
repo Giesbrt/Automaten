@@ -4,11 +4,11 @@ import importlib
 import sys
 import json
 import inspect
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules', 'automaton', 'base')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from automaton import Automaton as BaseAutomaton
-from state import State
-from transition import Transition as BaseTransition
+from core.modules.automaton.base.state import State as BaseState
+from core.modules.automaton.base.transition import Transition as BaseTransition
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 import ast
 import unittest
 from threading import Thread
@@ -50,22 +50,24 @@ class Extensions_Loader:
         print(classes_in_module)
         for name, element in classes_in_module:
             print(f"Class: {name}, MRO: {inspect.getmro(element)}")
-            print(State)
-            print(inspect.getfile(State))
+            for base in inspect.getmro(element):
+                print("State:", BaseState.__name__, BaseState.__module__)
+                print("Base:", base.__name__, base.__module__)
+            print(inspect.getfile(BaseState))
             if name.endswith("State"):
-                if any(base == State for base in inspect.getmro(element)):
+                if any(base.__module__ == BaseState.__module__ and base.__name__ == BaseState.__name__ for base in inspect.getmro(element)):
                     if "s" in  check:
                         check.remove("s")
                     else:
                         return False
             elif name.endswith("Automaton"):
-                if any(base == BaseAutomaton for base in inspect.getmro(element)):
+                if any(base.__module__ == BaseAutomaton.__module__ and base.__name__ == BaseAutomaton.__name__ for base in inspect.getmro(element)):
                     if "a" in  check:
                         check.remove("a")
                     else:
                         return False
             elif name.endswith("Transition"):
-                if any(base == BaseTransition for base in inspect.getmro(element)):
+                if any(base.__module__ == BaseTransition.__module__ and base.__name__ == BaseTransition.__name__ for base in inspect.getmro(element)):
                     if "t" in  check:
                         check.remove("t")
                     else:
@@ -93,6 +95,7 @@ class Extensions_Loader:
         dir_list = glob.glob(extensions_path)
         for path in dir_list:
             self.content[os.path.splitext(os.path.basename(path))[0]] = lambda: self.prioritise(path)
+        print(self.content)
 
         for path in dir_list:
             rel_path = os.path.relpath(path, start=base_dir)
@@ -101,6 +104,7 @@ class Extensions_Loader:
             modules[os.path.splitext(os.path.basename(path))[0]] = importlib.import_module(module_path)
             last_change = os.path.getmtime(path)
             print("modul", modules[os.path.splitext(os.path.basename(path))[0]])
+
             for module in self.data["modules"]:
                 if path == module["path"] and last_change == module["last_change"]:
                     if module["functioning"] == True:
@@ -109,10 +113,7 @@ class Extensions_Loader:
                         for name, element in all_classes:
                             if element.__module__ == modules[os.path.splitext(os.path.basename(path))[0]].__name__ : 
                                 classes.append(element)
-                        #Hier muss ich die Klassen suchen also ...State, ...Transition, ...Automaton und dann in content einfügen.
-
                         self.content[os.path.splitext(os.path.basename(path))[0]] = classes
-                        print(self.content)
                     break
                 elif path == module["path"]:
                     self.data["modules"] = [d for d in self.data["modules"] if d.get("path") != path]
@@ -123,7 +124,18 @@ class Extensions_Loader:
                                 "functioning": self.check_module(modules[os.path.splitext(os.path.basename(path))[0]])
                                 }
                 print(f'Letzte Änderung: {last_change}')
+
+                if cache_module["functioning"]:
+                    all_classes = [(name, obj) for name, obj in inspect.getmembers(modules[os.path.splitext(os.path.basename(path))[0]], inspect.isclass)]
+                    classes = []
+                    for name, element in all_classes:
+                        if element.__module__ == modules[os.path.splitext(os.path.basename(path))[0]].__name__ : 
+                            classes.append(element)
+                    self.content[os.path.splitext(os.path.basename(path))[0]] = classes
+                else:
+                    del self.content[os.path.splitext(os.path.basename(path))[0]]
                 self.data["modules"].append(cache_module)
+                
                 with open(os.path.join(self.cache_path, "cache.json"), 'w') as file:
                     json.dump(self.data, file, indent=4)
         return self.content

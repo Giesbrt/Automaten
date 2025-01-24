@@ -70,6 +70,9 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
         """
         self._display_text = display_text
 
+    def set_active(self, value: bool) -> None:
+        self._is_active = value
+
     def get_colour(self) -> Qt.GlobalColor:
         """Gets the colour of the state.
         

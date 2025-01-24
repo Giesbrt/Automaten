@@ -13,7 +13,7 @@ from core.modules.abstract import IUiAutomaton
 
 from aplustools.io.env import auto_repr_with_privates
 from aplustools.io import ActLogger
-from core.utils.OrderedSet import OrderedSet
+from utils.OrderedSet import OrderedSet
 
 # Standard typing imports for aps
 import collections.abc as _a

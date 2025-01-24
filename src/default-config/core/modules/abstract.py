@@ -4,7 +4,7 @@ import threading
 from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
 from PySide6.QtCore import Qt
 
-from core.utils.OrderedSet import OrderedSet
+from utils.OrderedSet import OrderedSet
 
 # Standard typing imports for aps
 import abc as _abc

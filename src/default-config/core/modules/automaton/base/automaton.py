@@ -5,7 +5,7 @@ import json
 from core.modules.automaton.base.state import State
 from core.modules.automaton.base.transition import Transition
 
-from core.utils.OrderedSet import OrderedSet
+from utils.OrderedSet import OrderedSet
 
 # Standard typing imports for aps
 import collections.abc as _a

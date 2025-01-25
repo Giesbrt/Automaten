@@ -109,7 +109,9 @@ if exit_code:
 print(f"Starting {PROGRAM_NAME} {str(VERSION) + VERSION_ADD} with py{'.'.join([str(x) for x in _sys.version_info])} ...")
 
 
-exported_vars = _configure()
-exported_logs, base_app_dir, old_cwd = (exported_vars["accumulated_logs"], exported_vars["base_app_dir"],
-                                        exported_vars["old_cwd"])
+if "CONFIG_DONE" not in locals():
+    exported_vars = _configure()
+    exported_logs, base_app_dir, old_cwd = (exported_vars["accumulated_logs"], exported_vars["base_app_dir"],
+                                            exported_vars["old_cwd"])
+    CONFIG_DONE: bool = True
 del _sys, _os, _shutil

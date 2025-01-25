@@ -1,6 +1,5 @@
 """TBA"""
 import config
-import config
 import core.modules.serializer  # So we know the backend still works
 
 # Standard imports

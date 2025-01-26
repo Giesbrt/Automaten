@@ -224,7 +224,7 @@ class SettingsPanel(Panel):
         #  - Enable/Disable shortcuts
         # Updates:
         #  - Enable automatic updates
-        #  - Check for updates manually/ automatically
+        #  - Check for updates manually/ automatically (the .exe file)
         #  - Download updates in the background
         # Language and Localization:
         #  - Select app language
@@ -247,8 +247,13 @@ class SettingsPanel(Panel):
         #  - Font Family
         # Animations:
         #  - Enable/Disable animations
+        # Tutorials:
+        #  - Auto open tutorials tab (default "on")
         # Scaling
         #  - enable/disable automatic scaling
+        # Defaults:
+        #  - Default state background color
+        #  - Transition func seperator (default "/")
         self.security_panel = self.create_settings_page("Security")
         #  - Warn of new plugins
         #  - Run plugin only in a separate process (Not as efficient)

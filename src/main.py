@@ -40,6 +40,7 @@ from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, S
 from core.modules.abstract import IMainWindow, IBackend
 from core.modules.automaton_loader import start
 from core.modules.automaton.UiBridge import UiBridge
+from utils.errorCache import ErrorCache, ErrorSeverity
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -92,6 +93,9 @@ class App:  # The main logic and gui are separated
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
         self.window.app = self.qapp
+
+        # Setup errorCache
+        ErrorCache().init(self.window.button_popup, config.INDEV)
 
         # Setup window
         self.system: BaseSystemType = get_system()

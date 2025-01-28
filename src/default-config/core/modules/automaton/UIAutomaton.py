@@ -14,6 +14,7 @@ from core.modules.abstract import IUiAutomaton
 from aplustools.io.env import auto_repr_with_privates
 from aplustools.io import ActLogger
 from utils.OrderedSet import OrderedSet
+from utils.errorCache import ErrorCache, ErrorSeverity
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -314,7 +315,7 @@ class UiAutomaton(IUiAutomaton):
         if state not in self._states:
             self.add_state(state)
 
-    def handle_bridge_updates(self) -> None:
+    def handle_bridge_updates(self) -> None:  # todo req testing
         """Handles updates from the UI bridge.
         
         :return: None
@@ -325,7 +326,32 @@ class UiAutomaton(IUiAutomaton):
 
         # Handle bridge
         bridge_item: _ty.Dict[str, _ty.Any] = bridge.get_ui_task()
-        pass  # Todo: implement as needed
+
+        if "type" not in bridge_item:
+            return
+
+        if "message" not in bridge_item:
+            return
+
+        if "success" not in bridge_item:
+            return
+
+        error_type: str = bridge_item["type"]
+        message: str = bridge_item["type"]
+        success: bool = bridge_item["success"]
+
+        error_type = error_type.lower().replace("_", " ")
+        if " " in error_type:
+            split_error_type = error_type.split(" ")
+            formatted_error_type: str = " ".join(split_error_type)
+        else:
+            formatted_error_type: str = error_type
+
+        args: list = [formatted_error_type, message, True]
+        if not success:
+            ErrorCache().error(*args)
+
+        ErrorCache().info(*args)
 
     def get_state_by_id(self, state_id: int) -> UiState:
         """Gets a state by its id.
@@ -405,6 +431,7 @@ class UiAutomaton(IUiAutomaton):
         if not structure["content"]:
             log_message: str = "No structure found for simulation!"
             ActLogger().error(log_message)
+            ErrorCache().info(log_message, "Can not simulate an automaton without any contents", True, False)
             return _result.Failure(log_message)
 
         # send to bridge
@@ -449,6 +476,9 @@ class UiAutomaton(IUiAutomaton):
 
             state: UiState = self.get_state_by_id(state_index)
             if state is None:
+                ErrorCache().error("Failure occurred whilst deserialisation of simulation results",
+                                   f"State with index {state_index} not found.",
+                                   True, False)
                 return _result.Failure(f"State with index {state_index} not found.")
             state._activate()
 
@@ -459,6 +489,9 @@ class UiAutomaton(IUiAutomaton):
 
             transition: UiTransition = self.get_transition_by_id(transition_index)
             if transition is None:
+                ErrorCache().error("Failure occurred whilst deserialisation of simulation results",
+                                   f"Transition with index {transition_index} not found.",
+                                   True, False)
                 return _result.Failure(f"Transition with index {transition_index} not found.")
             transition._activate()
 

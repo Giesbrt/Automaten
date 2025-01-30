@@ -17,11 +17,8 @@ import types as _ts
 class AutomatonSimulator:
     def __init__(self, simulation_request: _ty.Dict[str, _ty.Any],
                  simulation_result_callback: _ty.Callable,
-                 max_restart_counter: int,
                  error_callable: _ty.Callable):
         super().__init__()
-        self._max_restart_counter: int = max_restart_counter
-        self._restart_counter: int = 0
 
         self._simulation_request: _ty.Dict[str, _ty.Any] = simulation_request
         self._simulation_result_callback: _ty.Callable = simulation_result_callback
@@ -201,23 +198,13 @@ class AutomatonSimulator:
         except Exception as e:
             log_message: str = (f"An error occurred whilst trying to simulate an "
                                 f"{self.automaton.get_implementation_name()}: {str(e)}")
-            self.__handle_failure(log_message, self._simulate)
+
+            ActLogger().error(log_message)
+
+            error: _ty.Dict[str, _ty.Any] = {}
+            error["type"] = "SIMULATION_ERROR"
+            error["message"] = str(e)
+            error["success"] = False
+            self._error_callable(error)
+
             return _result.Failure(log_message)
-
-    def __handle_failure(self, log_message: str, action: _ty.Callable = None) -> None:  # Todo: is this really needed?
-        """Handle a failure
-        
-        :param log_message: The message to log
-        :param action: The action to take
-        :return: None
-        """
-        self._restart_counter += 1
-        ActLogger().error(log_message)
-
-        if self._restart_counter < self._max_restart_counter:
-            if action is not None:
-                action()
-            return
-
-        # notify the user that the module is broken
-        self._error_callable()

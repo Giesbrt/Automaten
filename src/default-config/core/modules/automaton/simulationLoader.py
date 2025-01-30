@@ -26,12 +26,6 @@ class SimulationLoader:
         # App storage access
         self._app_storage: JSONAppStorage = json_app_storage
 
-        loaded_max_restart_counter: int = 5  # set default of 5 if the config could not be read
-        if self._app_storage is not None:
-            loaded_max_restart_counter = self._app_storage.retrieve("simulation_loader_max_restart_counter", int)
-
-        self._max_restart_counter: int = loaded_max_restart_counter or 5  # set default of 5 if the config could not be read
-
         self._bridge: UiBridge = UiBridge()
 
     def _push_simulation_to_bridge(self, item: _ty.Dict[str, _ty.Any]) -> None:
@@ -68,8 +62,7 @@ class SimulationLoader:
 
                     automaton_simulator: AutomatonSimulator = AutomatonSimulator(simulation_request=bridge_data,
                                                                                  simulation_result_callback=self._push_simulation_to_bridge,
-                                                                                 error_callable=self._push_error_to_bridge,
-                                                                                 max_restart_counter=self._max_restart_counter)
+                                                                                 error_callable=self._push_error_to_bridge)
                     result: _result.Result = automaton_simulator.run()
                     ActLogger().info(f"Finished automaton simulation, result: " + (result._inner_value or "Could not cache the simulation result."))
 

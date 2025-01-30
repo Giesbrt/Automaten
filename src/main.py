@@ -370,7 +370,6 @@ class App:  # The main logic and gui are separated
         })
         self.app_settings.set_default_settings({
             "update_check_request_timeout": "0.4",
-            "simulation_loader_max_restart_counter": "5"
         })
 
     def load_themes(self, theme_folder: str, clear: bool = False) -> None:

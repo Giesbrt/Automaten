@@ -349,8 +349,7 @@ class App:  # The main logic and gui are separated
             "update_check_request_timeout": "0.2",
             "titlebox_rotation_reset_delay_seconds": "5",
             "titlebox_rotation_rate": "1",
-            "window_icon_abs_path": "#/data/assets/logo-nobg.png",
-            "simulation_loader_max_restart_counter": "5"
+            "window_icon_abs_path": "#/data/assets/logo-nobg.png"
         })
 
     def closeEvent(self, event: QCloseEvent) -> None:

@@ -95,7 +95,8 @@ class App:  # The main logic and gui are separated
         self.window.app = self.qapp
 
         # Setup errorCache
-        ErrorCache().init(self.window.button_popup, config.INDEV)
+        self.error_cache: ErrorCache = ErrorCache()
+        self.error_cache.init(self.window.button_popup, config.INDEV)
 
         # Setup window
         self.system: BaseSystemType = get_system()
@@ -430,6 +431,9 @@ class App:  # The main logic and gui are separated
             self.timer_number += 1
             if self.timer_number > 999:
                 self.timer_number = 1
+
+            # display cached Errors
+            self.error_cache.invoke_popup()
         else:
             print("Tock")
         # if not self.threading:

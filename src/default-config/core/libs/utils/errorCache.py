@@ -2,6 +2,7 @@
 
 from utils.OrderedSet import OrderedSet
 from aplustools.io import ActLogger
+from queue import Queue
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -34,11 +35,32 @@ class ErrorCache:
     _currently_displayed: OrderedSet[str] = OrderedSet()
     _button_display_callable: _ty.List[_ty.Callable] = []
     _is_indev: _ty.List[bool] = []
+    _popup_queue: _ty.List[_ty.Callable] = []
 
     _logger: ActLogger = ActLogger()
 
     def __init__(self) -> None:
         pass
+
+    def has_cached_errors(self) -> bool:
+        """
+        Returns if there are popups cached which have not been displayed yet
+        :return: bool
+        """
+        return len(self._popup_queue) > 0
+
+    def invoke_popup(self) -> None:
+        """
+
+        :return:
+        """
+        if not self.has_cached_errors():
+            return
+
+        popup_callable: _ty.Callable = self._popup_queue[0]
+        self._popup_queue.pop(0)
+
+        popup_callable()
 
     def init(self, popup_creation_callable: _ty.Callable, is_indev: bool) -> None:
         """
@@ -106,7 +128,7 @@ class ErrorCache:
         if not show_dialog:
             return
 
-        self._show_dialog(title, log_message, description, icon)
+        self._popup_queue.append(lambda: self._show_dialog(title, log_message, description, icon))
 
     # "Errors"
 
@@ -137,11 +159,10 @@ class ErrorCache:
         :return: None
         """
         title: str = "Information"
-
-        self._handle_dialog(show_dialog, title, log_message, description, icon)
-
         if print_log:
             self._logger.info(log_message)
+
+        self._handle_dialog(show_dialog, title, log_message, description, icon)
 
     def warning(self, log_message: str, description: str, show_dialog: bool = False,
                 print_log: bool = True,
@@ -156,11 +177,10 @@ class ErrorCache:
         :return: None
         """
         title: str = "Warning"
-
-        self._handle_dialog(show_dialog, title, log_message, description, icon)
-
         if print_log:
             self._logger.warning(log_message)
+
+        self._handle_dialog(show_dialog, title, log_message, description, icon)
 
     def error(self, log_message: str, description: str, show_dialog: bool = False,
               print_log: bool = True,
@@ -177,11 +197,10 @@ class ErrorCache:
         :return: None
         """
         title: str = f"{str(error_severity).capitalize()} Error"
-
-        self._handle_dialog(show_dialog, title, log_message, description, icon)
-
         if print_log:
             self._logger.error(f"{str(error_severity)}: {log_message}")
+
+        self._handle_dialog(show_dialog, title, log_message, description, icon)
 
     def debug(self, log_message: str, description: str, show_dialog: bool = False,
               print_log: bool = True,
@@ -203,8 +222,7 @@ class ErrorCache:
             return
 
         title: str = "Debug"
-
-        self._handle_dialog(show_dialog, title, log_message, description, icon)
-
         if print_log:
             self._logger.debug(log_message)
+
+        self._handle_dialog(show_dialog, title, log_message, description, icon)

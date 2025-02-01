@@ -16,6 +16,7 @@ import abc as _abc
 import typing as _ty
 import types as _ts
 
+
 # Docs generated with Github Copilot
 
 
@@ -37,14 +38,34 @@ class SimulationLoader:
         ActLogger().info("Pushed simulation packet to bridge.")
         self._bridge.add_simulation_item(item)
 
-    def _push_error_to_bridge(self, error: _ty.Dict[str, _ty.Any]) -> None:
+    def _push_error_to_bridge(self, error: _ty.Dict[str, _ty.Any],
+                              error_queue: _ty.Literal["ui", "simulation"] = "ui",
+                              clear_queues: _ty.List[_ty.Literal["ui", "simulation"]] | None = None) -> None:
         """Push an error to the bridge
         
         :param error: The error to push
+        :param error_queue: The queue the error should be pushed to
+        :param clear_queues: The queues that should be cleared before pushing the error
         :return: None
         """
-        # Todo
-        ActLogger().error("Received an Error from automaton simulation, can not push to bridge due to it being not implemented. Error: " + str(error))
+        bridge_queue_callables: _ty.Dict[_ty.Literal["ui", "simulation"], _ty.Tuple[_ty.Callable, _ty.Callable]] = {
+            "simulation": (lambda: self._bridge.add_simulation_item(error), self._bridge.clear_simulation_queue),
+            "ui": (lambda: self._bridge.add_ui_item(error), self._bridge.clear_ui_queue)}
+
+        # Clear queues
+        for clear_queue in clear_queues:
+            if clear_queue not in bridge_queue_callables:
+                ActLogger().debug(
+                    f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge (CLEAR)")
+                return
+            bridge_queue_callables[clear_queue][1]()  # Invoke the clear method
+
+        # push error to queue
+        if error_queue not in bridge_queue_callables:
+            ActLogger().debug(f"Failed to recognise {error_queue} queue whilst trying to push error to bridge (PUSH)")
+            return
+
+        bridge_queue_callables[error_queue][0]()
 
     def handle_bridge(self) -> None:
         """Handle the bridge requests
@@ -59,12 +80,12 @@ class SimulationLoader:
         try:
             match (str(bridge_data["action"]).lower()):
                 case "simulation":
-
                     automaton_simulator: AutomatonSimulator = AutomatonSimulator(simulation_request=bridge_data,
                                                                                  simulation_result_callback=self._push_simulation_to_bridge,
                                                                                  error_callable=self._push_error_to_bridge)
                     result: _result.Result = automaton_simulator.run()
-                    ActLogger().info(f"Finished automaton simulation, result: " + (result._inner_value or "Could not cache the simulation result."))
+                    ActLogger().info(f"Finished automaton simulation, result: " + (
+                            result._inner_value or "Could not cache the simulation result."))
 
         except Exception as e:
             error_packet: _ty.Dict[str, _ty.Any] = {}
@@ -75,5 +96,3 @@ class SimulationLoader:
             self._push_error_to_bridge(error_packet)
 
         self._bridge.complete_backend_task()
-
-

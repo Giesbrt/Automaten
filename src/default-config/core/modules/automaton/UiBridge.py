@@ -72,6 +72,12 @@ class UiBridge:
         """
         return not self._ui_queue.empty()
 
+    def clear_ui_queue(self) -> None:
+        """
+        This method clears the ui queue.
+        """
+        self._ui_queue.empty()
+
     # Simulation-related methods
     def get_simulation_queue(self) -> Queue[_ty.Dict[str, str]]:
         """

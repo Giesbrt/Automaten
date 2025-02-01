@@ -205,6 +205,6 @@ class AutomatonSimulator:
             error["type"] = "SIMULATION_ERROR"
             error["message"] = str(e)
             error["success"] = False
-            self._error_callable(error)
+            self._error_callable(error, "ui", ["simulation"])
 
             return _result.Failure(log_message)

@@ -8,8 +8,8 @@ import typing as _ty
 import types as _ts
 
 
-def error():
-    print("error")
+def error(*args, **kwargs):
+    print("error", args, kwargs)
 
 
 def simulation_step_result(step):
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     while i < 1:
         i += 1
-        simulator = AutomatonSimulator(data, simulation_step_result, 2, error)
+        simulator = AutomatonSimulator(data, simulation_step_result, error)
         result = simulator.run()
         state_list = [i.get_name() for i in simulator.automaton.get_states()]
         print(result)

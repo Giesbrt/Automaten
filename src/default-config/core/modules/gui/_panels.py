@@ -89,11 +89,11 @@ class ConditionEditMenu(QFrame):
 
 class UserPanel(Panel):
     """The main panel to be shown"""
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, automaton_type: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         from ._grids import AutomatonInteractiveGridView
         self.setLayout(QNoSpacingBoxLayout(QBoxDirection.TopToBottom))
-        self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
+        self.grid_view = AutomatonInteractiveGridView(automaton_type)  # Get values from settings
         self.layout().addWidget(self.grid_view)
 
         # Side Menu

@@ -1,7 +1,8 @@
 """TBA"""
-from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget
-from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont
-from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl
+from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget, QDialog, \
+    QVBoxLayout, QLabel
+from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont, QColor, QPalette
+from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl, Qt
 
 from aplustools.io.qtquick import QQuickMessageBox
 
@@ -12,6 +13,43 @@ from ._panels import Panel, UserPanel, SettingsPanel
 import collections.abc as _a
 import typing as _ty
 import types as _ts
+
+
+class AutomatonSelectionDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+
+        # Dunkler Hintergrund
+        palette = self.palette()
+        palette.setColor(QPalette.Window, QColor(0, 0, 0, 128))
+        self.setAutoFillBackground(True)
+        self.setPalette(palette)
+
+        layout = QVBoxLayout(self)
+
+        title = QLabel("Wählen Sie einen Automatentyp:")
+        title.setStyleSheet("color: white; font-size: 18px;")
+        layout.addWidget(title)
+
+        types = ["Deterministic Finite Automaton (DFA)", "Mealy-Machine (MM)", "Turing Machine (TM)"]
+        self.buttons = {}
+
+        for automaton_type in types:
+            btn = QPushButton(automaton_type)
+            btn.clicked.connect(self.select_type)
+            layout.addWidget(btn)
+            self.buttons[automaton_type] = btn
+
+        self.selected_type = None
+
+    def select_type(self):
+        button = self.sender()
+        if button:
+            self.selected_type = button.text()
+        self.parentWidget().user_panel.grid_view.set_automaton_type(self.selected_type)
+        self.accept()
 
 
 class MainWindow(QMainWindow, IMainWindow):
@@ -26,10 +64,11 @@ class MainWindow(QMainWindow, IMainWindow):
         self.user_panel_animation: QPropertyAnimation | None = None
         self.settings_panel_animation: QPropertyAnimation | None = None
         self.panel_animation_group: QParallelAnimationGroup | None = None
+        self.automaton_type: str | None = None
         super().__init__(parent=None)
 
     def setup_gui(self) -> None:
-        self.user_panel = UserPanel(parent=self)
+        self.user_panel = UserPanel(self.automaton_type, parent=self)
         self.settings_panel = SettingsPanel(parent=self)
 
         # Animation for Panels
@@ -233,9 +272,30 @@ class MainWindow(QMainWindow, IMainWindow):
     def resizeEvent(self, event):
         self.reload_panels()
 
+    def show_automaton_selection(self) -> bool:
+        dialog = AutomatonSelectionDialog(self)
+
+        overlay = QWidget(self)
+        overlay.setGeometry(self.rect())
+        overlay.setStyleSheet("background-color: rgba(0, 0, 0, 150);")
+        overlay.show()
+
+        result = dialog.exec()
+
+        overlay.deleteLater()
+
+        if result == QDialog.DialogCode.Accepted:
+            self.automaton_type = dialog.selected_type
+            return True
+        return False
+
     def start(self) -> None:
         self.show()
         self.raise_()
+
+        # Dialog nach dem Anzeigen des Hauptfensters aufrufen
+        if not self.show_automaton_selection():
+            self.close()
 
     def close(self) -> None:
         QMainWindow.close(self)

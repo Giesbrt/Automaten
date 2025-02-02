@@ -1,14 +1,14 @@
 """Everything regarding the infinite grid"""
 import numpy as np
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu, \
-    QGraphicsTextItem
+    QGraphicsTextItem, QGraphicsProxyWidget
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QAction
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint
 
 # from core.modules.automaton.base.transition import Transition
 # from core.modules.automaton.base.state import State
 
-from ._grid_items import State, StateGroup, Label, ConnectionPoint, TempTransition, Transition, TransitionLineEdit
+from ._grid_items import State, StateGroup, Label, ConnectionPoint, TempTransition, Transition, TransitionFunction
 from ._panels import UserPanel
 
 # Standard typing imports for aps
@@ -131,30 +131,103 @@ class InteractiveGridView(StaticGridView):
 
 
 class AutomatonInteractiveGridView(InteractiveGridView):
-    """TBA"""
-    def __init__(self) -> None:  # TODO: Please remember to type hint :)
+    """
+    A specialized interactive grid view for automaton visualization.
+
+    This class extends `InteractiveGridView` to support different types
+    of automata, handling states, transitions, and user interactions.
+    """
+    def __init__(self, automation_type: str) -> None:
+        """
+        Initialize the automaton grid view.
+
+        Args:
+            automation_type (str): The type of automaton being visualized.
+        """
         super().__init__()
+        self.automaton_type: str | None = automation_type
         self._counter: int = 0
         self._last_active: State | None = None
         self._temp_line: TempTransition | None = None
         self._start_ellipse: ConnectionPoint | None = None
         self._last_connection_point: ConnectionPoint | None = None
 
+    def _setup_automaton_view(self) -> None:
+        """
+        Configure settings based on the selected automaton type.
+        This method sets the number of sections required in a transition function.
+        """
+        if self.automaton_type == 'Deterministic Finite Automaton (DFA)':
+            self._automaton_settings: dict = {
+                'transition_sections': 1
+            }
+        elif self.automaton_type == 'Mealy-Machine (MM)':
+            self._automaton_settings: dict = {
+                'transition_sections': 2
+            }
+        elif self.automaton_type == 'Turing Machine (TM)':
+            self._automaton_settings: dict = {
+                'transition_sections': 3
+            }
+
+    def set_automaton_type(self, automaton_type) -> None:
+        """
+        Set a new automaton type and update the view accordingly.
+
+        Args:
+            automaton_type (str): The new automaton type.
+        """
+        self.automaton_type = automaton_type
+        print(self.automaton_type)
+        self._setup_automaton_view()
+
     def get_mapped_position(self, item: QGraphicsItem) -> any:
+        """
+        Get the mapped scene position of a given item.
+
+        Args:
+            item (QGraphicsItem): The item whose position is needed.
+
+        Returns:
+            QPoint: The mapped position in the grid view.
+        """
         scene_pos = item.mapToScene(item.boundingRect().center())
         return self.mapFromScene(scene_pos)
 
     def get_item_at(self, pos: QPoint) -> QGraphicsItem:
+        """
+        Retrieve the item at a given position.
+
+        Args:
+            pos (QPoint): The position in the grid view.
+
+        Returns:
+            QGraphicsItem: The item at the given position, if any.
+        """
         scene_pos: QPointF = self.mapToScene(pos)
         return self.scene().itemAt(scene_pos, self.transform())
 
     def get_item_group(self, item: State | Label | ConnectionPoint) -> StateGroup:
+        """
+        Retrieve the parent `StateGroup` of a given item.
+
+        Args:
+            item (State | Label | ConnectionPoint): The item whose group is needed.
+
+        Returns:
+            StateGroup: The parent group of the item.
+        """
         while not isinstance(item, StateGroup):
             item: State | StateGroup = item.parentItem()
         return item
 
     def new_state(self, pos: QPointF) -> None:
-        """TBA"""
+        """
+        Create a new state at the given position.
+
+        Args:
+            pos (QPointF): The position where the new state should be created.
+        """
         new_state = StateGroup(pos.x() - self.grid_size / 2,
                                pos.y() - self.grid_size / 2,
                                self.grid_size, self.grid_size,
@@ -164,27 +237,47 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._counter += 1
 
     def remove_item(self, item: QGraphicsItem) -> None:
+        """
+        Remove an item from the scene.
+
+        Args:
+            item (QGraphicsItem): The item to remove.
+        """
         self.scene().removeItem(item)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Start panning on right or middle mouse button click."""
+        """
+        Handle mouse press events for interaction with the automaton.
+
+        - Right-click opens a context menu for deleting states.
+        - Middle-click starts panning.
+        - Left-click selects/moves items or starts a transition.
+
+        Args:
+            event (QMouseEvent): The mouse event.
+        """
         if event.button() == Qt.MouseButton.RightButton:
+            # Remove temporary transition line if right-clicked
             if self._temp_line:
                 self.scene().removeItem(self._temp_line)
                 self._start_ellipse, self._temp_line = None, None
             item: QGraphicsItem = self.get_item_at(event.pos())
             if isinstance(item, (State, Label)):
+                # Context menu for deleting a state
                 context_menu = QMenu(self)
                 delete_action = QAction("Löschen", self)
                 delete_action.triggered.connect(lambda: self.remove_item(self.get_item_group(item)))
                 context_menu.addAction(delete_action)
                 context_menu.exec(event.globalPos())
-        if event.button() == Qt.MouseButton.MiddleButton:
+
+        elif event.button() == Qt.MouseButton.MiddleButton:
+            # Start panning the view
             self._is_panning = True
             self._pan_start = event.position()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             event.accept()
             return
+
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.button() == Qt.MouseButton.LeftButton:
             clicked_point = self.mapToScene(event.pos())
 
@@ -192,11 +285,19 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             if isinstance(item, State | Label):
                 if item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable:
                     item.setSelected(not item.isSelected())
+
         elif event.button() == Qt.MouseButton.LeftButton:
             self.left_button_click(event)
+
         super().mousePressEvent(event)
 
     def left_button_click(self, event: QMouseEvent):
+        """
+        Handle left mouse button clicks for selection, movement, and transitions.
+
+        Args:
+            event (QMouseEvent): The mouse event.
+        """
         item = self.get_item_at(event.pos())
         parent: QWidget = self.parent()
         if not isinstance(parent, UserPanel):
@@ -207,15 +308,13 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             item.parentItem().setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
             current_parent_item = self.get_item_group(item)
 
-        if isinstance(item, TransitionLineEdit):
-            item.setFocus()
-            return
-
+        # Handling connection points and transitions
         if isinstance(item, ConnectionPoint) and item.flow == 'out':
             item.parentItem().setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
             self._start_ellipse = item
             return
 
+        # Handling state selection and transitions
         if isinstance(item, State | Label):
             if self._start_ellipse and self._temp_line:
                 start_point: ConnectionPoint = self._start_ellipse
@@ -232,8 +331,10 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                     self.remove_item(self._temp_line)
                     self._start_ellipse, self._temp_line = None, None
                     transition = Transition(start_point, closest_point, start_point)
-                    text_item = TransitionLineEdit(self.mapToScene(event.pos()), 'Bearbeite mich', transition)
-                    self.scene().addItem(text_item)
+                    transition_function = TransitionFunction(self._automaton_settings['transition_sections'])
+                    transition.set_transition_function(transition_function)
+                    transition.update_position()
+                    self.scene().addItem(transition_function)
                 return
 
         if self._last_active is not None:
@@ -255,7 +356,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._last_active = current_parent_item
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        """TBA"""
+        """
+        Handle double-click events to create new states.
+
+        Args:
+            event (QMouseEvent): The mouse event.
+        """
         if event.button() == Qt.MouseButton.LeftButton:
             if not self.get_item_at(event.pos()):
                 global_pos: QPoint = event.pos()
@@ -264,6 +370,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event):
+        """
+        Handle mouse movement events for hovering effects and temporary transitions.
+
+        Args:
+            event (QMouseEvent): The mouse event.
+        """
         item = self.get_item_at(event.pos())
         if isinstance(item, ConnectionPoint) and item.flow == 'out' and not item.is_hovered:
             item.grow()
@@ -273,6 +385,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 self._last_connection_point.shrink()
                 self._last_connection_point = None
 
+        # Handling temporary transition drawing
         if self._start_ellipse:
             mouse_pos = self.mapToScene(event.pos())
             if not self._temp_line:

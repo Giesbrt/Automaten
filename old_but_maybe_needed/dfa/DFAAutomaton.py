@@ -50,12 +50,6 @@ class DFAAutomaton(BaseAutomaton):
         next_char() -> None:
             Advances the automaton to the next character in the input word.
 
-        set_end_states(new_end_states: _ty.Set[DFAState]) -> None:
-            Sets the accepting (end) states for the automaton.
-
-        get_end_states() -> _ty.Set[DFAState]:
-            Retrieves the set of accepting (end) states.
-
         next_state() -> None:
             Processes a transition based on the current state and input character.
 
@@ -91,6 +85,7 @@ class DFAAutomaton(BaseAutomaton):
 
         self._input_alphabet = []
         self._output_alphabet = []
+        self._end_states: _ty.Set[State] = set()
 
     def set_input(self, automaton_input: _ty.Any) -> None:
         """
@@ -175,7 +170,7 @@ class DFAAutomaton(BaseAutomaton):
             if self.char_index >= len(self.word):
                 break  # Stop simulation when the end of the word is reached.
 
-        if self.current_state in self.get_end_states():
+        if self.current_state in self._end_states:
             return _result.Success("Automaton terminated in an end state!")
         return _result.Failure("Automaton failed to terminate in an end state!")
 
@@ -198,7 +193,7 @@ class DFAAutomaton(BaseAutomaton):
             an error is logged and the simulation returns a failure.
         """
         if self.char_index >= len(self.word):
-            if self.current_state in self.get_end_states():
+            if self.current_state in self._end_states:
                 return _result.Success("Automaton terminated in an end state!")
             return _result.Failure("Automaton failed to terminate in an end state!")
 
@@ -263,7 +258,7 @@ class DFAAutomaton(BaseAutomaton):
         self.states.add(state)
         match state_type:
             case "end":
-                self.end_states.add(state)
+                self._end_states.add(state)
 
             case "default":
                 pass

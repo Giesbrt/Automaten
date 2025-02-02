@@ -8,6 +8,10 @@ __pycache__/
 .idea/
 .vscode/
 output/
+.mypy_cache/
+main.build/
+main.dist/
+test_compilation/
 
 # C extensions
 *.so

@@ -121,24 +121,6 @@ class Automaton(_abc.ABC):
     def get_author(self) -> str:
         return self._author
 
-    def get_end_states(self) -> _ty.Set:
-        """
-        Returns the set of all end-states in the automaton.
-
-        Returns:
-            _ty.Set[State]: A set containing all end-states that are part of the automaton.
-        """
-        return self.end_states
-
-    def set_end_states(self, new_end_states: _ty.Set) -> None:
-        """
-        Sets a new set of end states for the automaton.
-
-        Args:
-            new_end_states (_ty.Set[State]): A set of states to be set as the end states.
-        """
-        self.end_states = new_end_states
-
     def get_states(self) -> OrderedSet[State]:
         """
         Returns the set of all states in the automaton.
@@ -234,7 +216,7 @@ class Automaton(_abc.ABC):
         Returns:
             State: The state with the given ID.
         """
-        for i, state in enumerate(self.states):
+        for i, state in enumerate(iter(self.states)):
             if i != state_id:
                 continue
 
@@ -250,7 +232,7 @@ class Automaton(_abc.ABC):
         Returns:
             Transition: The transition with the given ID.
         """
-        for i, transition in enumerate(self.transitions):
+        for i, transition in enumerate(iter(self.transitions)):
             if i != transition_id:
                 continue
 
@@ -267,30 +249,6 @@ class Automaton(_abc.ABC):
         self.transitions = new_transitions
 
     @_abc.abstractmethod
-    @DeprecationWarning
-    def simulate(self) -> _result.Result:
-        """
-        WARNING: This method is deprecated and may be removed in a future release. Use `simulate_one_step` instead.
-
-        Abstract method that must be implemented in subclasses to simulate the automaton's behavior.
-
-        The simulation behavior depends on the type of automaton. For example:
-        - In a DFA, the simulation would process input and determine the next state based on the
-          current state and input symbol.
-        - In a Turing machine, the simulation would involve moving along the tape, reading and writing symbols.
-        - In a Mealy machine, the simulation might produce outputs while transitioning between states.
-
-        Returns:
-            _result.Result: The result of the simulation. This could indicate whether the automaton successfully
-            accepted or rejected an input, or it could represent some other outcome specific to the type of automaton.
-
-        Raises:
-            NotImplementedError:
-                If this method is not implemented in a subclass.
-        """
-        raise NotImplementedError("simulate must be implemented in a subclass.")
-
-    @_abc.abstractmethod
     def simulate_one_step(self) -> _result.Result:
         """
         Abstract method that must be implemented in subclasses to simulate one step of the automaton's behavior.
@@ -303,6 +261,10 @@ class Automaton(_abc.ABC):
 
         Returns:
             _result.Result: The result of the simulation for the step.
+
+        Raises:
+            NotImplementedError:
+                If this method is not implemented in a subclass.
         """
         raise NotImplementedError("simulate_one_step must be implemented in a subclass.")
 

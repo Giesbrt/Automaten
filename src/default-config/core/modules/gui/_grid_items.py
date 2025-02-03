@@ -297,6 +297,19 @@ class Transition(QGraphicsLineItem):
             painter.drawPolygon(self.arrow_head)
 
 
+class Section(QLineEdit):
+    def __init__(self, section_width: int, handle_function, parent=None):
+        super().__init__(parent)
+        self.setMaxLength(1)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setFixedSize(section_width, section_width)
+
+        validator = QRegularExpressionValidator('[A-Z]')
+        self.setValidator(validator)
+
+        self.textChanged.connect(handle_function)
+
+
 class MultiSectionLineEdit(QWidget):
     def __init__(self, sections: int, parent=None):
         """
@@ -307,8 +320,6 @@ class MultiSectionLineEdit(QWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-
-        # Hintergrund transparent machen für übergeordnetes Widget
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.sections = sections
@@ -329,16 +340,7 @@ class MultiSectionLineEdit(QWidget):
         Each field is set to accept a single uppercase character.
         """
         for _ in range(self.sections):
-            field = QLineEdit(self)
-            field.setMaxLength(1)
-            field.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            field.setFixedSize(self.section_width, self.section_width)
-
-            validator = QRegularExpressionValidator('[A-Z]')
-            field.setValidator(validator)
-
-            field.textChanged.connect(self._handle_text_change)
-
+            field = Section(self.section_width, self._handle_text_change, self)
             self.fields.append(field)
             self.layout.addWidget(field)
 

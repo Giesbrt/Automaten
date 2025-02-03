@@ -42,7 +42,13 @@ if __name__ == '__main__':
 
     sleep(2)
 
+    while uiAutomaton.has_bridge_updates():
+        uiAutomaton.handle_bridge_updates()
+
     while uiAutomaton.has_simulation_data():
+        while uiAutomaton.has_bridge_updates():
+            uiAutomaton.handle_bridge_updates()
+
         print("Output: ", uiAutomaton.handle_simulation_updates())
         for i in uiAutomaton.get_states():
             if not i.is_active():

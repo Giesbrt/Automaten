@@ -315,6 +315,10 @@ class UiAutomaton(IUiAutomaton):
         if state not in self._states:
             self.add_state(state)
 
+    def has_bridge_updates(self) -> bool:
+        bridge: UiBridge = UiBridge()
+        return bridge.has_ui_items()
+
     def handle_bridge_updates(self) -> None:  # todo req testing
         """Handles updates from the UI bridge.
         
@@ -337,7 +341,7 @@ class UiAutomaton(IUiAutomaton):
             return
 
         error_type: str = bridge_item["type"]
-        message: str = bridge_item["type"]
+        message: str = bridge_item["message"]
         success: bool = bridge_item["success"]
 
         error_type = error_type.lower().replace("_", " ")
@@ -350,6 +354,7 @@ class UiAutomaton(IUiAutomaton):
         args: list = [formatted_error_type, message, True]
         if not success:
             ErrorCache().error(*args)
+            return
 
         ErrorCache().info(*args)
 

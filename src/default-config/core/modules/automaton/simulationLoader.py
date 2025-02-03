@@ -53,12 +53,13 @@ class SimulationLoader:
             "ui": (lambda: self._bridge.add_ui_item(error), self._bridge.clear_ui_queue)}
 
         # Clear queues
-        for clear_queue in clear_queues:
-            if clear_queue not in bridge_queue_callables:
-                ActLogger().debug(
-                    f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge (CLEAR)")
-                return
-            bridge_queue_callables[clear_queue][1]()  # Invoke the clear method
+        if clear_queues is not None:
+            for clear_queue in clear_queues:
+                if clear_queue not in bridge_queue_callables:
+                    ActLogger().debug(
+                        f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge (CLEAR)")
+                    return
+                bridge_queue_callables[clear_queue][1]()  # Invoke the clear method
 
         # push error to queue
         if error_queue not in bridge_queue_callables:
@@ -93,6 +94,7 @@ class SimulationLoader:
 
             error_packet["type"] = "ERROR"
             error_packet["message"] = str(e)
+            error_packet["success"] = False
             self._push_error_to_bridge(error_packet)
 
         self._bridge.complete_backend_task()

@@ -160,7 +160,7 @@ class ErrorCache:
         """
         title: str = "Information"
         if print_log:
-            self._logger.info(log_message)
+            self._logger.info(f"{log_message} ({description})")
 
         self._handle_dialog(show_dialog, title, log_message, description, icon)
 
@@ -178,7 +178,7 @@ class ErrorCache:
         """
         title: str = "Warning"
         if print_log:
-            self._logger.warning(log_message)
+            self._logger.warning(f"{log_message} ({description})")
 
         self._handle_dialog(show_dialog, title, log_message, description, icon)
 
@@ -198,7 +198,7 @@ class ErrorCache:
         """
         title: str = f"{str(error_severity).capitalize()} Error"
         if print_log:
-            self._logger.error(f"{str(error_severity)}: {log_message}")
+            self._logger.error(f"{str(error_severity)}: {log_message} ({description})")
 
         self._handle_dialog(show_dialog, title, log_message, description, icon)
 
@@ -223,6 +223,6 @@ class ErrorCache:
 
         title: str = "Debug"
         if print_log:
-            self._logger.debug(log_message)
+            self._logger.debug(f"{log_message} ({description})")
 
         self._handle_dialog(show_dialog, title, log_message, description, icon)

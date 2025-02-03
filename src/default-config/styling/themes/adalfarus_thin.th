@@ -1,0 +1,28 @@
+extending adalfarus::thin_basic;
+Default/os/reuse_st
+
+/* Start of QSS */
+/* STYLING OF INDIVIDUAL BUTTONS, ... TO INCLUDE ICONS */
+QFrame#user_panel-side_menu, QFrame#user_panel-state_menu {
+    background-color: $background_secondary;
+}
+Section {
+    border: 2px solid #ccc;       /* Standardgraue Umrandung */
+    border-radius: 8px;           /* Abgerundete Ecken */
+    background-color: #f9f9f9;    /* Leichtes Hintergrundgrau */
+    font-size: 18px;              /* Größere Schrift für bessere Lesbarkeit */
+    font-weight: bold;
+    color: #333;                  /* Dunkelgrauer Text */
+}
+Section:focus {
+    border: 2px solid #0078D7;    /* Blaue Umrandung bei Fokus (Windows-Style) */
+    background-color: #ffffff;    /* Weißer Hintergrund, wenn ausgewählt */
+}
+Section:disabled {
+    border: 2px solid #999;
+    background-color: #eee;
+    color: #666;
+}
+/* End of QSS */
+
+ph:

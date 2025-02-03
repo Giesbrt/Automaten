@@ -10,6 +10,7 @@ import collections.abc as _a
 import abc as _abc
 import typing as _ty
 import types as _ts
+import traceback
 
 # Docs generated with Github Copilot
 
@@ -202,8 +203,8 @@ class AutomatonSimulator:
             ActLogger().error(log_message)
 
             error: _ty.Dict[str, _ty.Any] = {}
-            error["type"] = "SIMULATION_ERROR"
-            error["message"] = str(e)
+            error["type"] = f"SIMULATION_ERROR: {str(e)}"
+            error["message"] = traceback.format_exc()
             error["success"] = False
             self._error_callable(error, "ui", ["simulation"])
 

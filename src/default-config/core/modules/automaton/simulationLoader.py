@@ -15,6 +15,7 @@ import collections.abc as _a
 import abc as _abc
 import typing as _ty
 import types as _ts
+import traceback
 
 
 # Docs generated with Github Copilot
@@ -92,8 +93,8 @@ class SimulationLoader:
             error_packet: _ty.Dict[str, _ty.Any] = {}
             ActLogger().error(f"An error occurred whilst handling bridge requests")
 
-            error_packet["type"] = "ERROR"
-            error_packet["message"] = str(e)
+            error_packet["type"] = f"ERROR: {str(e)}"
+            error_packet["message"] = traceback.format_exc()
             error_packet["success"] = False
             self._push_error_to_bridge(error_packet)
 

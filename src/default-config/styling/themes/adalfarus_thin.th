@@ -6,6 +6,9 @@ Default/os/reuse_st
 QFrame#user_panel-side_menu, QFrame#user_panel-condition_edit_menu {
     background-color: $background_secondary;
 }
-/* End of QSS */
+MultiSectionLineEdit {
+    background-color: $background_secondary;
+}
+/* End of QSS */Ah
 
 ph:

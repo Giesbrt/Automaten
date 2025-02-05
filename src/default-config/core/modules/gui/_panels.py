@@ -1,13 +1,14 @@
 """Panels of the gui"""
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
                                QFormLayout, QLineEdit, QComboBox,
-                               QSlider, QPushButton)
-from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QRect
-from PySide6.QtGui import QColor, QIcon
+                               QSlider, QPushButton, QGroupBox, QTableWidget, QTableWidgetItem, QVBoxLayout,
+                               QHBoxLayout, QColorDialog)
+from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QRect, QRegularExpression
+from PySide6.QtGui import QColor, QIcon, QPen, QRegularExpressionValidator
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
-from ._grid_items import StateGroup
+from ._grid_items import StateGroup, MultiSectionLineEdit
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -21,51 +22,93 @@ class Panel(QWidget):
         super().__init__(parent)
 
 
-class ConditionEditMenu(QFrame):
-    name_changed = Signal(str)
-    color_changed = Signal(QColor)
-    size_changed = Signal(int)
-
+class StateMenu(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setAutoFillBackground(True)
 
+        self.visible = False
         self.state = None
-        # Layout für das Menü
-        self.layout = QFormLayout(self)
+        self.selected_color = QColor(52, 152, 219)
 
-        self.close_button = QPushButton('Close', self)
-        # self.close_button.connect()
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(10)
+
+        header_layout = QHBoxLayout()
+        self.close_button = QPushButton("✕", self)
+        self.close_button.setFixedSize(24, 24)
+        self.close_button.clicked.connect(lambda: self.parentWidget().toggle_condition_edit_menu(False))
+
+        self.title_label = QLabel("State Management", self)
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
+
+        header_layout.addWidget(self.close_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        header_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        header_layout.addStretch()
+        main_layout.addLayout(header_layout)
+
+        form_layout = QFormLayout()
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        form_layout.setHorizontalSpacing(10)
+        form_layout.setVerticalSpacing(8)
 
         self.name_input = QLineEdit(self)
-        self.name_input.setText('q0')
+        self.name_input.setPlaceholderText("State name")
 
-        # Beispiel: Eingabefelder für Einstellungen
-        self.color_input = QComboBox(self)
-        self.color_input.addItems(('None', 'Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Cyan'))
+        self.color_button = QPushButton("Choose Color", self)
+        self.color_button.clicked.connect(self.open_color_dialog)
+        self.color_button.setStyleSheet(f"background-color: {self.selected_color.name()}; color: #cb2821;")
 
         self.size_input = QSlider(Qt.Orientation.Horizontal, self)
         self.size_input.setRange(100, 450)
         self.size_input.setValue(100)
 
-        # Füge Widgets zum Layout hinzu
-        self.add_row_fixed_width('Name:', self.name_input)
-        self.add_row_fixed_width('Color:', self.color_input)
-        self.add_row_fixed_width('Size:', self.size_input)
-        self.layout.addRow(self.close_button)
+        form_layout.addRow("Name:", self.name_input)
+        form_layout.addRow("Color:", self.color_button)
+        form_layout.addRow("Size:", self.size_input)
 
-        self.setLayout(self.layout)
+        main_layout.addLayout(form_layout)
 
-        self.color_mapping = {
-            "None": Qt.GlobalColor.gray,
-            "Red": Qt.GlobalColor.red,
-            "Green": Qt.GlobalColor.green,
-            "Blue": Qt.GlobalColor.blue,
-            "Yellow": Qt.GlobalColor.yellow,
-            "Orange": QColor(255, 165, 0),
-            "Purple": QColor(128, 0, 128),
-            "Cyan": Qt.GlobalColor.cyan
-        }
+        self.transitions_table = QTableWidget(self)
+        self.transitions_table.setColumnCount(2)
+        self.transitions_table.setHorizontalHeaderLabels(["Target State", "Condition"])
+        self.transitions_table.horizontalHeader().setStretchLastSection(True)
+        self.transitions_table.verticalHeader().setVisible(False)
+        self.transitions_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.transitions_table.setMinimumHeight(120)
+        self.transitions_table.currentItemChanged.connect(self.on_current_item_changed)
+        main_layout.addWidget(self.transitions_table)
+
+        self.setLayout(main_layout)
+
+    def open_color_dialog(self):
+        color: QColor = QColorDialog.getColor(initial=self.selected_color, parent=self, title="Choose a color")
+        if color.isValid():
+            self.selected_color = color
+            self.color_button.setStyleSheet(f"background-color: {color.name()}; color: #000;")
+            if self.state is not None:
+                self.state.set_color(color)
+
+    def set_state(self, state: StateGroup) -> None:
+        self.state = state
+        self.set_parameters()
+
+    def set_parameters(self):
+        self.name_input.setText(self.state.label.toPlainText())
+        searched_color: Qt.GlobalColor = self.state.get_ui_state().get_colour()
+        self.color_button.setStyleSheet(f'background-color: {QColor(searched_color).name()}; color: #000;')
+        self.size_input.setValue(self.state.get_size())
+
+        transitions = self.state.connected_transitions
+        self.transitions_table.setRowCount(len(transitions))
+        for i, transition in enumerate(transitions):
+            target_item = QTableWidgetItem(transition.get_ui_transition().get_to_state().get_display_text())
+            target_item.setData(Qt.ItemDataRole.UserRole, transition)
+            condition_edit = MultiSectionLineEdit(len(transition.get_ui_transition().get_condition()))
+
+            self.transitions_table.setItem(i, 0, target_item)
+            self.transitions_table.setCellWidget(i, 1, condition_edit)
 
     def add_row_fixed_width(self, name: str, widget: QWidget) -> None:
         label = QLabel(name, self)
@@ -73,17 +116,17 @@ class ConditionEditMenu(QFrame):
         label.setFixedWidth(min(50, 100))
         self.layout.addRow(label, widget)
 
-    def set_condition(self, state: StateGroup) -> None:
-        self.state = state
+    def on_current_item_changed(self, current: QTableWidgetItem, previous: QTableWidgetItem | None) -> None:
+        if previous:
+            previous.data(Qt.ItemDataRole.UserRole).setPen(QPen(Qt.GlobalColor.black, 4))
+        current.data(Qt.ItemDataRole.UserRole).setPen(QPen(Qt.GlobalColor.red, 4))
 
     def connect_methods(self) -> None:
         self.name_input.textEdited.connect(self.state.set_name)
-        self.color_input.currentTextChanged.connect(lambda: self.state.set_color(self.color_mapping.get(self.color_input.currentText())))
         self.size_input.valueChanged.connect(self.state.set_size)
 
     def disconnect_methods(self) -> None:
         self.name_input.textEdited.disconnect()
-        self.color_input.currentTextChanged.disconnect()
         self.size_input.valueChanged.disconnect()
 
 
@@ -105,11 +148,11 @@ class UserPanel(Panel):
         self.side_menu_animation.setDuration(500)
 
         # Condition Edit Menu
-        self.condition_edit_menu = ConditionEditMenu(self)
-        self.condition_edit_menu.setGeometry(self.parent().width(), 0, 300, self.height())
+        self.state_menu = StateMenu(self)
+        self.state_menu.setGeometry(self.parent().width(), 0, 300, self.height())
         # Animation for Condition Edit Menu
-        self.condition_edit_menu_animation = QPropertyAnimation(self.condition_edit_menu, b'geometry')
-        self.condition_edit_menu_animation.setDuration(500)
+        self.state_menu_animation = QPropertyAnimation(self.state_menu, b'geometry')
+        self.state_menu_animation.setDuration(500)
 
         # Menu Button
         self.menu_button = QPushButton(QIcon(), "", self)
@@ -152,6 +195,7 @@ class UserPanel(Panel):
         """True: opened Sidepanel, False: closed Sidepanel"""
         width = max(200, int(self.width() / 4))
         height = self.height()
+        self.state_menu.visible = not self.state_menu.visible
 
         if to_state:
             start_value = QRect(self.width(), 0, width, height)
@@ -160,11 +204,11 @@ class UserPanel(Panel):
             start_value = QRect(self.width() - width, 0, width, height)
             end_value = QRect(self.width(), 0, width, height)
 
-        if (self.condition_edit_menu.x() >= self.width() and to_state
-                or self.condition_edit_menu.x() < self.width() and not to_state):
-            self.condition_edit_menu_animation.setStartValue(start_value)
-            self.condition_edit_menu_animation.setEndValue(end_value)
-            self.condition_edit_menu_animation.start()
+        if (self.state_menu.x() >= self.width() and to_state
+                or self.state_menu.x() < self.width() and not to_state):
+            self.state_menu_animation.setStartValue(start_value)
+            self.state_menu_animation.setEndValue(end_value)
+            self.state_menu_animation.start()
 
     # Window Methods
     def resizeEvent(self, event):
@@ -176,13 +220,10 @@ class UserPanel(Panel):
         else:
             self.side_menu.setGeometry(0, 0, width, height)
             self.menu_button.move(40, 20)  # Update the position of the menu button
-        if self.condition_edit_menu.x() + width <= self.width():
-            self.condition_edit_menu.setGeometry(self.width() - width, 0, width, height)
+        if self.state_menu.visible:
+            self.state_menu.setGeometry(self.width() - width, 0, width, height)
         else:
-            new_x = self.width() - width
-            if new_x < 0:
-                new_x = 0
-            self.condition_edit_menu.setGeometry(new_x, 0, width, height)
+            self.state_menu.setGeometry(self.width(), 0, width, height)
         self.update_menu_button_position()
         self.settings_button.move(self.width() - 60, 20)
 

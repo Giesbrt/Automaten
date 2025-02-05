@@ -3,12 +3,43 @@ Default/os/reuse_st
 
 /* Start of QSS */
 /* STYLING OF INDIVIDUAL BUTTONS, ... TO INCLUDE ICONS */
-QFrame#user_panel-side_menu, QFrame#user_panel-condition_edit_menu {
+QFrame#user_panel-side_menu, QFrame#user_panel-state_menu {
     background-color: $background_secondary;
 }
-MultiSectionLineEdit {
-    background-color: $background_secondary;
+QLabel#user_panel-state_menu-title_label {
+    font: 14px 'Segoe UI';
+    color: $color_primary;
 }
-/* End of QSS */Ah
+QLineEdit#user_panel-state_menu-name_input, QSlider#user_panel-state_menu-size_input, QTableWidget#user_panel-state_menu-transition_table {
+    background-color: transparent;
+    border: 1px solid $border_primary;
+    border-radius: 4px;
+    padding: 4px;
+    color: $color_primary;
+}
+QSlider#user_panel-state_menu-size_input::groove:horizontal {
+    background: $background_primary;
+    height: 6px;
+    border-radius: 3px;
+}
+QSlider#user_panel-state_menu-size_input::handle:horizontal {
+    background: $background_primary;
+    width: 12px;
+    border-radius: 6px;
+}
+QTableWidget#user_panel-state_menu-transition_table {
+    border: 1px solid $border_primary;
+}
+QPushButton#user_panel-state_menu-close_button {
+    background-color: transparent;
+    color: #FF6600;
+    border: none;
+    font: bold 14px;
+}
+QPushButton#user_panel-state_menu-close_button:hover {
+    color: #FF8533;
+    rgb(0, 10, 33)
+}
+/* End of QSS */
 
 ph:

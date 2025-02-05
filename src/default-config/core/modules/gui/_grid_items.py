@@ -1,9 +1,9 @@
 """Everything regarding the infinite grids items"""
 from PySide6.QtWidgets import (QStyleOptionGraphicsItem, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
                                QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem, QStyle, QLineEdit, QHBoxLayout,
-                               QWidget, QGraphicsProxyWidget)
+                               QWidget, QGraphicsProxyWidget, QGraphicsDropShadowEffect)
 from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QKeyEvent, QTextCursor, QRegularExpressionValidator
-from PySide6.QtCore import QRectF, Qt, QPointF, QLineF
+from PySide6.QtCore import QRectF, Qt, QPointF, QLineF, QPropertyAnimation, QEasingCurve
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -50,7 +50,7 @@ class State(QGraphicsEllipseItem):
     including movement and selection.
     """
     def __init__(self, x: float, y: float, width: int, height: int, color: Qt.GlobalColor,
-                 parent: QGraphicsItem | None = None) -> None:
+                 selected_color: Qt.GlobalColor, parent: QGraphicsItem | None = None) -> None:
         """
         Initialize the state with default properties.
 
@@ -69,21 +69,34 @@ class State(QGraphicsEllipseItem):
         self.y: float = y
         self.width: int = width
         self.height: int = height
+        self.selected_color = selected_color
+
+        self.glow_effect = QGraphicsDropShadowEffect()
+        self.glow_effect.setBlurRadius(20)
+        self.glow_effect.setColor(self.selected_color)
+        self.glow_effect.setOffset(0)
+        self.setGraphicsEffect(self.glow_effect)
 
         self.setBrush(color)
         self.setPen(Qt.PenStyle.NoPen)
 
-        self.setSelected(False)
+        self.setSelected(True)
+
+    def setSelected(self, value: bool) -> None:
+        super().setSelected(value)
+        self.update(self.rect())
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """
         Paint the state as an ellipse, changing its border when selected.
         """
         if self.isSelected():
-            self.setPen(QPen(Qt.GlobalColor.red, 3, Qt.PenStyle.DotLine))
+            self.glow_effect.setColor(self.selected_color)
         else:
-            self.setPen(Qt.PenStyle.NoPen)
+            self.glow_effect.setColor(Qt.GlobalColor.black)
+        self.update()
         painter.drawEllipse(self.boundingRect())
+        option.state = option.state & ~QStyle.StateFlag.State_Selected
         super().paint(painter, option, widget)
 
 
@@ -188,7 +201,7 @@ class Transition(QGraphicsLineItem):
             from_state_connecting_point = start_point.get_direction(),
             to_state = self.end_state.get_ui_state(),
             to_state_connecting_point = end_point.get_direction(),
-            condition = ['a']
+            condition = []
         )
 
         self.start_state.add_transition(self)
@@ -198,10 +211,10 @@ class Transition(QGraphicsLineItem):
         self.arrow_size: int = 10
         self.arrow_head: QPolygonF | None = None
 
-        self.setPen(QPen(Qt.GlobalColor.black, 4))
+        self.setPen(QPen(QColor(0, 10, 33), 4))
         self.update_position()
 
-    def set_transition_function(self, transition_function):
+    def set_transition_function(self, transition_function) -> None:
         """
         Set the transition function associated with this transition.
 
@@ -209,6 +222,9 @@ class Transition(QGraphicsLineItem):
             transition_function: The widget or function representing the transition function.
         """
         self.transition_function = transition_function
+
+    def set_transition(self, condition: _ty.List[str]):
+        self.ui_transition.set_condition(condition)
 
     def get_ui_transition(self) -> UiTransition:
         """
@@ -293,12 +309,41 @@ class Transition(QGraphicsLineItem):
         """
         super().paint(painter, option, widget)
         if self.arrow_head:
-            painter.setBrush(Qt.GlobalColor.black)
+            painter.setBrush(QColor(0, 10, 33))
             painter.drawPolygon(self.arrow_head)
 
 
+class Section(QLineEdit):
+    def __init__(self, section_width: int, handle_function, parent=None) -> None:
+        super().__init__(parent)
+        self.setMaxLength(1)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setFixedSize(section_width, section_width)
+
+        validator = QRegularExpressionValidator('[A-Z]')
+        self.setValidator(validator)
+
+        self.textChanged.connect(handle_function)
+
+        self.setStyleSheet(f"""
+            Section {{
+                border: 1px solid #3498db;
+                border-radius: 4px;
+                background-color: rgba(25, 92, 137, 0.5);
+                font-size: {section_width // 1.5}px;
+                font-weight: bold;
+                color: #ffffff;
+                selection-background-color: #2980b9;
+            }}
+            Section:focus {{
+                border: 1px solid #2980b9;
+                background-color: rgba(52, 152, 219, 0.2);
+            }}
+        """)
+
+
 class MultiSectionLineEdit(QWidget):
-    def __init__(self, sections: int, parent=None):
+    def __init__(self, sections: int, set_condition=None, parent=None) -> None:
         """
         Initialize the multi-section line edit widget.
 
@@ -307,42 +352,33 @@ class MultiSectionLineEdit(QWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-
-        # Hintergrund transparent machen für übergeordnetes Widget
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.sections = sections
+        self.set_condition = set_condition
         self.layout = QHBoxLayout(self)
         self.layout.setSpacing(2)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         self.fields = []
-        self.section_width = 20
+        self.section_width = 30
         self.spacing = self.layout.spacing()
         self._create_fields()
         self._adjust_size()
 
-    def _create_fields(self):
+    def _create_fields(self) -> None:
         """
         Create and configure the input fields for each section.
 
         Each field is set to accept a single uppercase character.
         """
         for _ in range(self.sections):
-            field = QLineEdit(self)
-            field.setMaxLength(1)
-            field.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            field.setFixedSize(self.section_width, self.section_width)
-
-            validator = QRegularExpressionValidator('[A-Z]')
-            field.setValidator(validator)
-
-            field.textChanged.connect(self._handle_text_change)
-
+            field = Section(self.section_width, self._handle_text_change, self)
+            field.setObjectName('section')
             self.fields.append(field)
             self.layout.addWidget(field)
 
-    def _adjust_size(self):
+    def _adjust_size(self) -> None:
         """
         Adjust the widget size based on the number of sections and spacing.
 
@@ -352,7 +388,7 @@ class MultiSectionLineEdit(QWidget):
         total_height = self.section_width
         self.setFixedSize(total_width, total_height)
 
-    def _handle_text_change(self):
+    def _handle_text_change(self) -> None:
         """
         Handle the text change event in the input fields.
 
@@ -361,18 +397,12 @@ class MultiSectionLineEdit(QWidget):
         for i, field in enumerate(self.fields):
             if field.text() and i < len(self.fields) - 1:
                 self.fields[i + 1].setFocus()
-                break
 
-    def get_text(self) -> str:
-        """
-        Retrieve the concatenated text from all input fields.
+        if all(field.text() for field in self.fields):
+            if self.set_condition:
+                self.set_condition(self.get_text())
 
-        Returns:
-            str: The combined text from each section.
-        """
-        return ''.join(field.text() for field in self.fields)
-
-    def set_text(self, text: str):
+    def set_text(self, text: str) -> None:
         """
         Set the text for the multi-section input fields.
 
@@ -383,9 +413,18 @@ class MultiSectionLineEdit(QWidget):
             if i < len(self.fields):
                 self.fields[i].setText(char)
 
+    def get_text(self) -> _ty.List[str]:
+        """
+        Retrieve the concatenated text from all input fields.
+
+        Returns:
+            _ty.List[str]: The combined text from each section.
+        """
+        return [field.text() for field in self.fields]
+
 
 class TransitionFunction(QGraphicsProxyWidget):
-    def __init__(self, sections: int, parent=None):
+    def __init__(self, sections: int, transition: Transition, parent=None) -> None:
         """
         Initialize the transition function widget.
 
@@ -395,17 +434,19 @@ class TransitionFunction(QGraphicsProxyWidget):
         """
         super().__init__(parent)
 
-        self.line_edit = MultiSectionLineEdit(sections)
+        self.transition = transition
+        self.line_edit = MultiSectionLineEdit(sections, self.set_condition)
         self.setWidget(self.line_edit)
 
-    def get_function(self) -> str:
+    def set_condition(self, condition: _ty.List[str]) -> None:
         """
         Retrieve the transition function as a concatenated string.
 
         Returns:
             str: The transition function text extracted from the input fields.
         """
-        return self.line_edit.get_text()
+        self.transition.get_ui_transition().set_condition(condition)
+        print(self.transition.get_ui_transition())
 
 
 class TempTransition(QGraphicsLineItem):
@@ -437,9 +478,8 @@ class TempTransition(QGraphicsLineItem):
 
 
 class StateGroup(QGraphicsItemGroup):
-    """TBA"""
-    def __init__(self, x: float, y: float, width: int, height: int, number: int, color: Qt.GlobalColor,
-                 parent: QGraphicsItem | None = None) -> None:
+    def __init__(self, x: float, y: float, width: int, height: int, number: int, default_color: Qt.GlobalColor,
+                 default_selected_color: Qt.GlobalColor, parent: QGraphicsItem | None = None) -> None:
         """
         Initialize a state group with a graphical representation and interaction elements.
 
@@ -449,29 +489,32 @@ class StateGroup(QGraphicsItemGroup):
             width (int): The width of the state.
             height (int): The height of the state.
             number (int): The state's identifier.
-            color (Qt.GlobalColor): The color of the state.
+            default_color (Qt.GlobalColor): The default color of the state.
+            default_selected_color (Qt.GlobalColor): The default color of selection.
             parent (QGraphicsItem | None, optional): The parent graphics item. Defaults to None.
         """
         super().__init__(parent)
         self.ui_state = UiState(
-            colour = Qt.GlobalColor.gray,
+            colour = default_color,
             position = (x, y),
             display_text = f'q{number}',
             node_type = 'default'
         )
 
+        # self.create_glow_effect()
         self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
 
-        self.state: State = State(x, y, width, height, color, self)
+        self.state: State = State(x, y, width, height, default_color, default_selected_color, self)
         self.label: Label = Label(f'q{number}', self)
         self.update_label_position()
 
         self.addToGroup(self.state)
         self.addToGroup(self.label)
 
-        self.connected_lines: list[Transition] = []
+        self.size: int = width
+        self.connected_transitions: list[Transition] = []
         self.connection_points: list[ConnectionPoint] = []
         rect: QRectF = self.state.rect()
         self.connection_positions: dict[str, tuple[float, float, Qt.GlobalColor]] = self.create_connection_positions(rect)
@@ -502,6 +545,10 @@ class StateGroup(QGraphicsItemGroup):
         new_y: float = center_y - size / 2
         new_rect: QRectF = QRectF(new_x, new_y, size, size)
         self.state.setRect(new_rect)
+        self.size = size
+
+        for transition in self.connected_transitions:
+            transition.update_position()
 
     def set_color(self, color: Qt.GlobalColor) -> None:
         """
@@ -511,6 +558,7 @@ class StateGroup(QGraphicsItemGroup):
             color (Qt.GlobalColor): The new color of the state.
         """
         self.state.setBrush(color)
+        self.get_ui_state().set_colour(color)
 
     def set_arrow_head_size(self, size: int) -> None:
         """
@@ -519,8 +567,17 @@ class StateGroup(QGraphicsItemGroup):
         Args:
             size (int): The new arrowhead size.
         """
-        for line in self.connected_lines:
+        for line in self.connected_transitions:
             line.arrow_size = size
+
+    def set_condition(self, condition: _ty.List[str]):
+        pass
+
+    def get_size(self) -> int:
+        return self.size
+
+    def get_color(self) -> Qt.GlobalColor:
+        return self.get_ui_state().get_colour()
 
     def get_ui_state(self) -> UiState:
         """
@@ -531,7 +588,7 @@ class StateGroup(QGraphicsItemGroup):
         """
         return self.ui_state
 
-    def create_connection_positions(self, rect: QRectF):
+    def create_connection_positions(self, rect: QRectF) -> dict[str, tuple[float, float, Qt.GlobalColor]]:
         """
         Create connection positions for the state.
 
@@ -554,14 +611,14 @@ class StateGroup(QGraphicsItemGroup):
         }
         return connection_positions
 
-    def add_transition(self, line: Transition) -> None:
+    def add_transition(self, transition: Transition) -> None:
         """
         Add a transition to the state's list of connected transitions.
 
         Args:
-            line (Transition): The transition to be added.
+            transition (Transition): The transition to be added.
         """
-        self.connected_lines.append(line)
+        self.connected_transitions.append(transition)
 
     def create_connection_points(self) -> None:
         """
@@ -599,7 +656,7 @@ class StateGroup(QGraphicsItemGroup):
 
     def mouseMoveEvent(self, event) -> None:
         super().mouseMoveEvent(event)
-        for line in self.connected_lines:
+        for line in self.connected_transitions:
             line.update_position()
 
     def paint(self, painter, option, widget = ...):

@@ -137,20 +137,24 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     This class extends `InteractiveGridView` to support different types
     of automata, handling states, transitions, and user interactions.
     """
-    def __init__(self, automation_type: str) -> None:
+    def __init__(self, automation_type: str, default_color: Qt.GlobalColor=Qt.GlobalColor.white,
+                 default_selected_color: Qt.GlobalColor=Qt.GlobalColor.magenta) -> None:
         """
         Initialize the automaton grid view.
 
         Args:
             automation_type (str): The type of automaton being visualized.
+            default_color (Qt.GlobalColor): The default color of the states.
         """
         super().__init__()
         self.automaton_type: str | None = automation_type
         self._counter: int = 0
         self._last_active: State | None = None
         self._temp_line: TempTransition | None = None
+        self._default_color: Qt.GlobalColor = default_color
         self._start_ellipse: ConnectionPoint | None = None
         self._last_connection_point: ConnectionPoint | None = None
+        self._default_selected_color: Qt.GlobalColor = default_selected_color
 
     def _setup_automaton_view(self) -> None:
         """
@@ -178,7 +182,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             automaton_type (str): The new automaton type.
         """
         self.automaton_type = automaton_type
-        print(self.automaton_type)
+        # print(self.automaton_type)
         self._setup_automaton_view()
 
     def get_mapped_position(self, item: QGraphicsItem) -> any:
@@ -221,19 +225,22 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             item: State | StateGroup = item.parentItem()
         return item
 
-    def new_state(self, pos: QPointF) -> None:
+    def create_state(self, pos: QPointF) -> None:
         """
         Create a new state at the given position.
 
         Args:
             pos (QPointF): The position where the new state should be created.
         """
-        new_state = StateGroup(pos.x() - self.grid_size / 2,
+        state = StateGroup(pos.x() - self.grid_size / 2,
                                pos.y() - self.grid_size / 2,
                                self.grid_size, self.grid_size,
-                               self._counter, Qt.GlobalColor.white)
-        self.scene().addItem(new_state)
+                               self._counter, self._default_color, self._default_selected_color)
+        self.scene().addItem(state)
         self.parent().toggle_condition_edit_menu(True)
+        self.parent().state_menu.set_state(state)
+        self.parent().state_menu.connect_methods()
+        self._last_active = state
         self._counter += 1
 
     def remove_item(self, item: QGraphicsItem) -> None:
@@ -265,7 +272,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             if isinstance(item, (State, Label)):
                 # Context menu for deleting a state
                 context_menu = QMenu(self)
-                delete_action = QAction("Löschen", self)
+                delete_action = QAction("Delete", self)
                 delete_action.triggered.connect(lambda: self.remove_item(self.get_item_group(item)))
                 context_menu.addAction(delete_action)
                 context_menu.exec(event.globalPos())
@@ -331,7 +338,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                     self.remove_item(self._temp_line)
                     self._start_ellipse, self._temp_line = None, None
                     transition = Transition(start_point, closest_point, start_point)
-                    transition_function = TransitionFunction(self._automaton_settings['transition_sections'])
+                    transition_function = TransitionFunction(self._automaton_settings['transition_sections'], transition)
                     transition.set_transition_function(transition_function)
                     transition.update_position()
                     self.scene().addItem(transition_function)
@@ -340,17 +347,18 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if self._last_active is not None:
             last_parent_item = self.get_item_group(self._last_active)
             if last_parent_item != current_parent_item:
-                parent.condition_edit_menu.disconnect_methods()
+                parent.state_menu.disconnect_methods()
                 last_parent_item.deactivate()
+        elif not isinstance(item, State | Label | ConnectionPoint):
+            ...
 
         if isinstance(item, State | Label):
-            parent.condition_edit_menu.name_input.setText(current_parent_item.ui_state.get_display_text())
             parent.toggle_condition_edit_menu(True)
-            parent.condition_edit_menu.set_condition(current_parent_item)
-            parent.condition_edit_menu.connect_methods()
+            parent.state_menu.set_state(current_parent_item)
+            parent.state_menu.connect_methods()
             current_parent_item.activate()
         else:
-            if parent.condition_edit_menu.x() < parent.width():
+            if parent.state_menu.x() < parent.width():
                 parent.toggle_condition_edit_menu(False)
 
         self._last_active = current_parent_item
@@ -366,7 +374,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             if not self.get_item_at(event.pos()):
                 global_pos: QPoint = event.pos()
                 scene_pos: QPointF = self.mapToScene(global_pos)
-                self.new_state(scene_pos)
+                self.create_state(scene_pos)
         super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -404,5 +412,3 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 mouse_y += 2
             self._temp_line.update_transition(QPointF(mouse_x, mouse_y))
         super().mouseMoveEvent(event)
-
-

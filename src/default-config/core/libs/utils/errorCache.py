@@ -3,6 +3,7 @@
 from utils.OrderedSet import OrderedSet
 from aplustools.io import ActLogger
 from queue import Queue
+from utils.staticContainer import StaticContainer
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -33,8 +34,8 @@ class ErrorSeverity:
 class ErrorCache:
     _do_not_show_again: OrderedSet[str] = OrderedSet()
     _currently_displayed: OrderedSet[str] = OrderedSet()
-    _button_display_callable: _ty.List[_ty.Callable] = []
-    _is_indev: _ty.List[bool] = []
+    _button_display_callable: StaticContainer[_ty.Callable] = StaticContainer()
+    _is_indev: StaticContainer[bool] = StaticContainer()
     _popup_queue: _ty.List[_ty.Callable] = []
 
     _logger: ActLogger = ActLogger()
@@ -69,15 +70,9 @@ class ErrorCache:
         :param is_indev: Boolean indicating whether the application is in development mode.
         :return: None
         """
-        if len(self._button_display_callable) > 0:
-            self._button_display_callable[0] = popup_creation_callable
-        else:
-            self._button_display_callable.append(popup_creation_callable)
+        self._button_display_callable.set_value(popup_creation_callable)
 
-        if len(self._is_indev) > 0:
-            self._is_indev[0] = is_indev
-        else:
-            self._is_indev.append(is_indev)
+        self._is_indev.set_value(is_indev)
 
     def _show_dialog(self, title: str, text: str, description: str,
                      icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"]) -> None:
@@ -97,7 +92,7 @@ class ErrorCache:
             # Error should not be displayed again
             return
 
-        if len(self._button_display_callable) <= 0:
+        if not self._button_display_callable.has_value():
             return
 
         self._currently_displayed.add(text)
@@ -106,7 +101,7 @@ class ErrorCache:
         buttons_list: _ty.List[str] = ["Ok"]
         default_button: str = buttons_list[0]
 
-        popup_creation_callable: _ty.Callable = self._button_display_callable[0]
+        popup_creation_callable: _ty.Callable = self._button_display_callable.get_value()
         popup_return: tuple[str | None, bool] = popup_creation_callable(title, text, description, icon,
                                                                         buttons_list, default_button, checkbox_text)
 
@@ -214,10 +209,10 @@ class ErrorCache:
         :param icon: Icon type for the dialog.
         :return: None
         """
-        if len(self._is_indev) <= 0:
+        if not self._is_indev.has_value():
             return
 
-        INDEV: bool = self._is_indev[0]
+        INDEV: bool = self._is_indev.get_value()
         if not INDEV:
             return
 

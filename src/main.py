@@ -62,7 +62,7 @@ class App:  # The main logic and gui are separated
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
-        self.styling_folder: str = os.path.join(self.base_app_dir, "styling")  # App styling
+        self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
 
         self.window.setup_gui()
         # self.window.repaint()
@@ -78,9 +78,9 @@ class App:  # The main logic and gui are separated
 
         # Load settings
         self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
-                                                                    ("auto_configs", "user_configs_design",
-                                                                     "user_configs_advanced"))
-        self.app_settings: JSONAppStorage = JSONAppStorage(f"{self.config_folder}/app_settings.json")
+                                                                    ("auto", "design", "advanced"))
+        self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
+        print(self.app_settings._storage._filepath)
         self.configure_settings()
 
         self.backend: IBackend = start(self.app_settings, self.user_settings)
@@ -219,7 +219,7 @@ class App:  # The main logic and gui are separated
         try:  # Get update content
             response: requests.Response = requests.get(
                 "https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
-                timeout=self.app_settings.retrieve("update_check_request_timeout", float))
+                timeout=self.user_settings.retrieve("user_configs_advanced", "update_check_request_timeout", "float"))
         except requests.exceptions.Timeout:
             title, text, description = "Update Info", ("The request timed out.\n"
                                                        "Please check your internet connection, "
@@ -374,11 +374,13 @@ class App:  # The main logic and gui are separated
             "settings_backup_file_mode": "overwrite",
             "settings_backup_auto_export": "False",
             "save_window_dimensions": "True",
-            "save_window_position": "False"
+            "save_window_position": "False",
+            "update_check_request_timeout": "2.0"
         })
-        self.app_settings.set_default_settings({
-            "update_check_request_timeout": "2.0",
-        })
+        self.user_settings
+        # self.app_settings.set_default_settings({
+        #     "update_check_request_timeout": "2.0",
+        # })
 
     def load_themes(self, theme_folder: str, clear: bool = False) -> None:
         """Loads all theme files from styling/themes"""

@@ -93,7 +93,7 @@ major_os_versions = MAJOR_OS_VERSIONS_LIST[platform_idx]
 if _platform.system() not in OS_LIST:
     exit_code, exit_message = 1, (f"You are currently on {_platform.system()}. "
                                   f"Please run this on a supported OS ({', '.join(OS_LIST)}).")
-elif _platform.version() != os_versions and os_versions != ("any",):
+elif _platform.version() not in os_versions and os_versions != ("any",):
     exit_code, exit_message = 1, (f"You are currently on {_platform.version()}. "
                                   f"Please run this on a supported OS version ({', '.join(os_versions)}).")
 elif not _platform.release() in major_os_versions:

@@ -79,9 +79,10 @@ class App:  # The main logic and gui are separated
 
         # Load settings
         self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
-                                                                    ("auto", "design", "advanced"))
-        self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
-        print(self.app_settings._storage._filepath)
+                                                                    ("auto", "design", "advanced", "shortcuts"))
+        # self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
+        self.app_settings = None
+        # print(self.app_settings._storage._filepath)
         self.configure_settings()
 
         self.backend: IBackend = start(self.app_settings, self.user_settings)
@@ -107,11 +108,11 @@ class App:  # The main logic and gui are separated
         self.update_icon()
         self.update_title()
         self.update_font()
-        x, y, height, width = self.user_settings.retrieve("auto_configs", "geometry", "tuple")
-        if not self.user_settings.retrieve("user_configs_advanced", "save_window_dimensions", "bool"):
+        x, y, height, width = self.user_settings.retrieve("auto", "geometry", "tuple")
+        if not self.user_settings.retrieve("advanced", "save_window_dimensions", "bool"):
             height = 640
             width = 1050
-        if self.user_settings.retrieve("user_configs_advanced", "save_window_position", "bool"):
+        if self.user_settings.retrieve("advanced", "save_window_position", "bool"):
             self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
         else:  # I guess windows does some weird shit with the title bar
             self.window.set_window_dimensions(height, width)
@@ -220,14 +221,14 @@ class App:  # The main logic and gui are separated
         try:  # Get update content
             response: requests.Response = requests.get(
                 "https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
-                timeout=self.user_settings.retrieve("user_configs_advanced", "update_check_request_timeout", "float"))
+                timeout=self.user_settings.retrieve("advanced", "update_check_request_timeout", "float"))
         except requests.exceptions.Timeout:
             title, text, description = "Update Info", ("The request timed out.\n"
                                                        "Please check your internet connection, "
                                                        "and try again."), format_exc()
             standard_buttons, default_button = ["Ok"], "Ok"
-            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_update_timeout")
-            show_update_timeout: bool = self.user_settings.retrieve("auto_configs", "show_update_timeout", "bool")
+            checkbox, checkbox_setting = "Do not show again", ("auto", "show_update_timeout")
+            show_update_timeout: bool = self.user_settings.retrieve("auto", "show_update_timeout", "bool")
             if not show_update_timeout:
                 do_popup = False
             return (do_popup,
@@ -276,15 +277,15 @@ class App:  # The main logic and gui are separated
                     (checkbox, checkbox_setting),
                     (standard_buttons, default_button), retval_func)
 
-        show_update_info: bool = self.user_settings.retrieve("auto_configs", "show_update_info", "bool")
-        show_no_update_info: bool = self.user_settings.retrieve("auto_configs", "show_no_update_info", "bool")
+        show_update_info: bool = self.user_settings.retrieve("auto", "show_update_info", "bool")
+        show_no_update_info: bool = self.user_settings.retrieve("auto", "show_no_update_info", "bool")
 
         if found_version != current_version and show_update_info and found_push:
             title = "There is an update available"
             text = (f"There is a newer version ({found_version}) "
                     f"available.\nDo you want to open the link to the update?")
             description = str(found_release.get("description"))  # type: ignore
-            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_update_info")
+            checkbox, checkbox_setting = "Do not show again", ("auto", "show_update_info")
             standard_buttons, default_button = ["Yes", "No"], "Yes"
 
             def retval_func(button: str) -> None:
@@ -301,13 +302,13 @@ class App:  # The main logic and gui are separated
             text = (f"No new updates available.\nChecklist last updated "
                     f"{update_json['metadata']['lastUpdated'].replace('-', '.')}.")
             description = f" --- v{found_version} --- \n{found_release.get('description')}"  # type: ignore
-            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_no_update_info")
+            checkbox, checkbox_setting = "Do not show again", ("auto", "show_no_update_info")
         elif show_no_update_info and found_push:
             title = "Info"
             text = (f"New version available, but not recommended {found_version}.\n"
                     f"Checklist last updated {update_json['metadata']['lastUpdated'].replace('-', '.')}.")
             description = str(found_release.get("description"))  # type: ignore
-            checkbox, checkbox_setting = "Do not show again", ("auto_configs", "show_no_update_info")
+            checkbox, checkbox_setting = "Do not show again", ("auto", "show_no_update_info")
         else:
             title, text, description = "Update Info", "There was a logic-error when checking for updates.", ""
             do_popup = False
@@ -333,7 +334,7 @@ class App:  # The main logic and gui are separated
 
     def update_icon(self) -> None:
         """Updates the window icon with data from the settings"""
-        window_icon_set_path: str = self.user_settings.retrieve("user_configs_design", "window_icon_set", "string")
+        window_icon_set_path: str = self.user_settings.retrieve("design", "window_icon_set", "string")
         if window_icon_set_path.startswith(":"):
             window_icon_set_path = window_icon_set_path.replace(":", self.base_app_dir, 1)
         self.window.set_window_icon(os.path.join(window_icon_set_path, "logo-nobg.png"))
@@ -341,16 +342,16 @@ class App:  # The main logic and gui are separated
     def update_title(self) -> None:
         """Updates the window title with data from the settings"""
         raw_title: Template = Template(
-            self.user_settings.retrieve("user_configs_design", "window_title_template", "string"))
+            self.user_settings.retrieve("design", "window_title_template", "string"))
         formatted_title: str = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
         self.window.set_window_title(formatted_title)
 
     def update_font(self) -> None:
         """Updates the window font with data from the settings. This is an expensive operation."""
-        self.window.set_font(self.user_settings.retrieve("user_configs_design", "font", "string"))
+        self.window.set_font(self.user_settings.retrieve("design", "font", "string"))
 
     def configure_settings(self) -> None:
-        self.user_settings.set_default_settings("auto_configs", {
+        self.user_settings.set_default_settings("auto", {
             "geometry": "(100, 100, 1050, 640)",
             "show_no_update_info": "False",
             "show_update_info": "True",
@@ -360,14 +361,28 @@ class App:  # The main logic and gui are separated
             "ask_to_reopen_last_opened_file": "True",
             "recent_files": "()"
         })
-        self.user_settings.set_default_settings("user_configs_design", {
+        self.user_settings.set_default_settings("design", {
             "light_theming": "adalfarus::thin/colored_summer_sky",  # thin_light_dark
             "dark_theming": "adalfarus::thin/colored_evening_sky",
             "window_icon_set": ":/data/assets/app_icons/shelline",
             "font": "Segoe UI",
-            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + " [INDEV]" if config.INDEV else ""
+            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + " [INDEV]" if config.INDEV else "",
+            "high_contrast_mode": "NO",  # Just make a high contrast theme
+            "automaton_scaling": "NO",  # Why? We could manipulate the scroll max and mins
+            "automatic_scaling": "True",  # Would enable / disable next two options
+            "larger_icons": "FORNOWNO",  # Would require theme loader mods
+            "font_size": "automatic",  # idk, also mods to theme loader
+            "enable_animations": "True",
+            "auto_open_tutorial_tab": "True",
+            "default_state_background_color": "#FFFFFFFF",
+            "transition_func_seperator": "/"
         })
-        self.user_settings.set_default_settings("user_configs_advanced", {
+        self.user_settings.set_default_settings("security", {
+            "warn_of_unsigned_plugins": "True",
+            "run_plugin_in_seperate_process": "False",
+            "user_safe_file_access": "True"
+        })
+        self.user_settings.set_default_settings("advanced", {
             "hide_titlebar": "False",
             # "hide_scrollbar": "True",
             "stay_on_top": "False",
@@ -376,9 +391,28 @@ class App:  # The main logic and gui are separated
             "settings_backup_auto_export": "False",
             "save_window_dimensions": "True",
             "save_window_position": "False",
-            "update_check_request_timeout": "2.0"
+            "update_check_request_timeout": "2.0",
+            "max_timer_tick_handled_events": "5",
+            "logging_mode": "DEBUG" if config.INDEV else "INFO",
         })
-        self.user_settings
+        self.user_settings.set_default_settings("shortcuts", {
+            "file_open": "Ctrl+O",  # "" means disabled
+            "file_save": "Ctrl+S",
+            "file_close": "Ctrl+Q",
+            "simulation_start": "Ctrl+G",
+            "simulation_step": "Ctrl+T",
+            "simulation_halt": "Ctrl+H",
+            "simulation_end": "Ctrl+Y",
+            "states_cut": "Ctrl+X",
+            "states_copy": "Ctrl+C",
+            "states_paste": "Ctrl+V",
+        })
+        self.user_settings.set_default_settings("general", {
+            "app_language": "enUS",
+            "open_last_file_on_startup": "True",
+            "launch_at_system_startup": "False"
+        })
+        # self.user_settings
         # self.app_settings.set_default_settings({
         #     "update_check_request_timeout": "2.0",
         # })
@@ -409,7 +443,7 @@ class App:  # The main logic and gui are separated
             raise RuntimeError(f"Default light and/or dark style are/is not present")
 
     def apply_theme(self) -> None:
-        theming_str: str = self.user_settings.retrieve("user_configs_design",
+        theming_str: str = self.user_settings.retrieve("design",
                                                        {SystemTheme.LIGHT: "light_theming",
                                                         SystemTheme.DARK: "dark_theming"}[self.os_theme],
                                                        "string")

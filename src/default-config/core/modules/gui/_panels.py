@@ -264,14 +264,9 @@ class SettingsPanel(Panel):
         #  - Change shortcuts
         #  - Enable/Disable shortcuts
         # Updates:
-        #  - Enable automatic updates
-        #  - Check for updates manually/ automatically (the .exe file)
-        #  - Download updates in the background
+        #  - Check for updates manually/ automatically
         # Language and Localization:
         #  - Select app language
-        #  - Region specific formatting (e.g. date/time, number formats)?
-        # Notifications:
-        #  - Enable / disable system notifications
         # Startup options:
         #  - Open last used file on startup
         #  - Launch at system startup
@@ -300,24 +295,13 @@ class SettingsPanel(Panel):
         #  - Run plugin only in a separate process (Not as efficient)
         # Save files:
         #  - Use safe file access to prevent corruption
-        #  -> enable encryption of save files?
-        #   -> app password (auto logoff)?
-        self.privacy_panel = self.create_settings_page("Privacy")
-        # Data Collection:
-        #  - Opt in or out of data collection
-        #  - View collected data
-        #  - Clear data collection cache
-        # Ad Preferences: --> Fake ads
-        #  - Disable personalized ads
-        #  - Clear ads cache
         self.advanced_panel = self.create_settings_page("Advanced")
         # Debugging:
         #  - Set logging mode
         #  - Open logs folder
         # Developer Options:
-        #  - Experimental features
         #  - Load selected plugin
-        #  -> Install plugins from e.g. Github
+        #  -> Install plugins from e.g. Github for now no!
 
         # Add panels to the stacked layout
         # import time

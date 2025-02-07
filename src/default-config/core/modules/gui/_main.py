@@ -70,6 +70,8 @@ class MainWindow(QMainWindow, IMainWindow):
     def setup_gui(self) -> None:
         self.user_panel = UserPanel(self.automaton_type, parent=self)
         self.settings_panel = SettingsPanel(parent=self)
+        # import time
+        # time.sleep(10)
 
         # Animation for Panels
         self.user_panel_animation = QPropertyAnimation(self.user_panel, b"geometry")

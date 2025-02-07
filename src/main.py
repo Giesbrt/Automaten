@@ -65,7 +65,8 @@ class App:  # The main logic and gui are separated
         self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
 
         self.window.setup_gui()
-        # self.window.repaint()
+        # import time
+        # time.sleep(10)
 
         # Setup logger
         self._order_logs(f"{self.data_folder}/logs")

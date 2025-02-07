@@ -234,7 +234,7 @@ class SettingsPanel(Panel):
     """The settings panel"""
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33); font-size: 16pt;")
+        # self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33); font-size: 16pt;")
 
         self.setLayout(QQuickBoxLayout(QBoxDirection.TopToBottom))
 
@@ -320,10 +320,14 @@ class SettingsPanel(Panel):
         #  -> Install plugins from e.g. Github
 
         # Add panels to the stacked layout
-        self.stacked_layout.addWidget(self.general_panel)
-        self.stacked_layout.addWidget(self.design_panel)
-        self.stacked_layout.addWidget(self.security_panel)
-        self.stacked_layout.addWidget(self.privacy_panel)
+        # import time
+        # time.sleep(10)
+        # self.stacked_layout.addWidget(self.general_panel)
+        # self.stacked_layout.addWidget(self.design_panel)
+        # self.stacked_layout.addWidget(self.security_panel)
+        # self.stacked_layout.addWidget(self.privacy_panel)
+        # import time
+        # time.sleep(10)
 
         main_content.addLayout(self.stacked_layout)
         self.layout().addLayout(main_content)

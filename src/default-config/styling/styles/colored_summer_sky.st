@@ -7,7 +7,7 @@ color_disabled: #A9C4D5;  // Muted blue for disabled text
 background_disabled: #FFEAC9;  // Pale cream
 border_primary: #FFD369;  // Bright sunshine yellow
 background_secondary: #FFDAA5;  // Light orange for buttons
-selection_background: #FFF5D1;  // Light sunny cream
+selection_background: #FFF1C2;  // Lighter warm cream
 background_tertiary: #FFF5D1;  // Light sunny cream
 background_scrollbar: transparent; // Stays
 dropdown_image: url(data/assets/icons/arrow-down-dark.png);

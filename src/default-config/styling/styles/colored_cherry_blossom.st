@@ -7,6 +7,6 @@ color_disabled: #A68A8A;
 background_disabled: #FFD4DA;
 border_primary: #E9A0A7;
 background_secondary: #FFD4DA;
-selection_background: #FFCCD3;
+selection_background: #FFC2CB;  // Lighter pink
 background_tertiary: #FFCCD3;
 background_scrollbar: transparent; // Stays

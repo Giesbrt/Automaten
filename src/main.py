@@ -26,7 +26,7 @@ from PySide6.QtCore import QEvent, QTimerEvent
 
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType
 from aplustools.io import ActLogger
-from aplustools.package.timid import TimidTimer
+from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeList
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 from packaging.version import Version, InvalidVersion
@@ -119,10 +119,13 @@ class App:  # The main logic and gui are separated
         # Setup values, signals, ...
         # TODO: self.window.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
 
+        # Thread pool
+        self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
+
         # Show gui
-        update_result = self.check_for_update()
+        self.pool.submit(lambda : self.check_for_update())
+        self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
         self.window.start()
-        self.show_update_result(update_result)
 
         self.timer: QtTimidTimer = QtTimidTimer()
         self.timer.timeout.connect(self.timer_tick)
@@ -193,7 +196,12 @@ class App:  # The main logic and gui are separated
             return fallback
         return base
 
-    def check_for_update(self) -> tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]:
+    def check_for_update(self) -> None:
+        """TBA"""
+        update_result = self.get_update_result()
+        self.for_loop_list.append((self.show_update_result, (update_result,)))
+
+    def get_update_result(self) -> tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]:
         """
         Checks for an update and returns the result.
         """
@@ -369,7 +377,7 @@ class App:  # The main logic and gui are separated
             "save_window_position": "False"
         })
         self.app_settings.set_default_settings({
-            "update_check_request_timeout": "0.4",
+            "update_check_request_timeout": "2.0",
         })
 
     def load_themes(self, theme_folder: str, clear: bool = False) -> None:
@@ -433,6 +441,13 @@ class App:  # The main logic and gui are separated
 
             # display cached Errors
             self.error_cache.invoke_popup()
+
+            num_handled: int = 0
+            while len(self.for_loop_list) > 0 and num_handled < 5:
+                entry = self.for_loop_list.pop()
+                func, args = entry
+                func(*args)
+                num_handled += 1
         else:
             print("Tock")
         # if not self.threading:

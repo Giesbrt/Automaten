@@ -1,5 +1,6 @@
 import json
 from queue import Queue
+from utils.staticContainer import StaticContainer
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -27,7 +28,9 @@ class UiBridge:
     _backend_queue: Queue[_ty.Dict[str, str]] = Queue()
     _simulation_queue: Queue[_ty.Dict[str, str]] = Queue()
 
-    # Simulation-related methods
+    _simulation_data_ready: StaticContainer[bool] = StaticContainer(False)
+
+    # ui-related methods
     def get_ui_queue(self) -> Queue[_ty.Dict[str, str]]:
         """
         Retrieve the Simulation queue.
@@ -76,7 +79,7 @@ class UiBridge:
         """
         This method clears the ui queue.
         """
-        self._ui_queue.empty()
+        self._ui_queue.queue.clear()
 
     # Simulation-related methods
     def get_simulation_queue(self) -> Queue[_ty.Dict[str, str]]:
@@ -122,12 +125,29 @@ class UiBridge:
             bool: True if the Simulation queue is empty, False otherwise.
         """
         return not self._simulation_queue.empty()
-    
+
     def clear_simulation_queue(self) -> None:
         """
         This method clears the simulation queue.
         """
-        self._simulation_queue.empty()
+        self._simulation_queue.queue.clear()
+
+    def is_simulation_data_ready(self) -> bool:
+        """
+        Returns an integrity-status for the simulation data
+        :return: True, if the simulation data is deemed ready
+        """
+        if not self._simulation_data_ready.has_value():
+            return False
+        return self._simulation_data_ready.get_value()
+
+    def set_simulation_data_status(self, status: bool) -> None:
+        """
+        Sets a new status for the simulation data
+        :param status: bool
+        :return: None
+        """
+        self._simulation_data_ready.set_value(status)
 
     # Backend-related methods
     def get_backend_queue(self) -> Queue[_ty.Dict[str, str]]:

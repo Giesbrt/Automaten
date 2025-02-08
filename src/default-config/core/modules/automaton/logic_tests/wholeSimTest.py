@@ -38,10 +38,16 @@ if __name__ == '__main__':
 
     # Simulation
     print(uiAutomaton.simulate(["a", "b", "b", "a"]))
+    print("-- SIMULATION SEND --")
     bridge = UiBridge()
 
-    sleep(2)
+    # sleep(2)
+    while not uiAutomaton.is_simulation_data_available() and not uiAutomaton.has_bridge_updates():
+        continue
 
+    print(f"-- SIMULATION DATA AVAILABLE  ({bridge.get_simulation_queue().qsize()} steps)--")
+
+    # Check for erros
     while uiAutomaton.has_bridge_updates():
         uiAutomaton.handle_bridge_updates()
 
@@ -59,6 +65,8 @@ if __name__ == '__main__':
             if not i.is_active():
                 continue
             print("(transition) Actually active:", uiAutomaton.get_transition_index(i))
+        print("--")
 
+    print("-- SIMULATION FINISHED --")
     backend_stop_event.set()
     exit(0)

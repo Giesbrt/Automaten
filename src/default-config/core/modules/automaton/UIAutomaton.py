@@ -256,6 +256,8 @@ class UiAutomaton(IUiAutomaton):
         self._start_state: UiState | None = None
         self._input: _ty.List[_ty.Any] = []
         self._pointer_index: int = 0
+        
+        self._bridge: UiBridge = UiBridge()
 
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)
@@ -316,20 +318,26 @@ class UiAutomaton(IUiAutomaton):
             self.add_state(state)
 
     def has_bridge_updates(self) -> bool:
-        bridge: UiBridge = UiBridge()
-        return bridge.has_ui_items()
+        return self._bridge.has_ui_items()
+
+    def is_simulation_data_available(self) -> bool:
+        """
+
+        :return:
+        """
+        return self._bridge.is_simulation_data_ready()
 
     def handle_bridge_updates(self) -> None:  # todo req testing
         """Handles updates from the UI bridge.
         
         :return: None
         """
-        bridge: UiBridge = UiBridge()
-        if not bridge.has_ui_items():
+        
+        if not self._bridge.has_ui_items():
             return
 
         # Handle bridge
-        bridge_item: _ty.Dict[str, _ty.Any] = bridge.get_ui_task()
+        bridge_item: _ty.Dict[str, _ty.Any] = self._bridge.get_ui_task()
 
         if "type" not in bridge_item:
             return
@@ -440,8 +448,9 @@ class UiAutomaton(IUiAutomaton):
             return _result.Failure(log_message)
 
         # send to bridge
-        bridge: UiBridge = UiBridge()
-        bridge.add_backend_item(structure)
+
+        self._bridge.set_simulation_data_status(False)
+        self._bridge.add_backend_item(structure)
         return _result.Success("The simulation request was successfully send!")
 
     def handle_simulation_updates(self) -> _result.Result or None:
@@ -449,8 +458,8 @@ class UiAutomaton(IUiAutomaton):
         
         :return: The result of the simulation.
         """
-        bridge: UiBridge = UiBridge()
-        if not bridge.has_simulation_items():
+        
+        if not self._bridge.has_simulation_items():
             return None
 
         # Remove all other activations
@@ -461,12 +470,14 @@ class UiAutomaton(IUiAutomaton):
             transition._deactivate()
 
         # Handle bridge
-        simulation_task: _ty.Dict[str, _ty.Any] = bridge.get_simulation_task()
+        simulation_task: _ty.Dict[str, _ty.Any] = self._bridge.get_simulation_task()
 
         if simulation_task["type"].upper() != "SIMULATION_UPDATE":
             if simulation_task["type"].upper() != "SIMULATION_RESULT":
                 return
 
+            self._bridge.clear_simulation_queue()
+            self._bridge.set_simulation_data_status(False)
             success = simulation_task["success"]
             if success:
                 return _result.Success(simulation_task["message"])
@@ -481,7 +492,7 @@ class UiAutomaton(IUiAutomaton):
 
             state: UiState = self.get_state_by_id(state_index)
             if state is None:
-                ErrorCache().error("Failure occurred whilst deserialisation of simulation results",
+                ErrorCache().error("Failure occurred while deserialisating of simulation results",
                                    f"State with index {state_index} not found.",
                                    True, False)
                 return _result.Failure(f"State with index {state_index} not found.")
@@ -494,7 +505,7 @@ class UiAutomaton(IUiAutomaton):
 
             transition: UiTransition = self.get_transition_by_id(transition_index)
             if transition is None:
-                ErrorCache().error("Failure occurred whilst deserialisation of simulation results",
+                ErrorCache().error("Failure occurred while deserialisating of simulation results",
                                    f"Transition with index {transition_index} not found.",
                                    True, False)
                 return _result.Failure(f"Transition with index {transition_index} not found.")
@@ -574,8 +585,8 @@ class UiAutomaton(IUiAutomaton):
         self._state_types_with_design = state_types_with_design
 
     def has_simulation_data(self) -> bool:
-        bridge: UiBridge = UiBridge()
-        return bridge.has_simulation_items()
+        
+        return self._bridge.has_simulation_items()
 
     def __eq__(self, other: _ty.Self):
         return (self._type == other.get_name()

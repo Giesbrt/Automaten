@@ -189,9 +189,11 @@ class AutomatonSimulator:
         try:
 
             return_result = None
+            i = 0
             while return_result is None:
                 self._serialise_automaton_to_bridge()
                 return_result = self.automaton.simulate_one_step()
+                i += 1
 
             self._serialise_simulation_result(return_result)
             return return_result
@@ -201,11 +203,19 @@ class AutomatonSimulator:
                                 f"{self.automaton.get_implementation_name()}: {str(e)}")
 
             ActLogger().error(log_message)
+            traceback_message: str = traceback.format_exc()
 
             error: _ty.Dict[str, _ty.Any] = {}
             error["type"] = f"SIMULATION_ERROR: {str(e)}"
-            error["message"] = traceback.format_exc()
+            error["message"] = traceback_message
             error["success"] = False
             self._error_callable(error, "ui", ["simulation"])
+
+            # Error packet for simulation_queue
+            simulation_error: _ty.Dict[str, _ty.Any] = {}
+            simulation_error["type"] = "SIMULATION_RESULT"
+            simulation_error["success"] = False
+            simulation_error["message"] = f"An error occurred {str(e)}\n{traceback_message}"
+            self._error_callable(simulation_error, "simulation")
 
             return _result.Failure(log_message)

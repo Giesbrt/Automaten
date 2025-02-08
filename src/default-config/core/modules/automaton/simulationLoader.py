@@ -39,6 +39,12 @@ class SimulationLoader:
         ActLogger().info("Pushed simulation packet to bridge.")
         self._bridge.add_simulation_item(item)
 
+        # check if simulation result packet is send
+        if "type" not in item:
+            return
+        if item["type"].lower() == "SIMULATION_RESULT".lower():
+            self._bridge.set_simulation_data_status(True)
+
     def _push_error_to_bridge(self, error: _ty.Dict[str, _ty.Any],
                               error_queue: _ty.Literal["ui", "simulation"] = "ui",
                               clear_queues: _ty.List[_ty.Literal["ui", "simulation"]] | None = None) -> None:
@@ -60,6 +66,7 @@ class SimulationLoader:
                     ActLogger().debug(
                         f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge (CLEAR)")
                     return
+                ActLogger().debug("Cleared queue")
                 bridge_queue_callables[clear_queue][1]()  # Invoke the clear method
 
         # push error to queue

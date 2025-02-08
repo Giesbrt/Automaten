@@ -18,7 +18,7 @@ import types as _ts
 import traceback
 
 
-# Docs generated with Github Copilot
+# Docs generated with GitHub Copilot
 
 
 class SimulationLoader:
@@ -66,7 +66,6 @@ class SimulationLoader:
                     ActLogger().debug(
                         f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge (CLEAR)")
                     return
-                ActLogger().debug("Cleared queue")
                 bridge_queue_callables[clear_queue][1]()  # Invoke the clear method
 
         # push error to queue
@@ -81,12 +80,12 @@ class SimulationLoader:
         
         :return: None
         """
-        if not self._bridge.has_backend_items():
-            return
-
-        bridge_data: _ty.Dict[str, _ty.Any] = self._bridge.get_backend_task()
-
         try:
+            if not self._bridge.has_backend_items():
+                return
+
+            bridge_data: _ty.Dict[str, _ty.Any] = self._bridge.get_backend_task()
+
             match (str(bridge_data["action"]).lower()):
                 case "simulation":
                     automaton_simulator: AutomatonSimulator = AutomatonSimulator(simulation_request=bridge_data,
@@ -100,9 +99,18 @@ class SimulationLoader:
             error_packet: _ty.Dict[str, _ty.Any] = {}
             ActLogger().error(f"An error occurred whilst handling bridge requests")
 
+            traceback_message: str = traceback.format_exc()
+
             error_packet["type"] = f"ERROR: {str(e)}"
-            error_packet["message"] = traceback.format_exc()
+            error_packet["message"] = traceback_message
             error_packet["success"] = False
-            self._push_error_to_bridge(error_packet)
+            self._push_error_to_bridge(error_packet, "ui", ["simulation"])
+
+            # Error packet for simulation_queue
+            simulation_error: _ty.Dict[str, _ty.Any] = {}
+            simulation_error["type"] = "SIMULATION_RESULT"
+            simulation_error["success"] = False
+            simulation_error["message"] = f"An error occurred {str(e)}\n{traceback_message}"
+            self._push_error_to_bridge(simulation_error, "simulation")
 
         self._bridge.complete_backend_task()

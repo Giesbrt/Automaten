@@ -21,7 +21,6 @@ class AutomatonSelectionDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
 
-        # Dunkler Hintergrund
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(0, 0, 0, 128))
         self.setAutoFillBackground(True)
@@ -29,7 +28,7 @@ class AutomatonSelectionDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        title = QLabel("Wählen Sie einen Automatentyp:")
+        title = QLabel("Choose a Automatontype:")
         title.setStyleSheet("color: white; font-size: 18px;")
         layout.addWidget(title)
 
@@ -37,10 +36,10 @@ class AutomatonSelectionDialog(QDialog):
         self.buttons = {}
 
         for automaton_type in types:
-            btn = QPushButton(automaton_type)
-            btn.clicked.connect(self.select_type)
-            layout.addWidget(btn)
-            self.buttons[automaton_type] = btn
+            button = QPushButton(automaton_type)
+            button.clicked.connect(self.select_type)
+            layout.addWidget(button)
+            self.buttons[automaton_type] = button
 
         self.selected_type = None
 
@@ -134,6 +133,9 @@ class MainWindow(QMainWindow, IMainWindow):
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
         self.menuBar().setFixedHeight(30)
+
+    def get_automaton_type(self) -> str:
+        return self.automaton_type
 
     def open_file(self):
         file_dialog = QFileDialog(self)
@@ -295,7 +297,6 @@ class MainWindow(QMainWindow, IMainWindow):
         self.show()
         self.raise_()
 
-        # Dialog nach dem Anzeigen des Hauptfensters aufrufen
         if not self.show_automaton_selection():
             self.close()
 

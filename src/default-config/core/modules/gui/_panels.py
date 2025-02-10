@@ -1,10 +1,10 @@
 """Panels of the gui"""
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
-                               QFormLayout, QLineEdit, QComboBox,
-                               QSlider, QPushButton, QGroupBox, QTableWidget, QTableWidgetItem, QVBoxLayout,
-                               QHBoxLayout, QColorDialog)
-from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QRect, QRegularExpression
-from PySide6.QtGui import QColor, QIcon, QPen, QRegularExpressionValidator
+                               QFormLayout, QLineEdit,
+                               QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
+                               QHBoxLayout, QColorDialog, QCheckBox, QComboBox)
+from PySide6.QtCore import Qt, QPropertyAnimation, QRect
+from PySide6.QtGui import QColor, QIcon, QPen
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
@@ -14,6 +14,8 @@ from ._grid_items import StateGroup, MultiSectionLineEdit
 import collections.abc as _a
 import typing as _ty
 import types as _ts
+
+from ..automaton.UIAutomaton import UiAutomaton
 
 
 class Panel(QWidget):
@@ -27,20 +29,20 @@ class StateMenu(QFrame):
         super().__init__(parent)
         self.setAutoFillBackground(True)
 
-        self.visible = False
-        self.state = None
-        self.selected_color = QColor(52, 152, 219)
+        self.visible: bool = False
+        self.state: StateGroup | None = None
+        self.selected_color: QColor = QColor(52, 152, 219)
 
-        main_layout = QVBoxLayout(self)
+        main_layout: QVBoxLayout = QVBoxLayout(self)
         main_layout.setContentsMargins(15, 15, 15, 15)
         main_layout.setSpacing(10)
 
-        header_layout = QHBoxLayout()
+        header_layout: QHBoxLayout = QHBoxLayout()
         self.close_button = QPushButton("✕", self)
         self.close_button.setFixedSize(24, 24)
         self.close_button.clicked.connect(lambda: self.parentWidget().toggle_condition_edit_menu(False))
 
-        self.title_label = QLabel("State Management", self)
+        self.title_label: QLabel = QLabel("State Management", self)
         self.title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
 
         header_layout.addWidget(self.close_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -48,29 +50,34 @@ class StateMenu(QFrame):
         header_layout.addStretch()
         main_layout.addLayout(header_layout)
 
-        form_layout = QFormLayout()
+        form_layout: QFormLayout = QFormLayout()
         form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         form_layout.setHorizontalSpacing(10)
         form_layout.setVerticalSpacing(8)
 
-        self.name_input = QLineEdit(self)
+        self.name_input: QLineEdit = QLineEdit(self)
         self.name_input.setPlaceholderText("State name")
 
-        self.color_button = QPushButton("Choose Color", self)
+        self.color_button: QPushButton = QPushButton("Choose Color", self)
         self.color_button.clicked.connect(self.open_color_dialog)
         self.color_button.setStyleSheet(f"background-color: {self.selected_color.name()}; color: #cb2821;")
 
-        self.size_input = QSlider(Qt.Orientation.Horizontal, self)
+        self.size_input: QSlider = QSlider(Qt.Orientation.Horizontal, self)
         self.size_input.setRange(100, 450)
         self.size_input.setValue(100)
+
+        self.type_input = QComboBox(self)
+        self.type_input.addItems(["Default", "Start", "End"])
+        self.type_input.currentTextChanged.connect(self.change_state_type)
 
         form_layout.addRow("Name:", self.name_input)
         form_layout.addRow("Color:", self.color_button)
         form_layout.addRow("Size:", self.size_input)
+        form_layout.addRow("Type:", self.type_input)
 
         main_layout.addLayout(form_layout)
 
-        self.transitions_table = QTableWidget(self)
+        self.transitions_table: QTableWidget = QTableWidget(self)
         self.transitions_table.setColumnCount(2)
         self.transitions_table.setHorizontalHeaderLabels(["Target State", "Condition"])
         self.transitions_table.horizontalHeader().setStretchLastSection(True)
@@ -99,12 +106,14 @@ class StateMenu(QFrame):
         searched_color: Qt.GlobalColor = self.state.get_ui_state().get_colour()
         self.color_button.setStyleSheet(f'background-color: {QColor(searched_color).name()}; color: #000;')
         self.size_input.setValue(self.state.get_size())
+        self.type_input.setCurrentText(self.state.get_type().capitalize())
 
         transitions = self.state.connected_transitions
         self.transitions_table.setRowCount(len(transitions))
         for i, transition in enumerate(transitions):
-            target_item = QTableWidgetItem(transition.get_ui_transition().get_to_state().get_display_text())
+            target_item = QTableWidgetItem(f'{transition.get_ui_transition().get_to_state().get_display_text()}')
             target_item.setData(Qt.ItemDataRole.UserRole, transition)
+            target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             condition_edit = MultiSectionLineEdit(len(transition.get_ui_transition().get_condition()))
 
             self.transitions_table.setItem(i, 0, target_item)
@@ -115,6 +124,10 @@ class StateMenu(QFrame):
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setFixedWidth(min(50, 100))
         self.layout.addRow(label, widget)
+
+    def change_state_type(self):
+        state_type = self.type_input.currentText().lower()
+        self.state.change_type(state_type)
 
     def on_current_item_changed(self, current: QTableWidgetItem, previous: QTableWidgetItem | None) -> None:
         if previous:
@@ -136,8 +149,10 @@ class UserPanel(Panel):
         super().__init__(parent)
         from ._grids import AutomatonInteractiveGridView
         self.setLayout(QNoSpacingBoxLayout(QBoxDirection.TopToBottom))
-        self.grid_view = AutomatonInteractiveGridView(automaton_type)  # Get values from settings
+        self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
         self.layout().addWidget(self.grid_view)
+        # self.ui_automaton = UiAutomaton(automaton_type, 'TheCodeJak', {})
+        # self.grid_view.set_ui_automaton(self.ui_automaton)
 
         # Side Menu
         self.side_menu = QFrame(self)

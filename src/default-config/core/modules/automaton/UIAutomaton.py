@@ -245,7 +245,7 @@ class UiTransition(IUiTransition):
 class UiAutomaton(IUiAutomaton):
 
     def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any]):
-        # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
+        # state_types_with_design = {"end": {"design": "Line x",  future}, "default": {"design": "Line y", future}}
         super().__init__(automaton_type, author, state_types_with_design)
 
         self._type: str = automaton_type
@@ -290,6 +290,7 @@ class UiAutomaton(IUiAutomaton):
         :return: None
         """
         self._states.add(state)
+        # print(self.__dict__)
 
     def add_transition(self, transition: UiTransition) -> None:
         """Adds a transition to the automaton.
@@ -299,11 +300,11 @@ class UiAutomaton(IUiAutomaton):
         """
         self._transitions.add(transition)
 
-    def get_name(self) -> str:
+    def get_name(self) -> str: # TODO: maybe another name (is a little bit confusing)
         """Gets the name of the automaton.
         
         :return: The name of the automaton.
-    """
+        """
         return self._type
 
     def set_start_state(self, state: UiState) -> None:
@@ -585,10 +586,41 @@ class UiAutomaton(IUiAutomaton):
         self._state_types_with_design = state_types_with_design
 
     def has_simulation_data(self) -> bool:
+        """ Returns a bool whether the bridge has simulation items
+
+        :return: True, if the bridge has simulation items
+        """
         
         return self._bridge.has_simulation_items()
 
+    def delete_transition(self, transition: UiTransition) -> None:
+        """ Deletes a transition
+
+        :param transition: The Transition to delete
+        :return: None
+        """
+        self._transitions.remove(transition)
+
+    def delete_state(self, state: UiState) -> None:
+        """ Deletes a state and all its transitions (inbound and outbound)
+
+        :param state: The state to delete
+        :return: None
+        """
+        # delete all transitions to/from this state
+        for transition in self.get_transitions():
+            if transition.get_from_state() == state or transition.get_to_state() == state:
+                self.delete_transition(transition)
+
+        # delete actual state
+        self._states.remove(state)
+
     def __eq__(self, other: _ty.Self):
+        print(self._type)
+        try:
+            print(other.get_name())
+        except:
+            print(other, 'has no attribute get_name')
         return (self._type == other.get_name()
                 and self._states == other.get_states()
                 and self._transitions == other.get_transitions()

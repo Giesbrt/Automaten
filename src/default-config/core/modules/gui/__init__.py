@@ -239,6 +239,7 @@ class Theme:
         :param s: The input string to convert.
         :return: The camel case version of the string.
         """
+        return s
         if not s:
             return s
         return s[0].lower() + s[1:]
@@ -262,6 +263,7 @@ class Theme:
         return self._compatible_styling in ("*", "os")
 
     def is_compatible(self, style: Style) -> bool:
+        print(self._load_styles_for)
         load_st_author, load_st_theme = self._load_styles_for.split("::")
         for path in style.get_for_paths():
             author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]
@@ -316,7 +318,7 @@ class Theme:
                 formatted_placeholder[front] = back
             for qpalette_placeholder in style.get_palette_parameters():
                 key, val = qpalette_placeholder.split(":")
-                getattr(palette, f"set{key}")(val)
+                # getattr(palette, f"set{key.title()}")(val)  TODO: FIX
 
         for placeholder in placeholders:
             front, assignment_type, end = self._find_special_sequence(placeholder)
@@ -413,7 +415,7 @@ class Theme:
             if placeholder != "":
                 placeholders.append(placeholder)
         # TODO: add other attributes more clearly
-        load_styles_for = from_theme if style_precautions == "reuse_st" and from_theme is not None else theme_name
+        load_styles_for = from_theme if style_precautions == "reuse_st" and from_theme is not None else f"{author}::{theme_name}"
         inherit_extend = (mode, from_theme)
         return cls(author, theme_name, qss.strip(), base_app_style, placeholders, compatible_styling, load_styles_for,
                    inherit_extend)

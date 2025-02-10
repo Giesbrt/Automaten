@@ -1,4 +1,4 @@
-extending adalfarus::thick;
+extending adalfarus::thick_basic;
 Fusion/os/reuse_st
 
 /* Start of QSS */

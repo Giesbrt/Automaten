@@ -375,8 +375,12 @@ class App:  # The main logic and gui are separated
             "recent_files": "()"
         })
         self.user_settings.set_default_settings("design", {
-            "light_theming": "adalfarus::thin/colored_summer_sky",  # thin_light_dark
+            "light_theming": "adalfarus::thin/base",  # thin_light_dark, colored_summer_sky
             "dark_theming": "adalfarus::thin/colored_evening_sky",
+            # "dark_theming": "adalfarus::thick/thick_light",
+            # "dark_theming": "adalfarus::chisled/base",
+            # "dark_theming": "adalfarus::modern/base",
+            # "dark_theming": "adalfarus::default/base",
             "window_icon_set": ":/data/assets/app_icons/shelline",
             "font": "Segoe UI",
             "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + " [INDEV]" if config.INDEV else "",

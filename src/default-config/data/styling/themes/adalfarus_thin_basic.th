@@ -164,14 +164,14 @@ QMenu::indicator:unchecked {
 /* End of QSS */
 
 ph:
-color_primary~=QPalette.Text;
-background_primary~=QPalette.ToolTipBase;
+color_primary~=QPalette.text;
+background_primary~=QPalette.toolTipBase;
 color_disabled~=darkGray;
-background_disabled~=QPalette.ToolTipBase;
-border_primary~=DarkGray;
-background_secondary~=QPalette.ToolTipBase;
-selection_background~=QPalette.Mid;
-background_tertiary~=QPalette.ToolTipBase;
+background_disabled~=QPalette.toolTipBase;
+border_primary~=darkGray;
+background_secondary~=QPalette.toolTipBase;
+selection_background~=QPalette.mid;
+background_tertiary~=QPalette.toolTipBase;
 background_scrollbar~=transparent; // Stays
 dropdown_image~=url();
 checkbox_image~=url();

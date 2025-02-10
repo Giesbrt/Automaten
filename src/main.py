@@ -412,10 +412,6 @@ class App:  # The main logic and gui are separated
             "open_last_file_on_startup": "True",
             "launch_at_system_startup": "False"
         })
-        # self.user_settings
-        # self.app_settings.set_default_settings({
-        #     "update_check_request_timeout": "2.0",
-        # })
 
     def load_themes(self, theme_folder: str, clear: bool = False) -> None:
         """Loads all theme files from styling/themes"""

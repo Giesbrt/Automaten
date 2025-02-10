@@ -585,8 +585,34 @@ class UiAutomaton(IUiAutomaton):
         self._state_types_with_design = state_types_with_design
 
     def has_simulation_data(self) -> bool:
+        """ Returns a bool whether the bridge has simulation items
+
+        :return: True, if the bridge has simulation items
+        """
         
         return self._bridge.has_simulation_items()
+
+    def delete_transition(self, transition: UiTransition) -> None:
+        """ Deletes a transition
+
+        :param transition: The Transition to delete
+        :return: None
+        """
+        self._transitions.remove(transition)
+
+    def delete_state(self, state: UiState) -> None:
+        """ Deletes a state and all its transitions (inbound and outbound)
+
+        :param state: The state to delete
+        :return: None
+        """
+        # delete all transitions to/from this state
+        for transition in self.get_transitions():
+            if transition.get_from_state() == state or transition.get_to_state() == state:
+                self.delete_transition(transition)
+
+        # delete actual state
+        self._states.remove(state)
 
     def __eq__(self, other: _ty.Self):
         return (self._type == other.get_name()

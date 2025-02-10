@@ -90,7 +90,15 @@ class App:  # The main logic and gui are separated
         self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                  args=(self.backend_stop_event,))
         self.backend_thread.start()
+
         # TODO: self.ui_automaton: UiAutomaton = UiAutomaton()  # TODO: er
+
+        states_with_design = {
+            'end': '',
+            'default': ''
+        }
+
+        self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
 
         self.load_themes(os.path.join(self.styling_folder, "themes"))
         self.load_styles(os.path.join(self.styling_folder, "styles"))
@@ -124,6 +132,7 @@ class App:  # The main logic and gui are separated
         # Thread pool
         self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
 
+        self.connect_signals()
         # Show gui
         self.pool.submit(lambda : self.check_for_update())
         self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
@@ -134,6 +143,10 @@ class App:  # The main logic and gui are separated
         self.timer.start(500, 0)
         self.timer_number: int = 1
         # self.timer.start(1500, 1)  # 1.5 second timer
+
+    def connect_signals(self):
+        self.window.user_panel.grid_view.add_state.connect(self.ui_automaton.add_state)
+        self.window.user_panel.grid_view.add_transition.connect(self.ui_automaton.add_transition)
 
     @staticmethod
     def _order_logs(directory: str) -> None:

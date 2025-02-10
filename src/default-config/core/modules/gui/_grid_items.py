@@ -2,8 +2,8 @@
 from PySide6.QtWidgets import (QStyleOptionGraphicsItem, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
                                QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem, QStyle, QLineEdit, QHBoxLayout,
                                QWidget, QGraphicsProxyWidget, QGraphicsDropShadowEffect)
-from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QKeyEvent, QTextCursor, QRegularExpressionValidator
-from PySide6.QtCore import QRectF, Qt, QPointF, QLineF, QPropertyAnimation, QEasingCurve
+from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QRegularExpressionValidator
+from PySide6.QtCore import QRectF, Qt, QPointF, QLineF
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -50,7 +50,7 @@ class State(QGraphicsEllipseItem):
     including movement and selection.
     """
     def __init__(self, x: float, y: float, width: int, height: int, color: Qt.GlobalColor,
-                 selected_color: Qt.GlobalColor, parent: QGraphicsItem | None = None) -> None:
+                 parent: QGraphicsItem | None = None) -> None:
         """
         Initialize the state with default properties.
 
@@ -69,35 +69,34 @@ class State(QGraphicsEllipseItem):
         self.y: float = y
         self.width: int = width
         self.height: int = height
-        self.selected_color = selected_color
 
-        self.glow_effect = QGraphicsDropShadowEffect()
-        self.glow_effect.setBlurRadius(20)
-        self.glow_effect.setColor(self.selected_color)
-        self.glow_effect.setOffset(0)
-        self.setGraphicsEffect(self.glow_effect)
+        # print(self.boundingRect().width(), self.boundingRect().height())
 
         self.setBrush(color)
         self.setPen(Qt.PenStyle.NoPen)
-
-        self.setSelected(True)
-
-    def setSelected(self, value: bool) -> None:
-        super().setSelected(value)
-        self.update(self.rect())
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """
         Paint the state as an ellipse, changing its border when selected.
         """
-        if self.isSelected():
-            self.glow_effect.setColor(self.selected_color)
-        else:
-            self.glow_effect.setColor(Qt.GlobalColor.black)
-        self.update()
+        state_type = self.parentItem().get_type()
+
+
+        painter.save()
+        painter.setPen(QPen(Qt.GlobalColor.black, 1))
+        painter.setBrush(self.brush() if state_type == 'default' or state_type == 'start' else Qt.BrushStyle.NoBrush)
         painter.drawEllipse(self.boundingRect())
-        option.state = option.state & ~QStyle.StateFlag.State_Selected
-        super().paint(painter, option, widget)
+        painter.restore()
+        # print(self.boundingRect().width(), self.boundingRect().height())
+
+        if state_type == 'end':
+            painter.save()
+            inner_margin = 5
+            inner_rect = self.boundingRect().adjusted(inner_margin, inner_margin, -inner_margin, -inner_margin)
+            painter.setBrush(Qt.GlobalColor.white)
+            painter.drawEllipse(inner_rect)
+            painter.restore()
+        # super().paint(painter, option, widget)
 
 
 class ConnectionPoint(QGraphicsEllipseItem):
@@ -479,7 +478,7 @@ class TempTransition(QGraphicsLineItem):
 
 class StateGroup(QGraphicsItemGroup):
     def __init__(self, x: float, y: float, width: int, height: int, number: int, default_color: Qt.GlobalColor,
-                 default_selected_color: Qt.GlobalColor, parent: QGraphicsItem | None = None) -> None:
+                 default_selection_color: Qt.GlobalColor, parent: QGraphicsItem | None = None) -> None:
         """
         Initialize a state group with a graphical representation and interaction elements.
 
@@ -490,10 +489,27 @@ class StateGroup(QGraphicsItemGroup):
             height (int): The height of the state.
             number (int): The state's identifier.
             default_color (Qt.GlobalColor): The default color of the state.
-            default_selected_color (Qt.GlobalColor): The default color of selection.
+            default_selection_color (Qt.GlobalColor): The default color of selection.
             parent (QGraphicsItem | None, optional): The parent graphics item. Defaults to None.
         """
         super().__init__(parent)
+
+        self.setSelected(False)
+        # self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemSendsScenePositionChanges, True)
+
+        self.size: int = width
+        self.selection_color = default_selection_color
+        self.state_type: _ty.Literal['default', 'start', 'end'] = 'default'
+        self.connected_transitions: list['Transition'] = []
+        self.connection_points: list['ConnectionPoint'] = []
+
+        self.shadow = QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(20)
+        self.shadow.setOffset(0)
+
         self.ui_state = UiState(
             colour = default_color,
             position = (x, y),
@@ -501,24 +517,16 @@ class StateGroup(QGraphicsItemGroup):
             node_type = 'default'
         )
 
-        # self.create_glow_effect()
-        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable, True)
-        self.setAcceptHoverEvents(True)
-
-        self.state: State = State(x, y, width, height, default_color, default_selected_color, self)
-        self.label: Label = Label(f'q{number}', self)
-        self.update_label_position()
-
+        self.state: State = State(x, y, width, height, default_color, self)
         self.addToGroup(self.state)
-        self.addToGroup(self.label)
+        self.label: Label = Label(f'q{number}', self)
+        self.label.setParentItem(self)
 
-        self.size: int = width
-        self.connected_transitions: list[Transition] = []
-        self.connection_points: list[ConnectionPoint] = []
-        rect: QRectF = self.state.rect()
-        self.connection_positions: dict[str, tuple[float, float, Qt.GlobalColor]] = self.create_connection_positions(rect)
+        self.connection_positions: dict[str, tuple[float, float, Qt.GlobalColor]] = self.create_connection_positions(self.state.rect())
         self.create_connection_points()
+
+        self.update_shadow_effect()
+        self.update_label_position()
 
     def set_name(self, name: str) -> None:
         """
@@ -544,6 +552,7 @@ class StateGroup(QGraphicsItemGroup):
         new_x: float = center_x - size / 2
         new_y: float = center_y - size / 2
         new_rect: QRectF = QRectF(new_x, new_y, size, size)
+        print(new_rect)
         self.state.setRect(new_rect)
         self.size = size
 
@@ -570,14 +579,14 @@ class StateGroup(QGraphicsItemGroup):
         for line in self.connected_transitions:
             line.arrow_size = size
 
-    def set_condition(self, condition: _ty.List[str]):
-        pass
-
     def get_size(self) -> int:
         return self.size
 
     def get_color(self) -> Qt.GlobalColor:
         return self.get_ui_state().get_colour()
+
+    def get_type(self) -> _ty.Literal['default', 'start', 'end']:
+        return self.state_type
 
     def get_ui_state(self) -> UiState:
         """
@@ -633,15 +642,29 @@ class StateGroup(QGraphicsItemGroup):
         """
         Activate the state, marking it as selected and updating its UI status.
         """
-        self.state.setSelected(True)
+        self.setSelected(True)
         self.ui_state.set_active(True)
 
     def deactivate(self) -> None:
         """
         Deactivate the state, removing its selection and updating its UI status.
         """
-        self.state.setSelected(False)
+        self.setSelected(False)
         self.ui_state.set_active(False)
+
+    def change_type(self, state_type: str):
+        self.state_type = state_type
+        self.state.update(self.state.rect())
+
+    def update_shadow_effect(self) -> None:
+        if self.isSelected():
+            self.shadow.setColor(Qt.GlobalColor.black)
+        else:
+            self.shadow.setColor(self.selection_color)
+
+        for item in self.childItems():
+            if isinstance(item, State):
+                item.setGraphicsEffect(self.shadow)
 
     def update_label_position(self) -> None:
         """
@@ -654,12 +677,15 @@ class StateGroup(QGraphicsItemGroup):
         label_y: float = rect_center.y() - label_height / 2
         self.label.setPos(label_x, label_y)
 
-    def mouseMoveEvent(self, event) -> None:
-        super().mouseMoveEvent(event)
-        for line in self.connected_transitions:
-            line.update_position()
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
+            self.update_shadow_effect()
+        if change == QGraphicsItem.GraphicsItemChange.ItemScenePositionHasChanged:
+            self.update_label_position()
+            for transition in self.connected_transitions:
+                transition.update_position()
+        return super().itemChange(change, value)
 
     def paint(self, painter, option, widget = ...):
         option.state = option.state & ~QStyle.StateFlag.State_Selected
         super().paint(painter, option, widget)
-        self.update_label_position()

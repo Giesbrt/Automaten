@@ -245,7 +245,7 @@ class UiTransition(IUiTransition):
 class UiAutomaton(IUiAutomaton):
 
     def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any]):
-        # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
+        # state_types_with_design = {"end": {"design": "Line x",  future}, "default": {"design": "Line y", future}}
         super().__init__(automaton_type, author, state_types_with_design)
 
         self._type: str = automaton_type
@@ -290,6 +290,7 @@ class UiAutomaton(IUiAutomaton):
         :return: None
         """
         self._states.add(state)
+        # print(self.__dict__)
 
     def add_transition(self, transition: UiTransition) -> None:
         """Adds a transition to the automaton.
@@ -299,11 +300,27 @@ class UiAutomaton(IUiAutomaton):
         """
         self._transitions.add(transition)
 
-    def get_name(self) -> str:
+    def delete_state(self, state: UiState) -> None:
+        """Adds a state to the automaton.
+
+        :param state: The state to be added.
+        :return: None
+        """
+        self._states.discard(state)
+
+    def delete_transition(self, transition: UiTransition) -> None:
+        """Adds a transition to the automaton.
+
+        :param transition: The transition to be added.
+        :return: None
+        """
+        self._transitions.discard(transition)
+
+    def get_name(self) -> str: # TODO: maybe another name (is a little bit confusing)
         """Gets the name of the automaton.
         
         :return: The name of the automaton.
-    """
+        """
         return self._type
 
     def set_start_state(self, state: UiState) -> None:
@@ -615,6 +632,11 @@ class UiAutomaton(IUiAutomaton):
         self._states.remove(state)
 
     def __eq__(self, other: _ty.Self):
+        print(self._type)
+        try:
+            print(other.get_name())
+        except:
+            print(other, 'has no attribute get_name')
         return (self._type == other.get_name()
                 and self._states == other.get_states()
                 and self._transitions == other.get_transitions()

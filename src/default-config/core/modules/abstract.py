@@ -375,6 +375,16 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
+    def delete_state(self, state: 'IUiState') -> None:
+        """Deletes a state from the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def delete_transition(self, transition: 'IUiTransition') -> None:
+        """Deletes a transition from the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
     def get_name(self) -> str:
         """Returns the type of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")

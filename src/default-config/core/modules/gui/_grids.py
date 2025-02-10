@@ -3,7 +3,7 @@ import numpy as np
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu, \
     QGraphicsTextItem, QGraphicsProxyWidget
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QColor, QAction
-from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint
+from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal
 
 # from core.modules.automaton.base.transition import Transition
 # from core.modules.automaton.base.state import State
@@ -15,6 +15,8 @@ from ._panels import UserPanel
 import collections.abc as _a
 import typing as _ty
 import types as _ts
+
+from ..automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 
 
 class StaticGridView(QGraphicsView):
@@ -137,24 +139,26 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     This class extends `InteractiveGridView` to support different types
     of automata, handling states, transitions, and user interactions.
     """
-    def __init__(self, automation_type: str, default_color: Qt.GlobalColor=Qt.GlobalColor.white,
-                 default_selected_color: Qt.GlobalColor=Qt.GlobalColor.magenta) -> None:
+    add_state: Signal = Signal(UiState)
+    add_transition: Signal = Signal(UiTransition)
+
+    def __init__(self, default_color: Qt.GlobalColor=Qt.GlobalColor.white,
+                 default_selection_color: Qt.GlobalColor=Qt.GlobalColor.red) -> None:
         """
         Initialize the automaton grid view.
 
         Args:
-            automation_type (str): The type of automaton being visualized.
             default_color (Qt.GlobalColor): The default color of the states.
         """
         super().__init__()
-        self.automaton_type: str | None = automation_type
+        self.automaton_type: str | None = None
         self._counter: int = 0
         self._last_active: State | None = None
         self._temp_line: TempTransition | None = None
         self._default_color: Qt.GlobalColor = default_color
         self._start_ellipse: ConnectionPoint | None = None
         self._last_connection_point: ConnectionPoint | None = None
-        self._default_selected_color: Qt.GlobalColor = default_selected_color
+        self._default_selection_color: Qt.GlobalColor = default_selection_color
 
     def _setup_automaton_view(self) -> None:
         """
@@ -233,15 +237,19 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             pos (QPointF): The position where the new state should be created.
         """
         state = StateGroup(pos.x() - self.grid_size / 2,
-                               pos.y() - self.grid_size / 2,
-                               self.grid_size, self.grid_size,
-                               self._counter, self._default_color, self._default_selected_color)
+                           pos.y() - self.grid_size / 2,
+                           self.grid_size, self.grid_size,
+                           self._counter, self._default_color, self._default_selection_color)
         self.scene().addItem(state)
-        self.parent().toggle_condition_edit_menu(True)
-        self.parent().state_menu.set_state(state)
-        self.parent().state_menu.connect_methods()
+        self.add_state.emit(state.get_ui_state())
+        parent: UserPanel = self.parent()
+        # self.ui_automaton.add_state(state.get_ui_state())
+        parent.toggle_condition_edit_menu(True)
+        parent.state_menu.set_state(state)
+        parent.state_menu.connect_methods()
         self._last_active = state
         self._counter += 1
+        print('finished')
 
     def remove_item(self, item: QGraphicsItem) -> None:
         """
@@ -250,20 +258,21 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         Args:
             item (QGraphicsItem): The item to remove.
         """
+        # self.ui_automaton.delete_state(state_group.get_ui_state())
         self.scene().removeItem(item)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
         Handle mouse press events for interaction with the automaton.
 
-        - Right-click opens a context menu for deleting states.
-        - Middle-click starts panning.
+        - Middle-click opens a context menu for deleting states.
+        - Right-click starts panning.
         - Left-click selects/moves items or starts a transition.
 
         Args:
             event (QMouseEvent): The mouse event.
         """
-        if event.button() == Qt.MouseButton.RightButton:
+        if event.button() == Qt.MouseButton.MiddleButton:
             # Remove temporary transition line if right-clicked
             if self._temp_line:
                 self.scene().removeItem(self._temp_line)
@@ -277,7 +286,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 context_menu.addAction(delete_action)
                 context_menu.exec(event.globalPos())
 
-        elif event.button() == Qt.MouseButton.MiddleButton:
+        elif event.button() == Qt.MouseButton.RightButton:
             # Start panning the view
             self._is_panning = True
             self._pan_start = event.position()
@@ -286,12 +295,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             return
 
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.button() == Qt.MouseButton.LeftButton:
-            clicked_point = self.mapToScene(event.pos())
-
-            item = self.get_item_at(QPoint(int(clicked_point.x()), int(clicked_point.y())))
-            if isinstance(item, State | Label):
-                if item.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable:
-                    item.setSelected(not item.isSelected())
+            # clicked_point = self.mapToScene(event.pos())
+            print('modified')
+            item_group = self.get_item_group(self.get_item_at(event.pos()))
+            if isinstance(item_group, StateGroup):
+                if item_group.state.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable:
+                    item_group.setSelected(not item_group.isSelected())
 
         elif event.button() == Qt.MouseButton.LeftButton:
             self.left_button_click(event)
@@ -337,11 +346,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 if closest_point:
                     self.remove_item(self._temp_line)
                     self._start_ellipse, self._temp_line = None, None
-                    transition = Transition(start_point, closest_point, start_point)
+                    transition = Transition(start_point, closest_point, self.get_item_group(item))
                     transition_function = TransitionFunction(self._automaton_settings['transition_sections'], transition)
                     transition.set_transition_function(transition_function)
                     transition.update_position()
                     self.scene().addItem(transition_function)
+                    # self.ui_automaton.add_transition(transition.get_ui_transition())
                 return
 
         if self._last_active is not None:

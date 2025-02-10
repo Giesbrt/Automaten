@@ -432,3 +432,23 @@ class IUiAutomaton(_abc.ABC):
     def has_simulation_data(self) -> bool:
         """Returns True if the automaton has unstaged simulation data"""
         raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def has_bridge_updates(self) -> bool:
+        """Checks if there are updates from the UI bridge."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def is_simulation_data_available(self) -> bool:
+        """Checks if simulation data is available from the bridge."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def delete_state(self, state: 'IUiState') -> None:
+        """Deletes a state from the automaton and removes associated transitions."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def delete_transition(self, transition: 'IUiTransition') -> None:
+        """Deletes a transition from the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")

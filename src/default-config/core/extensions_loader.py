@@ -166,5 +166,6 @@ class Extensions_Loader:
                     json.dump(self.data, file, indent=4)
         return self.content
 
-loader = Extensions_Loader()
-print(loader.load_content()) 
+if __name__ == "__main__":
+    loader = Extensions_Loader()
+    print(loader.load_content()) 

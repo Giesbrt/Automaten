@@ -452,13 +452,3 @@ class IUiAutomaton(_abc.ABC):
     def is_simulation_data_available(self) -> bool:
         """Checks if simulation data is available from the bridge."""
         raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def delete_state(self, state: 'IUiState') -> None:
-        """Deletes a state from the automaton and removes associated transitions."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def delete_transition(self, transition: 'IUiTransition') -> None:
-        """Deletes a transition from the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")

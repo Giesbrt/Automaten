@@ -300,22 +300,6 @@ class UiAutomaton(IUiAutomaton):
         """
         self._transitions.add(transition)
 
-    def delete_state(self, state: UiState) -> None:
-        """Adds a state to the automaton.
-
-        :param state: The state to be added.
-        :return: None
-        """
-        self._states.discard(state)
-
-    def delete_transition(self, transition: UiTransition) -> None:
-        """Adds a transition to the automaton.
-
-        :param transition: The transition to be added.
-        :return: None
-        """
-        self._transitions.discard(transition)
-
     def get_name(self) -> str: # TODO: maybe another name (is a little bit confusing)
         """Gets the name of the automaton.
         

@@ -11,7 +11,7 @@ import types as _ts
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from core.modules.automaton.base.state import BaseState
+from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
 
 # Comments generated with Chat-GPT
@@ -534,3 +534,6 @@ class TMAutomaton(BaseAutomaton):
 
     def get_current_return_value(self) -> _ty.Any:
         pass
+
+
+

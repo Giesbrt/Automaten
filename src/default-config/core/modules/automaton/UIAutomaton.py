@@ -235,7 +235,8 @@ class UiTransition(IUiTransition):
                 and self._from_state_connecting_point == other.get_from_state_connecting_point()
                 and self._to_state == other.get_to_state()
                 and self._to_state_connecting_point == other.get_to_state_connecting_point()
-                and self._is_active == other.is_active())
+                and self._is_active == other.is_active()
+                and self._condition == other.get_condition())
 
     def __hash__(self):
         return hash(repr(self))

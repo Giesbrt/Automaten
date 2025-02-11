@@ -2,8 +2,8 @@
 
 # Abstract Machine related imports
 from core.extensions.DFA import DFAAutomaton, DFAState, DFATransition
-from core.modules.automaton.TM import TMAutomaton, TMState, TMTransition
-from core.modules.automaton.mealy import mealyAutomaton, mealyState, mealyTransition
+from core.extensions.TM import TMAutomaton, TMState, TMTransition
+from core.extensions.mealy import MealyAutomaton, MealyState, MealyTransition
 
 from aplustools.io import ActLogger
 
@@ -25,8 +25,8 @@ class AutomatonProvider:
 
         # registered Automatons
         self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
-        self.register_automaton('tm', TMAutomaton.TMAutomaton, TMState.TMState, TMTransition.TMTransition)
-        self.register_automaton("mealy", mealyAutomaton.MealyAutomaton, mealyState.MealyState, mealyTransition.MealyTransition)
+        self.register_automaton('tm', TMAutomaton, TMState, TMTransition)
+        self.register_automaton("mealy", MealyAutomaton, MealyState, MealyTransition)
 
     def load_from_dict(self, loaded_automatons: _ty.Dict[str, _ty.List[_ty.Callable]], override: bool = False) -> None:
         """ Loads the required automatons classes from a dictionary

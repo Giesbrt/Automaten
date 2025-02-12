@@ -96,7 +96,7 @@ class MealyTransition(BaseTransition):
             The output associated with the transition when it is taken.
     """
 
-    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: any, output: any) -> None:
+    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: any) -> None:
         """
         Initializes a transition with the start state, target state, and condition details.
 
@@ -107,8 +107,8 @@ class MealyTransition(BaseTransition):
             output (any): The output produced when the transition is taken.
         """
         super().__init__(start_state, transition_target_state, condition)
-        self.condition_input: any = condition
-        self.output: any = output
+        self.condition_input: any = condition[0]
+        self.output: any = condition[1]
 
     def get_condition(self):
         """
@@ -387,6 +387,13 @@ class MealyAutomaton(BaseAutomaton):
             #ActLogger().error("Tried to start simulation of Mealy Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
 
+        # loop die alle states und transitions deaktiviert (state#deactivate())
+        for state in self.get_states():
+            state.deactivate()
+
+        for transition in self.get_transitions():
+            transition.deactivate()
+
         if self.current_state is None:
             self.current_state = self.start_state
             self.current_state.activate()
@@ -398,10 +405,10 @@ class MealyAutomaton(BaseAutomaton):
         print(self.output)
         self.next_input()
         self.current_state.activate()
-        return _result.Success("No error")
+        # return _result.Success("No error")
 
     def add_state(self, state: MealyState, state_type: str) -> None:
-        self.states.add_state(state)
+        self.states.add(state)
         match state_type:
             case "end":
                 self.end_states.add(state)

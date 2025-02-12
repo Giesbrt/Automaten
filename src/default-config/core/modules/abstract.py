@@ -385,7 +385,7 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
-    def get_name(self) -> str:
+    def get_automaton_type(self) -> str:
         """Returns the type of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 

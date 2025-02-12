@@ -257,7 +257,7 @@ class UiAutomaton(IUiAutomaton):
         self._start_state: UiState | None = None
         self._input: _ty.List[_ty.Any] = []
         self._pointer_index: int = 0
-        
+
         self._bridge: UiBridge = UiBridge()
 
     def __new__(cls, *args, **kwargs):
@@ -301,16 +301,16 @@ class UiAutomaton(IUiAutomaton):
         """
         self._transitions.add(transition)
 
-    def get_name(self) -> str: # TODO: maybe another name (is a little bit confusing)
-        """Gets the name of the automaton.
-        
-        :return: The name of the automaton.
+    def get_automaton_type(self) -> str:  # TODO: maybe another name (is a little bit confusing)
+        """Gets the automaton type of the automaton.
+
+        :return: The automaton type of the automaton.
         """
         return self._type
 
     def set_start_state(self, state: UiState) -> None:
         """Sets the start state of the automaton.
-        
+
         :param state: The start state of the automaton.
         :return: None
         """
@@ -331,10 +331,10 @@ class UiAutomaton(IUiAutomaton):
 
     def handle_bridge_updates(self) -> None:  # todo req testing
         """Handles updates from the UI bridge.
-        
+
         :return: None
         """
-        
+
         if not self._bridge.has_ui_items():
             return
 
@@ -370,7 +370,7 @@ class UiAutomaton(IUiAutomaton):
 
     def get_state_by_id(self, state_id: int) -> UiState:
         """Gets a state by its id.
-        
+
         :param state_id: The id of the state.
         :return: The state with the given id.
         """
@@ -378,7 +378,7 @@ class UiAutomaton(IUiAutomaton):
 
     def get_state_index(self, state: UiState) -> int:
         """Gets the index of a state.
-        
+
         :param state: The state.
         :return: The index of the state.
         """
@@ -386,7 +386,7 @@ class UiAutomaton(IUiAutomaton):
 
     def get_transition_by_id(self, transition_id: int) -> UiTransition:
         """Gets a transition by its id.
-        
+
         :param transition_id: The id of the transition.
         :return: The transition with the given id.
         """
@@ -394,7 +394,7 @@ class UiAutomaton(IUiAutomaton):
 
     def get_transition_index(self, transition: UiTransition) -> int:
         """Gets the index of a transition.
-        
+
         :param transition: The transition.
         :return: The index of the transition.
         """
@@ -402,7 +402,7 @@ class UiAutomaton(IUiAutomaton):
 
     def _serialise_structure_for_simulation(self) -> _ty.List[_ty.Dict[str, _ty.Any]]:
         """Serialises the automaton into a format the backend can understand
-        
+
         :return: The serialised structure of the automaton.
         """
         serialised_structure: _ty.List[_ty.Dict[str, _ty.Any]] = []
@@ -434,12 +434,12 @@ class UiAutomaton(IUiAutomaton):
 
     def simulate(self, input: _ty.List[_ty.Any]) -> _result.Result:
         """Simulates the automaton with a given input.
-        
+
         :param input: The input to the automaton.
         :return _result.Result: Returns success if the simulation request was successfully send to the backend"""
         structure: _ty.Dict[str, _ty.Any] = {}
         structure["action"] = "SIMULATION"
-        structure["id"] = f"{self.get_author().lower()}:{self.get_name().lower()}"
+        structure["id"] = f"{self.get_author().lower()}:{self.get_automaton_type().lower()}"
         structure["input"] = input
         structure["content"] = self._serialise_structure_for_simulation()
 
@@ -457,10 +457,10 @@ class UiAutomaton(IUiAutomaton):
 
     def handle_simulation_updates(self) -> _result.Result or None:
         """Handles updates from the simulation.
-        
+
         :return: The result of the simulation.
         """
-        
+
         if not self._bridge.has_simulation_items():
             return None
 
@@ -517,39 +517,39 @@ class UiAutomaton(IUiAutomaton):
         self._input = automaton_data["input"]
         self._pointer_index = automaton_data["pointer_index"]
 
-        return _result.Success(automaton_data["output"])
+        return _result.Success(automaton_data)
 
     def get_author(self) -> str:
         """Gets the author of the automaton.
-        
+
         :return: The author of the automaton.
         """
         return self._author
 
     def get_token_lists(self) -> _ty.List[_ty.List[str]]:
         """Gets the token lists of the automaton.
-        
+
         :return: The token lists of the automaton.
         """
         return self._token_lists
 
     def get_is_changeable_token_list(self) -> _ty.List[bool]:
         """Gets the changeable token lists of the automaton.
-        
+
         :return: The changeable token lists of the automaton.
         """
         return self._changeable_token_lists
 
     def get_transition_pattern(self) -> _ty.List[int]:
         """Gets the transition pattern of the automaton.
-        
+
         :return: The transition pattern of the automaton.
         """
         return self._transition_pattern
 
     def set_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
         """Sets the token lists of the automaton.
-        
+
         :param token_lists: The token lists of the automaton.
         :return: None
         """
@@ -557,7 +557,7 @@ class UiAutomaton(IUiAutomaton):
 
     def set_is_changeable_token_list(self, changeable_token_lists: _ty.List[bool]) -> None:
         """Sets the changeable token lists of the automaton.
-        
+
         :param changeable_token_lists: The changeable token lists of the automaton.
         :return: None
         """
@@ -565,7 +565,7 @@ class UiAutomaton(IUiAutomaton):
 
     def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
         """Sets the transition pattern of the automaton.
-        
+
         :param transition_pattern: The transition pattern of the automaton.
         :return: None
         """
@@ -573,14 +573,14 @@ class UiAutomaton(IUiAutomaton):
 
     def get_state_types_with_design(self) -> _ty.Dict[str, _ty.Any]:
         """Gets the state types with design of the automaton.
-        
+
         :return: The state types with design of the automaton.
         """
         return self._state_types_with_design
 
     def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, _ty.Any]) -> None:
         """Sets the state types with design of the automaton.
-        
+
         :param state_types_with_design: The state types with design of the automaton.
         :return: None
         """
@@ -591,7 +591,7 @@ class UiAutomaton(IUiAutomaton):
 
         :return: True, if the bridge has simulation items
         """
-        
+
         return self._bridge.has_simulation_items()
 
     def delete_transition(self, transition: UiTransition) -> None:
@@ -619,10 +619,10 @@ class UiAutomaton(IUiAutomaton):
     def __eq__(self, other: _ty.Self):
         print(self._type)
         try:
-            print(other.get_name())
+            print(other.get_automaton_type())
         except:
-            print(other, 'has no attribute get_name')
-        return (self._type == other.get_name()
+            print(other, 'has no attribute get_automaton_type')
+        return (self._type == other.get_automaton_type()
                 and self._states == other.get_states()
                 and self._transitions == other.get_transitions()
                 and self._start_state == other.get_start_state()

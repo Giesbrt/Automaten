@@ -1,9 +1,10 @@
 """Everything regarding the infinite grids items"""
 from PySide6.QtWidgets import (QStyleOptionGraphicsItem, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
                                QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem, QStyle, QLineEdit, QHBoxLayout,
-                               QWidget, QGraphicsProxyWidget, QGraphicsDropShadowEffect)
-from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QRegularExpressionValidator
-from PySide6.QtCore import QRectF, Qt, QPointF, QLineF
+                               QWidget, QGraphicsProxyWidget, QGraphicsDropShadowEffect, QComboBox, QVBoxLayout,
+                               QListWidget, QLabel, QPushButton, QListWidgetItem)
+from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QRegularExpressionValidator, QPainterPath
+from PySide6.QtCore import QRectF, Qt, QPointF, QLineF, QSize, Signal
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -222,6 +223,9 @@ class Transition(QGraphicsLineItem):
         """
         self.transition_function = transition_function
 
+    def get_transition_function(self):
+        return self.transition_function
+
     def set_transition(self, condition: _ty.List[str]):
         self.ui_transition.set_condition(condition)
 
@@ -297,10 +301,23 @@ class Transition(QGraphicsLineItem):
 
         if self.transition_function:
             center = self.get_center(start_scene_pos, end_scene_pos)
-            tf_width = self.transition_function.size().width()
-            tf_height = self.transition_function.size().height()
 
-            self.transition_function.setPos(center.x() - tf_width / 2, center.y() - tf_height / 2)
+            button_size = self.transition_function.button.size()
+            label_size = self.transition_function.label.size()
+            token_list_size = self.transition_function.token_list.size()
+
+            button_x = center.x() - button_size.width() / 2
+            button_y = center.y() - button_size.height() / 2
+            self.transition_function.button.setPos(button_x, button_y)
+
+            gap = 5
+            label_x = center.x() - label_size.width() / 2
+            label_y = button_y - gap - label_size.height()
+            self.transition_function.label.setPos(label_x, label_y)
+
+            token_list_x = center.x() - token_list_size.width() / 2
+            token_list_y = button_y + button_size.height() + gap
+            self.transition_function.token_list.setPos(token_list_x, token_list_y)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         """
@@ -422,30 +439,169 @@ class MultiSectionLineEdit(QWidget):
         return [field.text() for field in self.fields]
 
 
-class TransitionFunction(QGraphicsProxyWidget):
-    def __init__(self, sections: int, transition: Transition, parent=None) -> None:
-        """
-        Initialize the transition function widget.
 
-        Args:
-            sections (int): The number of input sections for the transition function.
-            parent (QGraphicsItem | None, optional): The parent graphics item. Defaults to None.
-        """
+class RoundedFrameWidget(QWidget):
+    """
+    Dieses Widget zeichnet einen Rahmen mit abgerundeten Ecken und
+    füllt nur den inneren, abgegrenzten Bereich mit der Hintergrundfarbe.
+    """
+    def __init__(self, parent=None, bg_color=QColor("white"),
+                 border_color=QColor("white"), border_radius=2, border_width=1):
         super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
+        self._bg_color = bg_color
+        self._border_color = border_color
+        self._border_radius = border_radius
+        self._border_width = border_width
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        # Verkleinere den zu zeichnenden Bereich, damit der Rand nicht abgeschnitten wird:
+        half_border_width = self._border_width // 2
+        adjusted_rect = rect.adjusted(half_border_width, half_border_width,
+                                      -half_border_width, -half_border_width)
+        path = QPainterPath()
+        path.addRoundedRect(adjusted_rect, self._border_radius, self._border_radius)
+        # Fülle nur innerhalb des abgegrenzten, abgerundeten Bereichs:
+        painter.fillPath(path, self._bg_color)
+        pen = QPen(self._border_color, self._border_width)
+        painter.setPen(pen)
+        painter.drawPath(path)
+
+
+class TokenSelectionLabel(QGraphicsProxyWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        container = RoundedFrameWidget(
+            bg_color=QColor("white"),
+            border_color=QColor("lightgray"),
+            border_radius=5,
+            border_width=1
+        )
+        layout = QVBoxLayout(container)
+        self.label = QLabel(".../.../...", container)
+        self.label.setStyleSheet('color: black; font-size: 14px')
+        layout.addWidget(self.label)
+        layout.setContentsMargins(5, 5, 5, 5)
+        container.setLayout(layout)
+        self.setWidget(container)
+
+    def update_text(self, tokens):
+        self.label.setText(" / ".join(tokens) if tokens else ".../.../...")
+
+
+class TokenSelectionButton(QGraphicsProxyWidget):
+    def __init__(self, token_list_widget, parent=None):
+        super().__init__(parent)
+        # Verwende ein kleineres RoundedFrameWidget für einen kompakten Button:
+        self.token_list = token_list_widget
+
+        container = RoundedFrameWidget(
+            bg_color=QColor("white"),
+            border_color=QColor("lightgray"),
+            border_radius=2,  # geringere Rundung für einen rechteckigeren Look
+            border_width=1
+        )
+        # Festgelegte, kleinere Dimensionen:
+        container.setFixedSize(20, 20)
+        layout = QVBoxLayout(container)
+        self.button = QPushButton("▼", container)
+        self.button.setFixedSize(20, 20)
+        self.button.clicked.connect(self.toggle_token_selection_list)
+        layout.addWidget(self.button)
+        layout.setContentsMargins(0, 0, 0, 0)
+        container.setLayout(layout)
+        self.setWidget(container)
+
+    def toggle_token_selection_list(self):
+        self.token_list.setVisible(not self.token_list.isVisible())
+
+
+class TokenSelectionList(QGraphicsProxyWidget):
+    """
+    Dieses Widget zeigt:
+      - Ein oben angeordnetes, beschreibbares Suchfeld,
+      - Einen dicken, farblich abgesetzten horizontalen Separator direkt unterhalb des Suchfelds
+      - Eine scrollbare Liste, in der die Items durch dünne, über die gesamte Breite gehende Trennlinien voneinander
+        unterteilt sind.
+    Das gesamte Widget ist in einem RoundedFrameWidget eingebettet, sodass die Ecken abgerundet sind.
+    """
+    token_selected = Signal(list)
+
+    def __init__(self, tokens, parent=None):
+        super().__init__(parent)
+        self.tokens = tokens
+        self.selected_tokens = []
+
+        container = RoundedFrameWidget(bg_color=QColor("white"),
+                                       border_color=QColor("white"),
+                                       border_radius=10,
+                                       border_width=0)
+        container.setFixedWidth(200)
+
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(0)
+
+        self.search_bar = QLineEdit(container)
+        self.search_bar.setPlaceholderText("Search ...")
+        self.search_bar.setStyleSheet("border: none; padding: 5px; font-size: 14px; background: transparent; color: black;")
+        layout.addWidget(self.search_bar)
+
+        self.search_separator = QWidget(container)
+        self.search_separator.setFixedHeight(2)
+        self.search_separator.setStyleSheet("background-color: #6666ff;")
+        layout.addWidget(self.search_separator)
+
+        self.list_widget = QListWidget(container)
+        self.list_widget.addItems(self.tokens)
+        self.list_widget.setStyleSheet(
+            "QListWidget { border: none; background: transparent; }"
+            "QListWidget::item { color: black; padding: 8px; border-bottom: 1px solid #cccccc; }"
+        )
+        layout.addWidget(self.list_widget)
+
+        container.setLayout(layout)
+        self.setWidget(container)
+
+        self.search_bar.textChanged.connect(self.filter_tokens)
+        self.list_widget.itemClicked.connect(self.item_clicked)
+
+        self.setVisible(False)
+
+    def filter_tokens(self, text):
+        filter_text = text.lower()
+        for i in range(self.list_widget.count()):
+            item = self.list_widget.item(i)
+            item.setHidden(filter_text not in item.text().lower())
+
+    def item_clicked(self, item):
+        token = item.text()
+        if token not in self.selected_tokens:
+            self.selected_tokens.append(token)
+        self.token_selected.emit(self.selected_tokens)
+
+
+class TransitionFunction(QGraphicsProxyWidget):
+    def __init__(self, tokens, transition, parent=None) -> None:
+        super().__init__(parent)
         self.transition = transition
-        self.line_edit = MultiSectionLineEdit(sections, self.set_condition)
-        self.setWidget(self.line_edit)
+        # Erstelle die einzelnen Elemente:
+        self.label = TokenSelectionLabel(self)
+        self.token_list = TokenSelectionList(tokens, self)
+        self.button = TokenSelectionButton(self.token_list, self)
 
-    def set_condition(self, condition: _ty.List[str]) -> None:
-        """
-        Retrieve the transition function as a concatenated string.
+        self.token_list.token_selected.connect(self.label.update_text)
 
-        Returns:
-            str: The transition function text extracted from the input fields.
-        """
+    def close_token_selection_list(self) -> None:
+        self.token_list.setVisible(False)
+
+    def set_condition(self, condition):
         self.transition.get_ui_transition().set_condition(condition)
-        print(self.transition.get_ui_transition())
+        # print(self.transition.get_ui_transition())
 
 
 class TempTransition(QGraphicsLineItem):

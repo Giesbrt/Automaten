@@ -130,30 +130,6 @@ class IBackend(_abc.ABC):
         ...
 
 
-class BackendInstructionManager:
-    @staticmethod
-    def load_file(file_path: str) -> _ty.Dict[str, _ty.Any]:
-        pass
-
-    @staticmethod
-    def save_file(file_path: str) -> ...:
-        pass
-
-
-class GuiInstructionManager:
-    @staticmethod
-    def load_automaton():  ## Todo implement
-        pass
-
-
-# Todo add ui automaton interface
-#
-# def __new__(cls, *args, **kwargs):
-#        raise Exception("This class can't be initialized; it is just an Interface.")
-#
-#
-
-
 class IUiState(_abc.ABC):
 
     def __init__(self, colour: Qt.GlobalColor, position: _ty.Tuple[float, float], display_text: str, node_type: str):

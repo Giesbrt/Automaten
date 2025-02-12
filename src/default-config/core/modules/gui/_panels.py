@@ -66,7 +66,7 @@ class StateMenu(QFrame):
         self.size_input.setRange(100, 450)
         self.size_input.setValue(100)
 
-        self.type_input = QComboBox(self)
+        self.type_input: QComboBox = QComboBox(self)
         self.type_input.addItems(["Default", "Start", "End"])
         self.type_input.currentTextChanged.connect(self.change_state_type)
 
@@ -98,7 +98,7 @@ class StateMenu(QFrame):
                 self.state.set_color(color)
 
     def set_state(self, state: StateGroup) -> None:
-        self.state = state
+        self.state: StateGroup = state
         self.set_parameters()
 
     def set_parameters(self):
@@ -111,10 +111,15 @@ class StateMenu(QFrame):
         transitions = self.state.connected_transitions
         self.transitions_table.setRowCount(len(transitions))
         for i, transition in enumerate(transitions):
-            target_item = QTableWidgetItem(f'{transition.get_ui_transition().get_to_state().get_display_text()}')
-            target_item.setData(Qt.ItemDataRole.UserRole, transition)
+            target_item: QTableWidgetItem = QTableWidgetItem(f'{transition.get_ui_transition().get_to_state().get_display_text()}')
             target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            condition_edit = MultiSectionLineEdit(len(transition.get_ui_transition().get_condition()))
+            target_item.setData(Qt.ItemDataRole.UserRole, transition)
+
+            condition_edit: QComboBox = QComboBox()
+            condition_edit.addItems(self.parentWidget().get_token_list())
+            condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
+
+            # condition_edit = MultiSectionLineEdit(len(transition.get_ui_transition().get_condition()))
 
             self.transitions_table.setItem(i, 0, target_item)
             self.transitions_table.setCellWidget(i, 1, condition_edit)
@@ -129,7 +134,7 @@ class StateMenu(QFrame):
         state_type = self.type_input.currentText().lower()
         self.state.change_type(state_type)
 
-    def on_current_item_changed(self, current: QTableWidgetItem, previous: QTableWidgetItem | None) -> None:
+    def on_current_item_changed(self, current: QTableWidgetItem | QComboBox, previous: QTableWidgetItem | QComboBox | None) -> None:
         if previous:
             previous.data(Qt.ItemDataRole.UserRole).setPen(QPen(Qt.GlobalColor.black, 4))
         current.data(Qt.ItemDataRole.UserRole).setPen(QPen(Qt.GlobalColor.red, 4))
@@ -151,8 +156,8 @@ class UserPanel(Panel):
         self.setLayout(QNoSpacingBoxLayout(QBoxDirection.TopToBottom))
         self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
         self.layout().addWidget(self.grid_view)
-        # self.ui_automaton = UiAutomaton(automaton_type, 'TheCodeJak', {})
-        # self.grid_view.set_ui_automaton(self.ui_automaton)
+
+        self.token_list = ['Apfel', 'Birne', 'Gurke']
 
         # Side Menu
         self.side_menu = QFrame(self)
@@ -182,6 +187,9 @@ class UserPanel(Panel):
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
         # TODO: SETTINGS
         # - Automaton loader settings
+
+    def get_token_list(self):
+        return self.token_list
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:

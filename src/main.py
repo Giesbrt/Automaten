@@ -91,8 +91,6 @@ class App:  # The main logic and gui are separated
                                                                  args=(self.backend_stop_event,))
         self.backend_thread.start()
 
-        # TODO: self.ui_automaton: UiAutomaton = UiAutomaton()  # TODO: er
-
         states_with_design = {
             'end': '',
             'default': ''
@@ -145,8 +143,38 @@ class App:  # The main logic and gui are separated
         # self.timer.start(1500, 1)  # 1.5 second timer
 
     def connect_signals(self):
-        self.window.user_panel.grid_view.add_state.connect(self.ui_automaton.add_state)
-        self.window.user_panel.grid_view.add_transition.connect(self.ui_automaton.add_transition)
+        grid_view = self.window.user_panel.grid_view
+        automaton: UiAutomaton = self.ui_automaton
+
+        grid_view.get_start_state.connect(automaton.get_start_state)
+        grid_view.get_state_types_with_design.connect(automaton.get_state_types_with_design)
+        grid_view.set_state_types_with_design.connect(automaton.set_state_types_with_design)
+        grid_view.get_author.connect(automaton.get_author)
+        grid_view.get_token_lists.connect(automaton.get_token_lists)
+        grid_view.get_is_changeable_token_list.connect(automaton.get_is_changeable_token_list)
+        grid_view.get_transition_pattern.connect(automaton.get_transition_pattern)
+        grid_view.set_token_lists.connect(automaton.set_token_lists)
+        grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
+        grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
+        grid_view.get_states.connect(automaton.get_states)
+        grid_view.get_transitions.connect(automaton.get_transitions)
+        grid_view.get_name.connect(automaton.get_name)
+        grid_view.set_start_state.connect(automaton.set_start_state)
+        grid_view.get_state_by_id.connect(automaton.get_state_by_id)
+        grid_view.get_state_index.connect(automaton.get_state_index)
+        grid_view.get_transition_index.connect(automaton.get_transition_index)
+        grid_view.get_transition_by_id.connect(automaton.get_transition_by_id)
+        grid_view.simulate.connect(automaton.simulate)
+        grid_view.handle_simulation_updates.connect(automaton.handle_simulation_updates)
+        grid_view.handle_bridge_updates.connect(automaton.handle_bridge_updates)
+        grid_view.has_simulation_data.connect(automaton.has_simulation_data)
+        grid_view.has_bridge_updates.connect(automaton.has_bridge_updates)
+        grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)
+
+        grid_view.add_state.connect(automaton.add_state)
+        grid_view.add_transition.connect(automaton.add_transition)
+        grid_view.delete_state.connect(automaton.delete_state)
+        grid_view.delete_transition.connect(automaton.delete_transition)
 
     @staticmethod
     def _order_logs(directory: str) -> None:

@@ -208,7 +208,7 @@ class PainterToStr:
         (start_deg, end_deg) = arc
         radius_scaled = min(1.0, radius_scalar) * self._radius
         self._curr_style_str += (f"Arc: ({base_point}, {radius_scaled}), ({start_deg}, {end_deg}), "
-                                 f"{thickness}#{color.as_hex()};")
+                                 f"{thickness}{color.as_hex()};")
 
     def circle(self, circle: PainterCircleT, thickness: int = 1, color: PainterColor | None = None) -> None:
         """
@@ -223,7 +223,7 @@ class PainterToStr:
 
         (base_point, radius_scalar) = circle
         radius_scaled = min(1.0, radius_scalar) * self._radius
-        self._curr_style_str += f"Circle: ({base_point}, {radius_scaled}), {thickness}#{color.as_hex()};"
+        self._curr_style_str += f"Circle: ({base_point}, {radius_scaled}), {thickness}{color.as_hex()};"
 
     def base_rect(self, base_circle: PainterCircleT, top_left_deg: float, bottom_right_deg: float,
                   thickness: int = 1, color: PainterColor | None = None) -> None:
@@ -245,7 +245,7 @@ class PainterToStr:
         scaled_y = base_y - self._diameter
         rel_tl_x, rel_tl_y = self.coord().polar_to_cartesian(top_left_deg, min(1.0, radius_scalar))
         rel_br_x, rel_br_y = self.coord().polar_to_cartesian(bottom_right_deg, min(1.0, radius_scalar))
-        self._curr_style_str += f"Rect: (({rel_tl_x + scaled_x}, {rel_tl_y + scaled_y}), ({rel_br_x + scaled_x}, {rel_br_y + scaled_y})), {thickness}#{color.as_hex()};"
+        self._curr_style_str += f"Rect: (({rel_tl_x + scaled_x}, {rel_tl_y + scaled_y}), ({rel_br_x + scaled_x}, {rel_br_y + scaled_y})), {thickness}{color.as_hex()};"
 
     def rect(self, top_left_point: PainterCoordT, bottom_right_point: PainterCoordT,
              thickness: int = 1, color: PainterColor | None = None) -> None:
@@ -260,7 +260,7 @@ class PainterToStr:
         if color is None:
             color = PainterColor(0, 0, 0)
 
-        self._curr_style_str += f"Rect: ({top_left_point}, {bottom_right_point}), {thickness}#{color.as_hex()};"
+        self._curr_style_str += f"Rect: ({top_left_point}, {bottom_right_point}), {thickness}{color.as_hex()};"
 
     def base_polygon(self, base_circle: PainterCircleT, degs: list[float], thickness: int = 1,
                      color: PainterColor | None = None) -> None:
@@ -284,7 +284,7 @@ class PainterToStr:
         for deg in degs:
             rel_x, rel_y = self.coord().polar_to_cartesian(deg, min(1.0, radius_scalar))
             points.append((rel_x + scaled_x, rel_y + scaled_y))
-        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}#{color.as_hex()};"
+        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}{color.as_hex()};"
 
     def polygon(self, points: list[PainterCoordT], thickness: int = 1, color: PainterColor | None = None) -> None:
         """
@@ -297,7 +297,7 @@ class PainterToStr:
         if color is None:
             color = PainterColor(0, 0, 0)
 
-        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}#{color.as_hex()};"
+        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}{color.as_hex()};"
 
     def text(self, start_point: PainterCoordT, text: str, bold: bool = False, italic: bool = False,
              underline: bool = False, strikethrough: bool = False, color: PainterColor | None = None) -> None:
@@ -319,7 +319,7 @@ class PainterToStr:
         for i, flag in enumerate((bold, italic, underline, strikethrough)):
             empty_flag |= (1 if flag else 0) << i
 
-        self._curr_style_str += f"Text: {start_point} ,('{text}', {empty_flag}#{color.as_hex()})"
+        self._curr_style_str += f"Text: {start_point} ,('{text}', {empty_flag}{color.as_hex()})"
 
     def clean_out_style_str(self) -> str:
         """Returns the current style string and then resets it"""

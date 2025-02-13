@@ -5,16 +5,28 @@ import shutil as _shutil
 import platform as _platform
 
 
-INDEV = 1
-OLD_CWD = _os.getcwd()
-PROGRAM_NAME = "E.F.S Simulator"
-PROGRAM_NAME_NORMALIZED = "efs_simulator"
-VERSION, VERSION_ADD = 1000, "a3"
-OS_LIST = ["Windows"]
-OS_VERSIONS_LIST = [("any",)]
-MAJOR_OS_VERSIONS_LIST = [("10", "11")]
-PY_VERSIONS = [(3, 10), (3, 11), (3, 12)]
+INDEV: int = 1
+OLD_CWD: str = _os.getcwd()
+PROGRAM_NAME: str = "E.F.S Simulator"
+PROGRAM_NAME_NORMALIZED: str = "efs_simulator"
+VERSION: int = 1000
+VERSION_ADD: str = "a3"
+OS_LIST: list[str] = ["Windows"]
+OS_VERSIONS_LIST: list[tuple[str, ...]] = [("any",)]
+MAJOR_OS_VERSIONS_LIST: list[tuple[str, ...]] = [("10", "11")]
+PY_VERSIONS: list[tuple[int, int]] = [(3, 10), (3, 11), (3, 12)]
 
+if "CONFIG_DONE" not in locals():
+    CONFIG_DONE: bool = False
+if "CHECK_DONE" not in locals():
+    CHECK_DONE: bool = False
+
+exported_logs: str
+base_app_dir: str
+old_cwd: str
+
+exit_code: int
+exit_message: str
 
 def is_compiled() -> bool:
     """  # From aps.io.env
@@ -85,33 +97,43 @@ def _configure() -> dict[str, str]:
     }
 
 
-# Check if environment is suitable
-exit_code, exit_message = 0, "An unknown error occurred"
-platform_idx = OS_LIST.index(_platform.system())
-os_versions = OS_VERSIONS_LIST[platform_idx]
-major_os_versions = MAJOR_OS_VERSIONS_LIST[platform_idx]
-if _platform.system() not in OS_LIST:
-    exit_code, exit_message = 1, (f"You are currently on {_platform.system()}. "
-                                  f"Please run this on a supported OS ({', '.join(OS_LIST)}).")
-elif _platform.version() not in os_versions and os_versions != ("any",):
-    exit_code, exit_message = 1, (f"You are currently on {_platform.version()}. "
-                                  f"Please run this on a supported OS version ({', '.join(os_versions)}).")
-elif not _platform.release() in major_os_versions:
-    exit_code, exit_message = 1, (f"You are currently on {_platform.release()}. "
-                                  f"Please run this on a supported major OS version ({', '.join(major_os_versions)}).")
-elif _sys.version_info[:2] not in PY_VERSIONS:
-    py_versions_strs = [f"{major}.{minor}" for (major, minor) in PY_VERSIONS]
-    exit_code, exit_message = 1, (f"You are currently on {'.'.join([str(x) for x in _sys.version_info])}. "
-                                  f"Please run this using a supported python version ({', '.join(py_versions_strs)}).")
-if exit_code:
-    raise RuntimeError(exit_message)
+def check() -> RuntimeError | None:
+    """Check if environment is suitable"""
+    global CHECK_DONE, exit_code, exit_message
 
-print(f"Starting {PROGRAM_NAME} {str(VERSION) + VERSION_ADD} with py{'.'.join([str(x) for x in _sys.version_info])} ...")
+    if CHECK_DONE:
+        return None
+    CHECK_DONE = True
+
+    exit_code, exit_message = 0, "An unknown error occurred"
+    platform_idx = OS_LIST.index(_platform.system())
+    os_versions = OS_VERSIONS_LIST[platform_idx]
+    major_os_versions = MAJOR_OS_VERSIONS_LIST[platform_idx]
+    if _platform.system() not in OS_LIST:
+        exit_code, exit_message = 1, (f"You are currently on {_platform.system()}. "
+                                      f"Please run this on a supported OS ({', '.join(OS_LIST)}).")
+    elif _platform.version() not in os_versions and os_versions != ("any",):
+        exit_code, exit_message = 1, (f"You are currently on {_platform.version()}. "
+                                      f"Please run this on a supported OS version ({', '.join(os_versions)}).")
+    elif not _platform.release() in major_os_versions:
+        exit_code, exit_message = 1, (f"You are currently on {_platform.release()}. "
+                                      f"Please run this on a supported major OS version ({', '.join(major_os_versions)}).")
+    elif _sys.version_info[:2] not in PY_VERSIONS:
+        py_versions_strs = [f"{major}.{minor}" for (major, minor) in PY_VERSIONS]
+        exit_code, exit_message = 1, (f"You are currently on {'.'.join([str(x) for x in _sys.version_info])}. "
+                                      f"Please run this using a supported python version ({', '.join(py_versions_strs)}).")
+    if exit_code:
+        return RuntimeError(exit_message)
+    return None
 
 
-if "CONFIG_DONE" not in locals():
+def setup() -> None:
+    """Setup the app, this does not include checking for compatibility"""
+    global CONFIG_DONE, exported_logs, base_app_dir, old_cwd
+    if CONFIG_DONE or not CHECK_DONE:
+        return None
+    CONFIG_DONE = True
     exported_vars = _configure()
     exported_logs, base_app_dir, old_cwd = (exported_vars["accumulated_logs"], exported_vars["base_app_dir"],
                                             exported_vars["old_cwd"])
-    CONFIG_DONE: bool = True
-del _sys, _os, _shutil
+    return None

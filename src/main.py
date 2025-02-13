@@ -1,6 +1,7 @@
 """TBA"""
 import config
-import core.modules.serializer  # So we know the backend still works
+config.check()
+config.setup()
 
 # Standard imports
 from pathlib import Path as PLPath
@@ -15,31 +16,25 @@ import os
 import re
 
 # Third party imports
-from PySide6.QtWidgets import QApplication, QCheckBox, QMessageBox
+from packaging.version import Version, InvalidVersion
+import stdlib_list
+import requests
+
+from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QIcon, QDesktopServices
-from PySide6.QtGui import (QCloseEvent, QResizeEvent, QMoveEvent, QFocusEvent, QKeyEvent, QMouseEvent,
-                           QEnterEvent, QPaintEvent, QDragEnterEvent, QDragMoveEvent, QDropEvent,
-                           QDragLeaveEvent, QShowEvent, QHideEvent, QContextMenuEvent,
-                           QWheelEvent, QTabletEvent)
-from PySide6.QtCore import QEvent, QTimerEvent
 
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType
 from aplustools.io import ActLogger
 from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeList
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
-from packaging.version import Version, InvalidVersion
-import stdlib_list
-import requests
-
-from core.modules.automaton.UIAutomaton import UiAutomaton
 # Core imports (dynamically resolved)
+from core.modules.automaton.UIAutomaton import UiAutomaton
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
 from core.modules.abstract import IMainWindow, IBackend
 from core.modules.automaton_loader import start
-from core.modules.automaton.UiBridge import UiBridge
 from utils.errorCache import ErrorCache, ErrorSeverity
 
 # Standard typing imports for aps
@@ -53,10 +48,12 @@ multiprocessing.freeze_support()
 
 class App:  # The main logic and gui are separated
     """TBA"""
-    window: IMainWindow
-    qapp: QApplication
 
-    def __init__(self, input_path: str, logging_level: int | None = None) -> None:
+    def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str,
+                 logging_level: int | None = None) -> None:
+        self.window: IMainWindow = window
+        self.qapp: QApplication = qapp
+
         self.base_app_dir: str = config.base_app_dir
         self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
@@ -65,13 +62,11 @@ class App:  # The main logic and gui are separated
         self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
 
         self.window.setup_gui()
-        # import time
-        # time.sleep(10)
 
         # Setup logger
         self._order_logs(f"{self.data_folder}/logs")
         self.logger: ActLogger = ActLogger(log_to_file=True, filename=f"{self.data_folder}/logs/latest.log")
-        self.logger.logger.setLevel(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
+        self.logger.setLevel(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
         self.logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
         self.logger.monitor_pipe(sys.stderr, level=logging.ERROR)
         for exported_line in config.exported_logs.split("\n"):
@@ -411,7 +406,7 @@ class App:  # The main logic and gui are separated
             # "dark_theming": "adalfarus::default/base",
             "window_icon_set": ":/data/assets/app_icons/shelline",
             "font": "Segoe UI",
-            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + " [INDEV]" if config.INDEV else "",
+            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (" [INDEV]" if config.INDEV else ""),
             "high_contrast_mode": "NO",  # Just make a high contrast theme
             "automaton_scaling": "NO",  # Why? We could manipulate the scroll max and mins
             "automatic_scaling": "True",  # Would enable / disable next two options
@@ -544,7 +539,8 @@ class App:  # The main logic and gui are separated
 
 
 if __name__ == "__main__":
-    CODES: dict[int, _a.Callable] = {
+    print(f"Starting {config.PROGRAM_NAME} {str(config.VERSION) + config.VERSION_ADD} with py{'.'.join([str(x) for x in sys.version_info])} ...")
+    CODES: dict[int, _a.Callable[[], None]] = {
         1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)
     }
     qapp: QApplication | None = None
@@ -558,27 +554,24 @@ if __name__ == "__main__":
                         help="Logging mode (default: None)")
     args = parser.parse_args()
 
-    logging_mode = args.logging_mode
-    logging_level = None
+    logging_mode: str = args.logging_mode
+    logging_level: int | None = None
     if logging_mode is not None:
         logging_level = getattr(logging, logging_mode.upper(), None)
-    if logging_level is None and logging_mode is not None:
-        logging.error(f"Invalid logging mode: {logging_mode}")
-        sys.exit(1)
+        if logging_level is None:
+            logging.error(f"Invalid logging mode: {logging_mode}")
 
-    input_path = os.path.abspath(args.input)
+    input_path: str = os.path.abspath(args.input)
 
     if not os.path.exists(input_path):
         logging.error(f"The input file ({input_path}) needs to exist")
-        sys.exit(1)
+        input_path = ""
     config.exported_logs += f"Reading {input_path}\n"
 
     try:
         qapp = QApplication(sys.argv)
         qgui = MainWindow()
-        App.window = qgui
-        App.qapp = qapp
-        dp_app = App(input_path, logging_level)  # Shows gui
+        dp_app = App(qgui, qapp, input_path, logging_level)  # Shows gui
         current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -590,10 +583,10 @@ if __name__ == "__main__":
         msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning, error_title, error_text, error_description,
                                    standard_buttons=QMessageBox.StandardButton.Ok,
                                    default_button=QMessageBox.StandardButton.Ok)
-        icon_path = os.path.abspath("./data/assets/logo-nobg.png")
-        if hasattr(dp_app, "abs_window_icon_path"):
-            icon_path = dp_app.abs_window_icon_path
-        msg_box.setWindowIcon(QIcon(icon_path))
+        #icon = QMessageBox.Icon.Warning
+        #if hasattr(dp_app, "abs_window_icon_path"):
+        #    icon_path = dp_app.abs_window_icon_path
+        #msg_box.setWindowIcon(QIcon(icon_path))
         msg_box.exec()
         logger: logging.Logger = logging.getLogger("ActLogger")
         if not logger.hasHandlers():

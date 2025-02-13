@@ -49,8 +49,8 @@ multiprocessing.freeze_support()
 class App:
     """The main logic and gui are separated"""
 
-    def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str,
-                 logging_level: int | None = None) -> None:
+    def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str, logging_level: int | None = None
+                 ) -> None:
         self.window: IMainWindow = window
         self.qapp: QApplication = qapp
 
@@ -76,11 +76,10 @@ class App:
         self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
                                                                     ("auto", "design", "advanced", "shortcuts"))
         # self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
-        self.app_settings = None
         # print(self.app_settings._storage._filepath)
         self.configure_settings()
 
-        self.backend: IBackend = start(self.app_settings, self.user_settings)
+        self.backend: IBackend = start(None, self.user_settings)
         self.backend_stop_event: threading.Event = threading.Event()
         self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                  args=(self.backend_stop_event,))

@@ -24,7 +24,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QIcon, QDesktopServices
 
-from aplustools.io.env import get_system, SystemTheme, BaseSystemType
+from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
 from aplustools.io import ActLogger
 from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeList
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
@@ -51,90 +51,94 @@ class App:
 
     def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str, logging_level: int | None = None
                  ) -> None:
-        self.window: IMainWindow = window
-        self.qapp: QApplication = qapp
+        try:
+            self.window: IMainWindow = window
+            self.qapp: QApplication = qapp
 
-        self.base_app_dir: str = config.base_app_dir
-        self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
-        self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
-        self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
-        self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
-        self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
+            self.base_app_dir: str = config.base_app_dir
+            self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
+            self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
+            self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
+            self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
+            self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
 
-        self.window.setup_gui()
+            self.window.setup_gui()
 
-        # Setup logger
-        self._order_logs(f"{self.data_folder}/logs")
-        self.logger: ActLogger = ActLogger(log_to_file=True, filename=f"{self.data_folder}/logs/latest.log")
-        self.logger.setLevel(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
-        self.logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
-        self.logger.monitor_pipe(sys.stderr, level=logging.ERROR)
-        for exported_line in config.exported_logs.split("\n"):
-            self.logger.debug(exported_line)  # Flush config prints
+            # Setup logger
+            self._order_logs(f"{self.data_folder}/logs")
+            self.logger: ActLogger = ActLogger(log_to_file=True, filename=f"{self.data_folder}/logs/latest.log")
+            self.logger.setLevel(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
+            self.logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
+            self.logger.monitor_pipe(sys.stderr, level=logging.ERROR)
+            for exported_line in config.exported_logs.split("\n"):
+                self.logger.debug(exported_line)  # Flush config prints
 
-        # Load settings
-        self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
-                                                                    ("auto", "design", "advanced", "shortcuts"))
-        # self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
-        # print(self.app_settings._storage._filepath)
-        self.configure_settings()
+            # Load settings
+            self.user_settings: MultiUserDBStorage = MultiUserDBStorage(f"{self.config_folder}/user_settings.db",
+                                                                        ("auto", "design", "advanced", "shortcuts"))
+            # self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
+            # print(self.app_settings._storage._filepath)
+            self.configure_settings()
 
-        self.backend: IBackend = start(None, self.user_settings)
-        self.backend_stop_event: threading.Event = threading.Event()
-        self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
-                                                                 args=(self.backend_stop_event,))
-        self.backend_thread.start()
+            self.backend: IBackend = start(None, self.user_settings)
+            self.backend_stop_event: threading.Event = threading.Event()
+            self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
+                                                                     args=(self.backend_stop_event,))
+            self.backend_thread.start()
 
-        states_with_design = {
-            'end': '',
-            'default': ''
-        }
+            states_with_design = {
+                'end': '',
+                'default': ''
+            }
 
-        self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
+            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
 
-        self.load_themes(os.path.join(self.styling_folder, "themes"))
-        self.load_styles(os.path.join(self.styling_folder, "styles"))
-        self.window.app = self.qapp
+            self.load_themes(os.path.join(self.styling_folder, "themes"))
+            self.load_styles(os.path.join(self.styling_folder, "styles"))
+            self.window.app = self.qapp
 
-        # Setup errorCache
-        self.error_cache: ErrorCache = ErrorCache()
-        self.error_cache.init(self.window.button_popup, config.INDEV)
+            # Setup errorCache
+            self.error_cache: ErrorCache = ErrorCache()
+            self.error_cache.init(self.window.button_popup, config.INDEV)
 
-        # Setup window
-        self.system: BaseSystemType = get_system()
-        self.os_theme: SystemTheme = self.get_os_theme()
-        self.apply_theme()
+            # Setup window
+            self.system: BaseSystemType = get_system()
+            self.os_theme: SystemTheme = self.get_os_theme()
+            self.apply_theme()
 
-        self.update_icon()
-        self.update_title()
-        self.update_font()
-        x, y, height, width = self.user_settings.retrieve("auto", "geometry", "tuple")
-        if not self.user_settings.retrieve("advanced", "save_window_dimensions", "bool"):
-            height = 640
-            width = 1050
-        if self.user_settings.retrieve("advanced", "save_window_position", "bool"):
-            self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
-        else:  # I guess windows does some weird shit with the title bar
-            self.window.set_window_dimensions(height, width)
-        assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
+            self.update_icon()
+            self.update_title()
+            self.update_font()
+            x, y, height, width = self.user_settings.retrieve("auto", "geometry", "tuple")
+            if not self.user_settings.retrieve("advanced", "save_window_dimensions", "bool"):
+                height = 640
+                width = 1050
+            if self.user_settings.retrieve("advanced", "save_window_position", "bool"):
+                self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
+            else:  # I guess windows does some weird shit with the title bar
+                self.window.set_window_dimensions(height, width)
+            assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
 
-        # Setup values, signals, ...
-        # TODO: self.window.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
+            # Setup values, signals, ...
+            # TODO: self.window.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
 
-        # Thread pool
-        self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
+            # Thread pool
+            self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
 
-        self.connect_signals()
-        # Show gui
-        self.pool.submit(lambda : self.check_for_update())
-        self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
-        self.window.start()
+            self.connect_signals()
+            # Show gui
+            self.pool.submit(lambda : self.check_for_update())
+            self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
+            self.window.start()
 
-        self.timer: QtTimidTimer = QtTimidTimer()
-        self.timer.timeout.connect(self.timer_tick)
-        self.timer.start(500, 0)
-        self.timer_number: int = 1
-        # self.timer.start(1500, 1)  # 1.5 second timer
+            self.timer: QtTimidTimer = QtTimidTimer()
+            self.timer.timeout.connect(self.timer_tick)
+            self.timer.start(500, 0)
+            self.timer_number: int = 1
+            # self.timer.start(1500, 1)  # 1.5 second timer
+        except Exception as e:
+            self.exit()
+            raise Exception("Exception occurred during initialization of the App class") from e
 
     def connect_signals(self):
         grid_view = self.window.user_panel.grid_view
@@ -529,6 +533,8 @@ class App:
     def exit(self) -> None:
         if hasattr(self, "timer"):
             self.timer.stop_all()
+        if hasattr(self, "pool"):
+            self.pool.shutdown()
         if hasattr(self, "backend_thread") and self.backend_thread.is_alive():  # TODO: Is it alive after error?
             self.backend_stop_event.set()
             self.backend_thread.join()
@@ -538,7 +544,6 @@ class App:
 
 
 if __name__ == "__main__":
-    from aplustools.io.env import diagnose_shutdown_blockers
     print(f"Starting {config.PROGRAM_NAME} {str(config.VERSION) + config.VERSION_ADD} with py{'.'.join([str(x) for x in sys.version_info])} ...")
     CODES: dict[int, _a.Callable[[], None]] = {
         1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)

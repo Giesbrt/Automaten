@@ -397,7 +397,7 @@ class App:
             "recent_files": "()"
         })
         self.user_settings.set_default_settings("design", {
-            "light_theming": "adalfarus::thin/base",  # thin_light_dark, colored_summer_sky
+            "light_theming": "adalfarus::thin/thin_light",  # thin_light_dark, colored_summer_sky
             "dark_theming": "adalfarus::thin/colored_evening_sky",
             # "dark_theming": "adalfarus::thick/thick_light",
             # "dark_theming": "adalfarus::chisled/base",

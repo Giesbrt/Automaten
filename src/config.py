@@ -55,10 +55,12 @@ def _configure() -> dict[str, str]:
     dir_structure = (
             ("config", ()),
             ("core", ("libs", "modules")),
-            ("data", (("assets", ("app_icons", "icons",)),
-                      "logs")),
-            ("extensions", ()),
-            ("styling", ("styles", "themes"))
+            ("data", (
+                ("assets", ("app_icons", "icons",)),
+                ("styling", ("styles", "themes",)),
+                "logs"
+            ),),
+            ("extensions", ())
     )  # Use a stack to iteratively traverse the directory structure
     stack: list[tuple[str, tuple[str, ...] | tuple]] = [(base_app_dir, item) for item in dir_structure]
     while stack:

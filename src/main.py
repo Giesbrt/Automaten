@@ -46,8 +46,8 @@ hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
 
 
-class App:  # The main logic and gui are separated
-    """TBA"""
+class App:
+    """The main logic and gui are separated"""
 
     def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str,
                  logging_level: int | None = None) -> None:
@@ -580,14 +580,22 @@ if __name__ == "__main__":
         error_text = (f"There was an error while running the app {config.PROGRAM_NAME}.\n"
                       "This error is unrecoverable.\nPlease submit the details to our GitHub issues page.")
         error_description = format_exc()
-        msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning, error_title, error_text, error_description,
-                                   standard_buttons=QMessageBox.StandardButton.Ok,
+
+        icon: QIcon = QIcon(QMessageBox.standardIcon(QMessageBox.Icon.Warning))
+        custom_icon: bool = False
+        if hasattr(dp_app, "abs_window_icon_path"):
+            icon_path = dp_app.abs_window_icon_path
+            icon = QIcon(icon_path)
+            custom_icon = True
+
+        msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning if custom_icon else None, error_title, error_text, error_description,
+                                   standard_buttons=QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Retry,
                                    default_button=QMessageBox.StandardButton.Ok)
-        #icon = QMessageBox.Icon.Warning
-        #if hasattr(dp_app, "abs_window_icon_path"):
-        #    icon_path = dp_app.abs_window_icon_path
-        #msg_box.setWindowIcon(QIcon(icon_path))
-        msg_box.exec()
+        msg_box.setWindowIcon(icon)
+        pressed_button = msg_box.exec()
+        if pressed_button == QMessageBox.StandardButton.Retry:
+            current_exit_code = 1000
+
         logger: logging.Logger = logging.getLogger("ActLogger")
         if not logger.hasHandlers():
             print(error_description.strip())  # We print, in case the logger is not initialized yet

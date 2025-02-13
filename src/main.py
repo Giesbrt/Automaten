@@ -529,7 +529,7 @@ class App:
     def exit(self) -> None:
         if hasattr(self, "timer"):
             self.timer.stop_all()
-        if hasattr(self, "backend_thread") and self.backend_thread.is_alive():
+        if hasattr(self, "backend_thread") and self.backend_thread.is_alive():  # TODO: Is it alive after error?
             self.backend_stop_event.set()
             self.backend_thread.join()
 
@@ -538,6 +538,7 @@ class App:
 
 
 if __name__ == "__main__":
+    from aplustools.io.env import diagnose_shutdown_blockers
     print(f"Starting {config.PROGRAM_NAME} {str(config.VERSION) + config.VERSION_ADD} with py{'.'.join([str(x) for x in sys.version_info])} ...")
     CODES: dict[int, _a.Callable[[], None]] = {
         1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)
@@ -608,4 +609,5 @@ if __name__ == "__main__":
             qgui.close()
         if qapp is not None:
             qapp.instance().quit()
+        diagnose_shutdown_blockers()
         CODES.get(current_exit_code, lambda: sys.exit(current_exit_code))()

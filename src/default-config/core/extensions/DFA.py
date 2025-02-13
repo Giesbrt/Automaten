@@ -9,11 +9,18 @@ import typing as _ty
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from core.modules.automaton.base.settings import Settings as BaseSettings
 
 from core.modules.automaton.base.state import State
 
 
 # Docs generated with Chat-GPT
+
+class Settings(BaseSettings):
+
+    def __init__(self):
+        super().__init__("dfa", "Giesbrt", [[], ], [True, ], [0, ])
+
 
 class DFAState(BaseState):
     """
@@ -85,7 +92,8 @@ class DFATransition(BaseTransition):
         transition_target_state (BaseState): The state where the transition leads.
     """
 
-    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: _ty.List[_ty.Any] | str) -> None:
+    def __init__(self, start_state: BaseState, transition_target_state: BaseState,
+                 condition: _ty.List[_ty.Any] | str) -> None:
         """
         Initializes a transition with the start state, target state, and the input character condition.
 

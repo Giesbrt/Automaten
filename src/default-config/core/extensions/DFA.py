@@ -186,7 +186,7 @@ class DFAAutomaton(BaseAutomaton):
 
         It also ensures that the base automaton properties, such as states and transitions, are initialized.
         """
-        super().__init__("zScout")
+        super().__init__("Giesbrt")
         self.word: list = []
         self.char_index: int = 0
         self.current_char: str = ""

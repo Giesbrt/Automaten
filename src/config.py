@@ -5,7 +5,7 @@ import shutil as _shutil
 import platform as _platform
 
 
-INDEV: int = 1
+INDEV: bool = True
 OLD_CWD: str = _os.getcwd()
 PROGRAM_NAME: str = "E.F.S Simulator"
 PROGRAM_NAME_NORMALIZED: str = "efs_simulator"

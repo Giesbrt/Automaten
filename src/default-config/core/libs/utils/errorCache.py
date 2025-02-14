@@ -4,6 +4,7 @@ from utils.OrderedSet import OrderedSet
 from aplustools.io import ActLogger
 from queue import Queue
 from utils.staticContainer import StaticContainer
+from logging import ERROR, WARNING, INFO, DEBUG
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -180,6 +181,9 @@ class ErrorCache:
         if print_log:
             self._logger.info(f"{log_message} ({description})")
 
+        if ActLogger().logging_level >= INFO:
+            return
+
         self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)
 
     def warning(self, log_message: str, description: str, show_dialog: bool = False,
@@ -204,6 +208,9 @@ class ErrorCache:
 
         if print_log:
             self._logger.warning(f"{log_message} ({description})")
+
+        if ActLogger().logging_level >= WARNING:
+            return
 
         self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)
 
@@ -231,6 +238,9 @@ class ErrorCache:
 
         if print_log:
             self._logger.error(f"{str(error_severity)}: {log_message} ({description})")
+
+        if ActLogger().logging_level >= ERROR:
+            return
 
         self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)
 
@@ -263,5 +273,8 @@ class ErrorCache:
 
         if print_log:
             self._logger.debug(f"{log_message} ({description})")
+
+        if ActLogger().logging_level >= DEBUG:
+            return
 
         self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)

@@ -2,13 +2,13 @@
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
                                QFormLayout, QLineEdit,
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
-                               QHBoxLayout, QColorDialog, QCheckBox, QComboBox)
+                               QHBoxLayout, QColorDialog, QComboBox)
 from PySide6.QtCore import Qt, QPropertyAnimation, QRect
 from PySide6.QtGui import QColor, QIcon, QPen
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
-from ._grid_items import StateGroup, MultiSectionLineEdit
+from ._grid_items import StateGroup
 
 # Standard typing imports for aps
 import collections.abc as _a

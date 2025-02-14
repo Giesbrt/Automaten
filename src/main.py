@@ -156,7 +156,7 @@ class App:
         grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
         grid_view.get_states.connect(automaton.get_states)
         grid_view.get_transitions.connect(automaton.get_transitions)
-        grid_view.get_name.connect(automaton.get_automaton_type)
+        grid_view.get_automaton_type.connect(automaton.get_automaton_type)
         grid_view.set_start_state.connect(automaton.set_start_state)
         grid_view.get_state_by_id.connect(automaton.get_state_by_id)
         grid_view.get_state_index.connect(automaton.get_state_index)

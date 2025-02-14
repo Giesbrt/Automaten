@@ -1,10 +1,11 @@
 """Everything regarding the infinite grids items"""
+from PySide6.QtStateMachine import QStateMachine, QState
 from PySide6.QtWidgets import (QStyleOptionGraphicsItem, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
                                QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem, QStyle, QLineEdit, QHBoxLayout,
-                               QWidget, QGraphicsProxyWidget, QGraphicsDropShadowEffect, QComboBox, QVBoxLayout,
-                               QListWidget, QLabel, QPushButton, QListWidgetItem)
-from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QRegularExpressionValidator, QPainterPath
-from PySide6.QtCore import QRectF, Qt, QPointF, QLineF, QSize, Signal
+                               QWidget, QGraphicsProxyWidget, QGraphicsDropShadowEffect, QVBoxLayout,
+                               QListWidget, QPushButton)
+from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QPainterPath
+from PySide6.QtCore import QRectF, Qt, QPointF, QLineF, Signal
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -71,8 +72,6 @@ class State(QGraphicsEllipseItem):
         self.width: int = width
         self.height: int = height
 
-        # print(self.boundingRect().width(), self.boundingRect().height())
-
         self.setBrush(color)
         self.setPen(Qt.PenStyle.NoPen)
 
@@ -82,13 +81,11 @@ class State(QGraphicsEllipseItem):
         """
         state_type = self.parentItem().get_type()
 
-
         painter.save()
         painter.setPen(QPen(Qt.GlobalColor.black, 1))
         painter.setBrush(self.brush() if state_type == 'default' or state_type == 'start' else Qt.BrushStyle.NoBrush)
         painter.drawEllipse(self.boundingRect())
         painter.restore()
-        # print(self.boundingRect().width(), self.boundingRect().height())
 
         if state_type == 'end':
             painter.save()
@@ -97,7 +94,6 @@ class State(QGraphicsEllipseItem):
             painter.setBrush(Qt.GlobalColor.white)
             painter.drawEllipse(inner_rect)
             painter.restore()
-        # super().paint(painter, option, widget)
 
 
 class ConnectionPoint(QGraphicsEllipseItem):
@@ -128,6 +124,7 @@ class ConnectionPoint(QGraphicsEllipseItem):
 
         self.is_hovered = False
         self._size = 10
+        self._hovered_size = 15
 
         self.setAcceptHoverEvents(True)
         self.setBrush(QColor(color))
@@ -153,26 +150,13 @@ class ConnectionPoint(QGraphicsEllipseItem):
         """
         return self.flow
 
-    def grow(self):
-        """
-        Increase the size of the connection point when hovered.
-        """
-        new_rect = self.rect().adjusted(-5, -5, 5, 5)
-        self.setRect(new_rect)
-        self.is_hovered = True
-
-    def shrink(self):
-        """
-        Restore the original size of the connection point when not hovered.
-        """
-        new_rect = self.rect().adjusted(5, 5, -5, -5)
-        self.setRect(new_rect)
-        self.is_hovered = False
-
     def paint(self, painter, option, widget=None):
         for key, values in self.parentItem().create_connection_positions(self.parentItem().state.rect()).items():
             if f'{self.get_direction()}_{self.get_flow()}' == key:
-                self.setRect(QRectF(values[0] - 5, values[1] - 5, 10, 10))
+                self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))
+                if self.is_hovered and self.get_flow() == 'out':
+                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2, self._hovered_size, self._hovered_size))
+
         super().paint(painter, option, widget)
 
 
@@ -303,7 +287,7 @@ class Transition(QGraphicsLineItem):
             center = self.get_center(start_scene_pos, end_scene_pos)
 
             button_size = self.transition_function.button.size()
-            label_size = self.transition_function.label.size()
+            # label_size = self.transition_function.label.size()
             token_list_size = self.transition_function.token_list.size()
 
             button_x = center.x() - button_size.width() / 2
@@ -311,9 +295,9 @@ class Transition(QGraphicsLineItem):
             self.transition_function.button.setPos(button_x, button_y)
 
             gap = 5
-            label_x = center.x() - label_size.width() / 2
+            """label_x = center.x() - label_size.width() / 2
             label_y = button_y - gap - label_size.height()
-            self.transition_function.label.setPos(label_x, label_y)
+            self.transition_function.label.setPos(label_x, label_y)"""
 
             token_list_x = center.x() - token_list_size.width() / 2
             token_list_y = button_y + button_size.height() + gap
@@ -327,117 +311,6 @@ class Transition(QGraphicsLineItem):
         if self.arrow_head:
             painter.setBrush(QColor(0, 10, 33))
             painter.drawPolygon(self.arrow_head)
-
-
-class Section(QLineEdit):
-    def __init__(self, section_width: int, handle_function, parent=None) -> None:
-        super().__init__(parent)
-        self.setMaxLength(1)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setFixedSize(section_width, section_width)
-
-        validator = QRegularExpressionValidator('[A-Z]')
-        self.setValidator(validator)
-
-        self.textChanged.connect(handle_function)
-
-        self.setStyleSheet(f"""
-            Section {{
-                border: 1px solid #3498db;
-                border-radius: 4px;
-                background-color: rgba(25, 92, 137, 0.5);
-                font-size: {section_width // 1.5}px;
-                font-weight: bold;
-                color: #ffffff;
-                selection-background-color: #2980b9;
-            }}
-            Section:focus {{
-                border: 1px solid #2980b9;
-                background-color: rgba(52, 152, 219, 0.2);
-            }}
-        """)
-
-
-class MultiSectionLineEdit(QWidget):
-    def __init__(self, sections: int, set_condition=None, parent=None) -> None:
-        """
-        Initialize the multi-section line edit widget.
-
-        Args:
-            sections (int): The number of input sections.
-            parent (QWidget, optional): The parent widget. Defaults to None.
-        """
-        super().__init__(parent)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
-        self.sections = sections
-        self.set_condition = set_condition
-        self.layout = QHBoxLayout(self)
-        self.layout.setSpacing(2)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-
-        self.fields = []
-        self.section_width = 30
-        self.spacing = self.layout.spacing()
-        self._create_fields()
-        self._adjust_size()
-
-    def _create_fields(self) -> None:
-        """
-        Create and configure the input fields for each section.
-
-        Each field is set to accept a single uppercase character.
-        """
-        for _ in range(self.sections):
-            field = Section(self.section_width, self._handle_text_change, self)
-            field.setObjectName('section')
-            self.fields.append(field)
-            self.layout.addWidget(field)
-
-    def _adjust_size(self) -> None:
-        """
-        Adjust the widget size based on the number of sections and spacing.
-
-        This ensures that the widget's fixed size properly fits all input fields.
-        """
-        total_width = (self.section_width * self.sections) + self.spacing * (self.sections - 1)
-        total_height = self.section_width
-        self.setFixedSize(total_width, total_height)
-
-    def _handle_text_change(self) -> None:
-        """
-        Handle the text change event in the input fields.
-
-        When text is entered in a field, focus is automatically moved to the next field.
-        """
-        for i, field in enumerate(self.fields):
-            if field.text() and i < len(self.fields) - 1:
-                self.fields[i + 1].setFocus()
-
-        if all(field.text() for field in self.fields):
-            if self.set_condition:
-                self.set_condition(self.get_text())
-
-    def set_text(self, text: str) -> None:
-        """
-        Set the text for the multi-section input fields.
-
-        Args:
-            text (str): The text to set. Each character is assigned to a field sequentially.
-        """
-        for i, char in enumerate(text):
-            if i < len(self.fields):
-                self.fields[i].setText(char)
-
-    def get_text(self) -> _ty.List[str]:
-        """
-        Retrieve the concatenated text from all input fields.
-
-        Returns:
-            _ty.List[str]: The combined text from each section.
-        """
-        return [field.text() for field in self.fields]
-
 
 
 class RoundedFrameWidget(QWidget):
@@ -472,47 +345,56 @@ class RoundedFrameWidget(QWidget):
         painter.drawPath(path)
 
 
-class TokenSelectionLabel(QGraphicsProxyWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        container = RoundedFrameWidget(
-            bg_color=QColor("white"),
-            border_color=QColor("lightgray"),
-            border_radius=5,
-            border_width=1
-        )
-        layout = QVBoxLayout(container)
-        self.label = QLabel(".../.../...", container)
-        self.label.setStyleSheet('color: black; font-size: 14px')
-        layout.addWidget(self.label)
-        layout.setContentsMargins(5, 5, 5, 5)
-        container.setLayout(layout)
-        self.setWidget(container)
+class TokenButton(QPushButton):
+    def __init__(self, text: str, toggle_token_selection_list, parent=None):
+        super().__init__(text, parent)
 
-    def update_text(self, tokens):
-        self.label.setText(" / ".join(tokens) if tokens else ".../.../...")
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+
+        self.clicked.connect(toggle_token_selection_list)
+
+        self.setStyleSheet('''
+            QPushButton {
+                color: black; 
+                padding: 8px;
+                border: none;
+            }
+            QPushButton:hover {
+                border: 1px solid red;
+            }
+        ''')
 
 
 class TokenSelectionButton(QGraphicsProxyWidget):
-    def __init__(self, token_list_widget, parent=None):
+    def __init__(self, token_list_widget, sections, parent=None):
         super().__init__(parent)
         # Verwende ein kleineres RoundedFrameWidget für einen kompakten Button:
         self.token_list = token_list_widget
+        self.sections = sections
+
+        self.token_buttons = []
 
         container = RoundedFrameWidget(
             bg_color=QColor("white"),
             border_color=QColor("lightgray"),
-            border_radius=2,  # geringere Rundung für einen rechteckigeren Look
+            border_radius=2,
             border_width=1
         )
-        # Festgelegte, kleinere Dimensionen:
-        container.setFixedSize(20, 20)
-        layout = QVBoxLayout(container)
-        self.button = QPushButton("▼", container)
-        self.button.setFixedSize(20, 20)
-        self.button.clicked.connect(self.toggle_token_selection_list)
-        layout.addWidget(self.button)
-        layout.setContentsMargins(0, 0, 0, 0)
+
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(0)
+
+        for i in range(self.sections):
+            token_button = TokenButton('...', self.toggle_token_selection_list, container)
+            layout.addWidget(token_button)
+            if (self.sections == 2 and i == 0) or (self.sections == 3 and i == 0) or (self.sections == 3 and i == 1):
+                seperator = QWidget(container)
+                seperator.setFixedWidth(1)
+                seperator.setStyleSheet('background-color: black;')
+                layout.addWidget(seperator)
+            self.token_buttons.append(token_button)
+
         container.setLayout(layout)
         self.setWidget(container)
 
@@ -540,7 +422,7 @@ class TokenSelectionList(QGraphicsProxyWidget):
                                        border_color=QColor("white"),
                                        border_radius=10,
                                        border_width=0)
-        container.setFixedWidth(200)
+        container.setFixedWidth(100)
 
         layout = QVBoxLayout(container)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -548,7 +430,15 @@ class TokenSelectionList(QGraphicsProxyWidget):
 
         self.search_bar = QLineEdit(container)
         self.search_bar.setPlaceholderText("Search ...")
-        self.search_bar.setStyleSheet("border: none; padding: 5px; font-size: 14px; background: transparent; color: black;")
+        self.search_bar.setStyleSheet('''
+            QLineEdit {
+                border: none; 
+                padding: 5px; 
+                font-size: 14px; 
+                background: transparent; 
+                color: black;
+            }
+        ''')
         layout.addWidget(self.search_bar)
 
         self.search_separator = QWidget(container)
@@ -558,10 +448,17 @@ class TokenSelectionList(QGraphicsProxyWidget):
 
         self.list_widget = QListWidget(container)
         self.list_widget.addItems(self.tokens)
-        self.list_widget.setStyleSheet(
-            "QListWidget { border: none; background: transparent; }"
-            "QListWidget::item { color: black; padding: 8px; border-bottom: 1px solid #cccccc; }"
-        )
+        self.list_widget.setStyleSheet('''
+            QListWidget { 
+                border: none; 
+                background: transparent; 
+            }
+            QListWidget::item { 
+                color: black; 
+                padding: 8px; 
+                border-bottom: 1px solid #cccccc; 
+            }
+        ''')
         layout.addWidget(self.list_widget)
 
         container.setLayout(layout)
@@ -586,22 +483,23 @@ class TokenSelectionList(QGraphicsProxyWidget):
 
 
 class TransitionFunction(QGraphicsProxyWidget):
-    def __init__(self, tokens, transition, parent=None) -> None:
+    def __init__(self, tokens, sections, transition, parent=None) -> None:
         super().__init__(parent)
+        self.tokens = tokens
         self.transition = transition
+        self.sections = sections
         # Erstelle die einzelnen Elemente:
-        self.label = TokenSelectionLabel(self)
-        self.token_list = TokenSelectionList(tokens, self)
-        self.button = TokenSelectionButton(self.token_list, self)
+        # self.label = TokenSelectionLabel(self)
+        self.token_list = TokenSelectionList(self.tokens, self)
+        self.button = TokenSelectionButton(self.token_list, self.sections, self)
 
-        self.token_list.token_selected.connect(self.label.update_text)
+        # self.token_list.token_selected.connect(self.label.update_text)
 
     def close_token_selection_list(self) -> None:
         self.token_list.setVisible(False)
 
     def set_condition(self, condition):
         self.transition.get_ui_transition().set_condition(condition)
-        # print(self.transition.get_ui_transition())
 
 
 class TempTransition(QGraphicsLineItem):
@@ -651,7 +549,7 @@ class StateGroup(QGraphicsItemGroup):
         super().__init__(parent)
 
         self.setSelected(False)
-        # self.setAcceptHoverEvents(True)
+        self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemSendsScenePositionChanges, True)

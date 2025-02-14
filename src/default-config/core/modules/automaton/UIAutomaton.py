@@ -602,7 +602,9 @@ class UiAutomaton(IUiAutomaton):
         :param transition: The Transition to delete
         :return: None
         """
-        self._transitions.remove(transition)
+        print(transition in self._transitions)
+        self._transitions.discard(transition)
+        print(self._transitions)
 
     def delete_state(self, state: UiState) -> None:
         """ Deletes a state and all its transitions (inbound and outbound)

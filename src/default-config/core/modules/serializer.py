@@ -187,7 +187,7 @@ def serialize(
     ) -> bytes:
     """TBA"""
     dcg_dict: DCGDictT = {
-        "name": automaton.get_name(),
+        "name": automaton.get_automaton_type(),
         "author": automaton.get_author(),
         "token_lsts": automaton.get_token_lists(),
         "is_custom_token_lst": automaton.get_is_changeable_token_list(),
@@ -451,7 +451,7 @@ if __name__ == "__main__":
     seri = serialize(auto, "", format_="binary")
     print(seri)
     auto2 = deserialize(seri, "binary")
-    print("Name: ", auto.get_name() == auto2.get_name())
+    print("Name: ", auto.get_automaton_type() == auto2.get_automaton_type())
     print("States: ", auto.get_states() == auto2.get_states())
     print("Transitions: ", auto.get_transitions() == auto2.get_transitions())
     print("Start States: ", auto.get_start_state() == auto2.get_start_state())

@@ -114,6 +114,8 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
         self._is_active = False
 
     def __eq__(self, other: _ty.Self):
+        if not isinstance(other, UiState):
+            return False
         return (self._colour == other.get_colour()
                 and self._position == other.get_position()
                 and self._display_text == other.get_display_text()

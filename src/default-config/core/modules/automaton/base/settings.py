@@ -10,7 +10,8 @@ class Settings(_abc.ABC):
                  author: str,
                  token_lists: _ty.List[_ty.List[_ty.Any]],
                  customisable_token_list: _ty.List[bool],
-                 transition_description_layout: _ty.List[int]):
+                 transition_description_layout: _ty.List[int],
+                 state_types_with_design: _ty.Dict[str, str]):
         """ Constructor of the automaton settings file.
         This file serves as a settings-provider to make basic automaton settings (like the transition content)
         :param module_name: The name of the automaton module (e.g. for a Deterministic Finite Automaton -> dfa)
@@ -18,12 +19,14 @@ class Settings(_abc.ABC):
         :param token_lists: The different alphabets the automaton depends on (e.g. a turing machine has following token_lists: The input alphabet like [a, b, c] and the movement alphabet, like [L, R, H]) - If you want, that a specific list has no presets, then just add an empty list
         :param customisable_token_list: This defines which of the previous declared lists can be modified by the user (format: [True, False] if the first list should be changeable, but the second list not)
         :param transition_description_layout: This parameter defines which format the transition description has (format [0, 1] if the transition should have two parameters, and if the first transition attribute should be an element of the first token_list and the second attribute an element out of the second list)
+        :param state_types_with_design: The different possible state types (like end or default) are the keys and the value is the design
         """
         self._module_name: str = module_name
         self._author: str = author
         self._token_lists: _ty.List[_ty.List[_ty.Any]] = token_lists
         self._customisable_token_list: _ty.List[bool] = customisable_token_list
         self._transition_description_layout: _ty.List[int] = transition_description_layout
+        self._state_types_with_design: _ty.Dict[str, str] = state_types_with_design
 
     @property
     def module_name(self) -> str:
@@ -44,3 +47,7 @@ class Settings(_abc.ABC):
     @property
     def transition_description_layout(self) -> _ty.List[int]:
         return self._transition_description_layout
+
+    @property
+    def state_types_with_design(self) -> _ty.Dict[str, str]:
+        return self._state_types_with_design

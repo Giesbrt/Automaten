@@ -19,7 +19,9 @@ from core.modules.automaton.base.state import State
 class Settings(BaseSettings):
 
     def __init__(self):
-        super().__init__("dfa", "Giesbrt", [[], ], [True, ], [0, ])
+        super().__init__("dfa", "Giesbrt",
+                         [[], ], [True, ], [0, ],
+                         {"end": "Circle: ((180.0, 180.0), 162.0), 2##000000;", "default": ""})
 
 
 class DFAState(BaseState):

@@ -265,7 +265,9 @@ class IUiTransition(_abc.ABC):
 
 
 class IUiAutomaton(_abc.ABC):
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any]):
+    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
+                 token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
+                 transition_pattern: _ty.List[int] = []):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
         self._type: str = automaton_type
 
@@ -277,9 +279,9 @@ class IUiAutomaton(_abc.ABC):
         self._pointer_index: int = 0
 
         self._author: str = author
-        self._token_lists: _ty.List[_ty.List[str]] = []
-        self._changeable_token_lists: _ty.List[bool] = []
-        self._transition_pattern: _ty.List[int] = []
+        self._token_lists: _ty.List[_ty.List[str]] = token_lists
+        self._changeable_token_lists: _ty.List[bool] = changeable_token_lists
+        self._transition_pattern: _ty.List[int] = transition_pattern
 
         self._state_types_with_design: _ty.Dict[str, _ty.Any] = state_types_with_design
 

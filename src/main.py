@@ -246,19 +246,31 @@ class App:
 
     @staticmethod
     def load_file(filepath: str) -> UiAutomaton | None:
-        """Loads a UIAutomaton from a serialized file"""
+        """Loads a UIAutomaton from a serialized file.
+        Returns an UIAutomaton upon successful load or None if an error occurred."""
         end = filepath.rsplit(".", maxsplit=1)[1]
-
-        with os_open(filepath, "r") as f:
+        with os_open(filepath, "rb") as f:
             content: bytes = f.read()
-        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)
+        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
         if filetype is None:
             ...  # Error case
             return None
         automaton: UiAutomaton = deserialize(content, filetype)
         return automaton
 
-    # @staticmethod
+    @staticmethod
+    def save_to_file(filepath: str, automaton: UiAutomaton) -> str | None:
+        """Saves a UIAutomaton to a file.
+        Returns the filepath upon successful save or None if an error occurred."""
+        end = filepath.rsplit(".", maxsplit=1)[1]
+        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
+        if filetype is None:
+            ...  # Error case
+            return None
+        content: bytes = serialize(automaton, "", filetype)
+        with os_open(filepath, "wb") as f:
+            f.write(content)
+        return filepath
 
     def get_update_result(self) -> tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]:
         """

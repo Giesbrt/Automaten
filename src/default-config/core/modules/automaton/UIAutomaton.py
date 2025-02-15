@@ -1,5 +1,5 @@
 """TBA"""
-from PySide6.QtGui import Qt
+from PySide6.QtGui import QColor
 
 from returns import result as _result
 
@@ -38,16 +38,16 @@ class CardinalDirection:
 class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type Any
     """A class representing a state in the automaton."""
 
-    def __init__(self, colour: Qt.GlobalColor, position: _ty.Tuple[float, float], display_text: str,
+    def __init__(self, colour: QColor, position: _ty.Tuple[float, float], display_text: str,
                  node_type: str) -> None:
         super().__init__(colour, position, display_text, node_type)
-        self._colour: Qt.GlobalColor = colour
+        self._colour: QColor = colour
         self._position: _ty.Tuple[float, float] = position
         self._display_text: str = display_text
         self._type: str = node_type
         self._is_active: bool = False
 
-    def set_colour(self, colour: Qt.GlobalColor) -> None:
+    def set_colour(self, colour: QColor) -> None:
         """Sets the colour of the state.
 
         :param colour: The colour of the state.
@@ -71,10 +71,13 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
         """
         self._display_text = display_text
 
+    def set_type(self, state_type: _ty.Literal['default', 'start', 'end']):
+        self._type = state_type
+
     def set_active(self, value: bool) -> None:
         self._is_active = value
 
-    def get_colour(self) -> Qt.GlobalColor:
+    def get_colour(self) -> QColor:
         """Gets the colour of the state.
         
         :return: The colour of the state.
@@ -247,7 +250,7 @@ class UiTransition(IUiTransition):
 @auto_repr_with_privates
 class UiAutomaton(IUiAutomaton):
 
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
+    def __init__(self, automaton_type: str | None, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
                  token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
                  transition_pattern: _ty.List[int] = []):
         # state_types_with_design = {"end": {"design": "Line x",  future}, "default": {"design": "Line y", future}}
@@ -295,7 +298,6 @@ class UiAutomaton(IUiAutomaton):
         :return: None
         """
         self._states.add(state)
-        # print(self.__dict__)
 
     def add_transition(self, transition: UiTransition) -> None:
         """Adds a transition to the automaton.
@@ -604,9 +606,7 @@ class UiAutomaton(IUiAutomaton):
         :param transition: The Transition to delete
         :return: None
         """
-        print(transition in self._transitions)
-        self._transitions.discard(transition)
-        print(self._transitions)
+        self._transitions.remove(transition)
 
     def delete_state(self, state: UiState) -> None:
         """ Deletes a state and all its transitions (inbound and outbound)

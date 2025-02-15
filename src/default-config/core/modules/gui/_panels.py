@@ -79,7 +79,7 @@ class StateMenu(QFrame):
 
         self.transitions_table: QTableWidget = QTableWidget(self)
         self.transitions_table.setColumnCount(2)
-        self.transitions_table.setHorizontalHeaderLabels(["Target State", "Condition"])
+        self.transitions_table.setHorizontalHeaderLabels(["From-To", "Condition"])
         self.transitions_table.horizontalHeader().setStretchLastSection(True)
         self.transitions_table.verticalHeader().setVisible(False)
         self.transitions_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -103,7 +103,7 @@ class StateMenu(QFrame):
 
     def set_parameters(self):
         self.name_input.setText(self.state.label.toPlainText())
-        searched_color: Qt.GlobalColor = self.state.get_ui_state().get_colour()
+        searched_color: QColor = self.state.get_ui_state().get_colour()
         self.color_button.setStyleSheet(f'background-color: {QColor(searched_color).name()}; color: #000;')
         self.size_input.setValue(self.state.get_size())
         self.type_input.setCurrentText(self.state.get_type().capitalize())
@@ -111,7 +111,7 @@ class StateMenu(QFrame):
         transitions = self.state.connected_transitions
         self.transitions_table.setRowCount(len(transitions))
         for i, transition in enumerate(transitions):
-            target_item: QTableWidgetItem = QTableWidgetItem(f'{transition.get_ui_transition().get_to_state().get_display_text()}')
+            target_item: QTableWidgetItem = QTableWidgetItem(f'{transition.get_ui_transition().get_from_state().get_display_text()} - {transition.get_ui_transition().get_to_state().get_display_text()}')
             target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             target_item.setData(Qt.ItemDataRole.UserRole, transition)
 
@@ -136,8 +136,8 @@ class StateMenu(QFrame):
 
     def on_current_item_changed(self, current: QTableWidgetItem | QComboBox, previous: QTableWidgetItem | QComboBox | None) -> None:
         if previous:
-            previous.data(Qt.ItemDataRole.UserRole).setPen(QPen(Qt.GlobalColor.black, 4))
-        current.data(Qt.ItemDataRole.UserRole).setPen(QPen(Qt.GlobalColor.red, 4))
+            previous.data(Qt.ItemDataRole.UserRole).setPen(QPen(QColor('black'), 4))
+        current.data(Qt.ItemDataRole.UserRole).setPen(QPen(QColor('red'), 4))
 
     def connect_methods(self) -> None:
         self.name_input.textEdited.connect(self.state.set_name)
@@ -154,10 +154,10 @@ class UserPanel(Panel):
         super().__init__(parent)
         from ._grids import AutomatonInteractiveGridView
         self.setLayout(QNoSpacingBoxLayout(QBoxDirection.TopToBottom))
-        self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
-        self.layout().addWidget(self.grid_view)
 
-        self.token_list = ['Apfel', 'Birne', 'Gurke']
+        self.token_list: _ty.List[str] = ['Apfel', 'Birne', 'Orange', 'Blaubeere', 'Aubergine', 'Erdbeere']
+        self.grid_view = AutomatonInteractiveGridView(self.token_list)  # Get values from settings
+        self.layout().addWidget(self.grid_view)
 
         # Side Menu
         self.side_menu = QFrame(self)
@@ -188,7 +188,10 @@ class UserPanel(Panel):
         # TODO: SETTINGS
         # - Automaton loader settings
 
-    def get_token_list(self):
+    def set_token_list(self, token_list: _ty.List[str]):
+        self.token_list = token_list
+
+    def get_token_list(self) -> _ty.List[str]:
         return self.token_list
 
     def update_menu_button_position(self, preset_value: int | None = None):

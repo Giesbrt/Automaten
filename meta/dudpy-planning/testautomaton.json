@@ -1,0 +1,40 @@
+{
+	"name": "DFA",
+	"author": "Giesbrt",
+	"token_lsts": [
+		["a", "b", "c", "d"],
+		["L", "R", "H"]
+	],
+	"is_custom_token_lst": [
+		true,
+		false
+	],
+	"abs_transition_idxs": [0, 1, 1],
+	"types": {
+		"default": "...",
+		"end": "...",
+		"fehler": "..."
+	},
+	"content_root_idx": 0,
+	"content": [
+		{
+			"name": "q0",
+			"type": "end",
+			"position": [1.0, 20.0],
+			"background_color": "#ffffff"
+		},
+		{
+			"name": "q1",
+			"type": "default",
+			"position": [21.0, 20.0],
+			"background_color": "#ffffff"
+		}
+	],
+
+    "content_transitions": [
+		[[0, 1], ["s", "w"], [0, 0, 0]],
+		[[1, 1], ["n", "e"], [1, 2, 2]],
+		[[1, 0], ["s", "e"], [2, 1, 1]]
+	],
+	"custom_python": "..."
+}

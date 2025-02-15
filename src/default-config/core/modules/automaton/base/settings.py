@@ -7,6 +7,7 @@ import types as _ts
 
 class Settings(_abc.ABC):
     def __init__(self, module_name: str,
+                 full_automaton_name: str,
                  author: str,
                  token_lists: _ty.List[_ty.List[_ty.Any]],
                  customisable_token_list: _ty.List[bool],
@@ -14,7 +15,8 @@ class Settings(_abc.ABC):
                  state_types_with_design: _ty.Dict[str, str]):
         """ Constructor of the automaton settings file.
         This file serves as a settings-provider to make basic automaton settings (like the transition content)
-        :param module_name: The name of the automaton module (e.g. for a Deterministic Finite Automaton -> dfa)
+        :param module_name: The short name of the automaton module (e.g. for a Deterministic Finite Automaton -> dfa)
+        :param full_automaton_name: The full name of the automaton (e.g. Deterministic Finite Automaton)
         :param author: The creator of this module
         :param token_lists: The different alphabets the automaton depends on (e.g. a turing machine has following token_lists: The input alphabet like [a, b, c] and the movement alphabet, like [L, R, H]) - If you want, that a specific list has no presets, then just add an empty list
         :param customisable_token_list: This defines which of the previous declared lists can be modified by the user (format: [True, False] if the first list should be changeable, but the second list not)
@@ -22,6 +24,7 @@ class Settings(_abc.ABC):
         :param state_types_with_design: The different possible state types (like end or default) are the keys and the value is the design
         """
         self._module_name: str = module_name
+        self._full_automaton_name: str = full_automaton_name
         self._author: str = author
         self._token_lists: _ty.List[_ty.List[_ty.Any]] = token_lists
         self._customisable_token_list: _ty.List[bool] = customisable_token_list
@@ -31,6 +34,10 @@ class Settings(_abc.ABC):
     @property
     def module_name(self) -> str:
         return self._module_name
+
+    @property
+    def full_automaton_name(self) -> str:
+        return self._full_automaton_name
 
     @property
     def author(self) -> str:

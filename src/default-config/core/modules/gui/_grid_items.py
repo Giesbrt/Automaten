@@ -566,7 +566,7 @@ class TransitionFunction(QGraphicsProxyWidget):
 
         :param condition: A list of tokens representing the condition.
         """
-        self.transition.get_ui_transition().set_tokens(condition)
+        self.transition.get_ui_transition().set_condition(condition)
 
 
 class TempTransition(QGraphicsLineItem):

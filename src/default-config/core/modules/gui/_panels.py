@@ -8,7 +8,7 @@ from PySide6.QtGui import QColor, QIcon, QPen
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
-from ._grid_items import StateGroup
+from ._grid_items import StateGroup, TransitionFunction
 
 # Standard typing imports for aps
 import collections.abc as _a

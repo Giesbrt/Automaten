@@ -1,9 +1,9 @@
 """TBA"""
 import math
+import re
 
-from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
-from PySide6.QtGui import QColor
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtCore import Qt, QRectF, QPointF
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -329,154 +329,99 @@ class PainterToStr:
 
 
 class StrToPainter:
-    def __init__(self, painter, center, diameter):
-        self.painter = painter
-        self.center = center
-        self.diameter = diameter
-        self.radius = diameter / 2
+    def __init__(self, painter: QPainter, center: QRectF, diameter: float) -> None:
+        self.painter: QPainter = painter
+        self.center: QRectF = center
+        self.diameter: float = diameter
+        self.radius: float = diameter / 2
 
         # Set clipping path for circular drawing
-        clip_path = QPainterPath()
+        clip_path: QPainterPath = QPainterPath()
         clip_path.addEllipse(QRectF(center.x() - self.radius, center.y() - self.radius, diameter, diameter))
         self.painter.setClipPath(clip_path)
 
-    def polar_to_cartesian(self, angle_deg, radius):
-        """
-        Convert polar coordinates to Cartesian.
+    def parse_command(self, command_str: str) -> None:
+        """Parses a PainterStr and draws the commands using the QPainter"""
+        commands: list[str] = command_str.strip().split(";")
+        for cmd in commands:
+            match cmd:
+                case "Line":
+                    self.draw_line(cmd)
+                case "Arc":
+                    self.draw_arc(cmd)
+                case "Circle":
+                    self.draw_circle(cmd)
+                case "Rect":
+                    self.draw_rect(cmd)
+                case "Polygon":
+                    self.draw_polygon(cmd)
+                case "Text":
+                    self.draw_text(cmd)
+                case _:
+                    ...  # Error Case. Skip?
+                    break
+        return None
 
-        :param angle_deg: Angle in degrees
-        :param radius: Radius relative to the diameter (0 to 1)
-        :return: QPointF
-        """
-        radius_scaled = radius * self.radius
-        angle_rad = math.radians(angle_deg)
-        x = self.center.x() + radius_scaled * math.cos(angle_rad)
-        y = self.center.y() - radius_scaled * math.sin(angle_rad)
-        return QPointF(x, y)
-
-    def line(self, start_angle, end_angle, radius_range):
-        """
-        Draw a line from one angle to another within a radius range.
-
-        :param start_angle: Starting angle in degrees
-        :param end_angle: Ending angle in degrees
-        :param radius_range: Tuple (start_radius, end_radius) where values are relative to diameter (0 to 1)
-        """
-        start_radius, end_radius = radius_range
-        start_point = self.polar_to_cartesian(start_angle, start_radius)
-        end_point = self.polar_to_cartesian(end_angle, end_radius)
-
-        self.painter.drawLine(start_point, end_point)
-
-    def arc(self, start_angle, span_angle, radius):
-        """
-        Draw an arc within the circle canvas.
-
-        :param start_angle: Starting angle in degrees
-        :param span_angle: Span angle in degrees
-        :param radius: Radius relative to the diameter (0 to 1)
-        """
-        radius_scaled = radius * self.radius
-        rect = QRectF(
-            self.center.x() - radius_scaled, self.center.y() - radius_scaled,
-            radius_scaled * 2, radius_scaled * 2
-        )
-        self.painter.drawArc(rect, int(start_angle * 16), int(span_angle * 16))
-
-    def circle(self, radius, brush=None, pen=None):
-        """
-        Draw a circle.
-
-        :param radius: Radius relative to the diameter (0 to 1)
-        :param brush: Optional QBrush for filling the circle
-        :param pen: Optional QPen for the circle outline
-        """
-        radius_scaled = radius * self.radius
-        if brush:
-            self.painter.setBrush(brush)
-        if pen:
-            self.painter.setPen(pen)
-
-        rect = QRectF(
-            self.center.x() - radius_scaled, self.center.y() - radius_scaled,
-            radius_scaled * 2, radius_scaled * 2
-        )
-        self.painter.drawEllipse(rect)
-
-    def rectangle(self, start_angle, end_angle, radius_range):
-        """
-        Draw a rectangle based on circular references.
-
-        :param start_angle: Starting angle in degrees
-        :param end_angle: Ending angle in degrees
-        :param radius_range: Tuple (start_radius, end_radius) where values are relative to diameter (0 to 1)
-        """
-        start_radius, end_radius = radius_range
-        top_left = self.polar_to_cartesian(start_angle, start_radius)
-        bottom_right = self.polar_to_cartesian(end_angle, end_radius)
-
-        rect = QRectF(top_left, bottom_right)
-        self.painter.drawRect(rect)
-
-    def polygon(self, points):
-        """
-        Draw a polygon using polar coordinates.
-
-        :param points: List of tuples [(angle1, radius1), (angle2, radius2), ...],
-                       where angles are in degrees and radii are relative to the diameter (0 to 1).
-        """
-        polygon = QPainterPath()
-
-        if points:
-            # Convert the first point and move to it
-            first_point = self.polar_to_cartesian(points[0][0], points[0][1])
-            polygon.moveTo(first_point)
-
-            # Convert and draw lines to subsequent points
-            for angle, radius in points[1:]:
-                point = self.polar_to_cartesian(angle, radius)
-                polygon.lineTo(point)
-
-            # Close the polygon
-            polygon.closeSubpath()
-
-        self.painter.drawPath(polygon)
-
-    def text(self, angle, radius, text):
-        """
-        Draw text at a specific angle and radius.
-
-        :param angle: Angle in degrees
-        :param radius: Radius relative to the diameter (0 to 1)
-        :param text: The text to draw
-        """
-        position = self.polar_to_cartesian(angle, radius)
-        self.painter.drawText(position, text)
-
-    def scale(self, factor):
-        """
-        Scale the canvas by a factor.
-
-        :param factor: Scaling factor
-        """
-        self.diameter *= factor
-        self.radius = self.diameter / 2
-
-    def set_pen(self, pen):
-        """
-        Set the pen for drawing.
-
-        :param pen: QPen object
-        """
+    def draw_line(self, cmd_str: str) -> None:
+        """Parse and draw line cmd string"""
+        match: re.Match[str] | None = re.search(r"Line: \(\(([^,]+), ([^,]+)\), \(([^,]+), ([^,]+)\)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
+        if match is None:  # Error case
+            ...
+        x1, y1, x2, y2, thickness, color = match.groups()
+        pen: QPen = QPen(QColor.fromString(color), int(thickness))
         self.painter.setPen(pen)
+        self.painter.drawLine(QPointF(float(x1), float(y1)), QPointF(float(x2), float(y2)))
+        return None
 
-    def set_brush(self, brush):
-        """
-        Set the brush for filling shapes.
+    def draw_arc(self, cmd_str: str) -> None:
+        """Parse and draw arc cmd string"""
+        match: re.Match[str] | None = re.search(r"Arc: \(\(([^,]+), ([^,]+)\), ([^,]+)\), \(([^,]+), ([^,]+)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
+        if match is None:  # Error case
+            ...
+        x, y, radius, start_deg, span_deg, thickness, color = match.groups()
+        rect: QRectF = QRectF(float(x) - float(radius), float(y) - float(radius), float(radius) * 2, float(radius) * 2)
+        pen: QPen = QPen(QColor.fromString(color), int(thickness))
+        self.painter.setPen(pen)
+        self.painter.drawArc(rect, int(float(start_deg) * 16), int(float(span_deg) * 16))
+        return None
 
-        :param brush: QBrush object
-        """
-        self.painter.setBrush(brush)
+    def draw_circle(self, cmd_str: str) -> None:
+        """Parse and draw circle cmd string"""
+        match: re.Match[str] | None = re.search(r"Circle: \(\(([^,]+), ([^,]+)\), ([^,]+)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
+        if match is None:  # Error case
+            ...
+        x, y, radius, thickness, color = match.groups()
+        rect: QRectF = QRectF(float(x) - float(radius), float(y) - float(radius), float(radius) * 2, float(radius) * 2)
+        pen: QPen = QPen(QColor.fromString(color), int(thickness))
+        self.painter.setPen(pen)
+        self.painter.drawEllipse(rect)
+        return None  # Draw ellipse?????? Fill in????
+
+    def draw_rect(self, cmd_str: str) -> None:
+        """Parse and draw rect cmd string"""
+        match: re.Match[str] | None = re.search(r"Rect: \(\(([^,]+), ([^,]+)\), \(([^,]+), ([^,]+)\)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
+        if match is None:  # Error case
+            ...
+        x1, y1, x2, y2, thickness, color = match.groups()
+        pen: QPen = QPen(QColor.fromString(color), int(thickness))
+        self.painter.setPen(pen)
+        self.painter.drawRect(QRectF(float(x1), float(y1), float(x2) - float(x1), float(y2) - float(y1)))
+        return None
+
+    def draw_polygon(self, cmd_str: str) -> None:
+        """Parse and draw polygon cmd string"""
+        match: re.Match[str] | None = re.search(r"Polygon: \((.+)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
+        if match is None:  # Error case
+            ...
+        points_str, thickness, color = match.groups()
+        pen: QPen = QPen(QColor.fromString(color), int(thickness))
+        self.painter.setPen(pen)
+        self.painter.drawRect(QRectF(float(x1), float(y1), float(x2) - float(x1), float(y2) - float(y1)))
+        return None
+
+    def draw_text(self, cmd_str: str) -> None:
+        """Parse and draw text cmd string"""
+        return None
 
 
 if __name__ == "__main__":

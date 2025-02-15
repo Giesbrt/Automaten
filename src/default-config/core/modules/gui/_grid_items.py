@@ -42,9 +42,8 @@ class Label(QGraphicsTextItem):
         :param option: The style options for the item.
         :param widget: The widget on which the item is painted, defaults to None.
         """
-        return
         super().paint(painter, option, widget)
-        self.setPlainText(self.parentItem().ui_state.get_display_text())
+        # self.setPlainText(self.parentItem().ui_state.get_display_text())
 
 
 class State(QGraphicsEllipseItem):

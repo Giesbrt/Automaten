@@ -648,21 +648,10 @@ if __name__ == "__main__":
     config.exported_logs += f"Reading {input_path}\n"
 
     try:
-        import cProfile
-        import pstats
-
-        with cProfile.Profile() as pr:
-            qapp = QApplication(sys.argv)
-            qgui = MainWindow()
-            dp_app = App(qgui, qapp, input_path, logging_level)  # Shows gui
-            current_exit_code = qapp.exec()
-        stats = pstats.Stats(pr)
-        stats.sort_stats(pstats.SortKey.TIME)
-        stats.print_stats()
-        stats.dump_stats(filename="needs_profiling.prof")
-        import os
-        os.system("py -3.12 -m pip install snakeviz")
-        os.system("py -3.12 -m snakeviz ./needs_profiling.prof")
+        qapp = QApplication(sys.argv)
+        qgui = MainWindow()
+        dp_app = App(qgui, qapp, input_path, logging_level)  # Shows gui
+        current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

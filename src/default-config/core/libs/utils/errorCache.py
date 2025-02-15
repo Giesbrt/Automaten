@@ -118,8 +118,9 @@ class ErrorCache:
 
         # invoke button commands
         button_name: str = popup_return[0]
-        if button_name in custom_buttons:
-            custom_buttons[button_name]()
+        if custom_buttons is not None:
+            if button_name in custom_buttons:
+                custom_buttons[button_name]()
 
     def _handle_dialog(self, show_dialog: bool, title: str, log_message: str, description: str,
                        icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"],

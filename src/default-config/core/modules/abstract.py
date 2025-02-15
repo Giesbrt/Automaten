@@ -2,6 +2,7 @@
 import threading
 
 from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
+from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
 from utils.OrderedSet import OrderedSet
@@ -132,8 +133,8 @@ class IBackend(_abc.ABC):
 
 class IUiState(_abc.ABC):
 
-    def __init__(self, colour: Qt.GlobalColor, position: _ty.Tuple[float, float], display_text: str, node_type: str):
-        self._colour: Qt.GlobalColor = colour
+    def __init__(self, colour: QColor, position: _ty.Tuple[float, float], display_text: str, node_type: str):
+        self._colour: QColor = colour
         self._position: _ty.Tuple[float, float] = position
         self._display_text: str = display_text
         self._type: str = node_type
@@ -152,6 +153,10 @@ class IUiState(_abc.ABC):
     @_abc.abstractmethod
     def set_display_text(self, display_text: str) -> None:
         """Sets the display text of the state."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_type(self, state_type: _ty.Literal['default', 'start', 'end']):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
@@ -265,7 +270,7 @@ class IUiTransition(_abc.ABC):
 
 
 class IUiAutomaton(_abc.ABC):
-    def __init__(self, automaton_type: str, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
+    def __init__(self, automaton_type: str | None, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
                  token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
                  transition_pattern: _ty.List[int] = []):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}

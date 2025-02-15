@@ -21,7 +21,7 @@ import stdlib_list
 import requests
 
 from PySide6.QtWidgets import QApplication, QMessageBox
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, Signal
 from PySide6.QtGui import QIcon, QDesktopServices
 
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
@@ -50,6 +50,8 @@ multiprocessing.freeze_support()
 
 class App:
     """The main logic and gui are separated"""
+
+    get_states: Signal = Signal()
 
     def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str, logging_level: int | None = None
                  ) -> None:
@@ -162,7 +164,9 @@ class App:
         grid_view.set_token_lists.connect(automaton.set_token_lists)
         grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
         grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
-        grid_view.get_states.connect(automaton.get_states)
+
+        grid_view.get_states.connect(self.process_signals) # automaton.get_states
+
         grid_view.get_transitions.connect(automaton.get_transitions)
         grid_view.get_automaton_type.connect(automaton.get_automaton_type)
         grid_view.set_start_state.connect(automaton.set_start_state)
@@ -181,6 +185,13 @@ class App:
         grid_view.add_transition.connect(automaton.add_transition)
         grid_view.delete_state.connect(automaton.delete_state)
         grid_view.delete_transition.connect(automaton.delete_transition)
+
+    def process_signals(self):
+        # methods = [func for func in dir(self.ui_automaton) if callable(getattr(self.ui_automaton, func)) and not func.startswith("__")]
+
+        sender_signal = self.window.user_panel.grid_view.sender()
+
+
 
     @staticmethod
     def _order_logs(directory: str) -> None:

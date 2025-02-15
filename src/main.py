@@ -88,12 +88,18 @@ class App:
                                                                      args=(self.backend_stop_event,))
             self.backend_thread.start()
 
-            states_with_design = {
-                'end': '',
-                'default': ''
-            }
+            # Automaton backend init
+            if input_path != "":
+                self.ui_automaton: UiAutomaton | None = self.load_file(input_path)
+                if self.ui_automaton is None:
+                    input_path = ""
+            if input_path == "":
+                states_with_design = {
+                    'end': '',
+                    'default': ''
+                }
 
-            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
+                self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
 
             self.load_themes(os.path.join(self.styling_folder, "themes"))
             self.load_styles(os.path.join(self.styling_folder, "styles"))

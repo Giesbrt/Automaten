@@ -42,6 +42,7 @@ class Label(QGraphicsTextItem):
         :param option: The style options for the item.
         :param widget: The widget on which the item is painted, defaults to None.
         """
+        return
         super().paint(painter, option, widget)
         self.setPlainText(self.parentItem().ui_state.get_display_text())
 
@@ -156,6 +157,7 @@ class ConnectionPoint(QGraphicsEllipseItem):
         :param option: The style options for the item.
         :param widget: The widget on which the item is painted, defaults to None.
         """
+        return
         for key, values in self.parentItem().create_connection_positions(self.parentItem().state.rect()).items():
             if f'{self.get_direction()}_{self.get_flow()}' == key:
                 self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))

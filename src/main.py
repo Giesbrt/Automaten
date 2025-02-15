@@ -26,11 +26,13 @@ from PySide6.QtGui import QIcon, QDesktopServices
 
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
 from aplustools.io import ActLogger
+from aplustools.io.fileio import os_open
 from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeList
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
 from core.modules.automaton.UIAutomaton import UiAutomaton
+from core.modules.serializer import serialize, deserialize
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
 from core.modules.abstract import IMainWindow, IBackend
@@ -241,6 +243,22 @@ class App:
         """TBA"""
         update_result = self.get_update_result()
         self.for_loop_list.append((self.show_update_result, (update_result,)))
+
+    @staticmethod
+    def load_file(filepath: str) -> UiAutomaton | None:
+        """Loads a UIAutomaton from a serialized file"""
+        end = filepath.rsplit(".", maxsplit=1)[1]
+
+        with os_open(filepath, "r") as f:
+            content: bytes = f.read()
+        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)
+        if filetype is None:
+            ...  # Error case
+            return None
+        automaton: UiAutomaton = deserialize(content, filetype)
+        return automaton
+
+    # @staticmethod
 
     def get_update_result(self) -> tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]:
         """

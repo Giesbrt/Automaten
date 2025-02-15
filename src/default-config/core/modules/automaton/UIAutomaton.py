@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor
 
 from returns import result as _result
 
+from core.modules.signal_bus import SignalBus
 # Bridge Import
 from core.modules.automaton.UiBridge import UiBridge
 
@@ -256,6 +257,9 @@ class UiAutomaton(IUiAutomaton):
         # state_types_with_design = {"end": {"design": "Line x",  future}, "default": {"design": "Line y", future}}
         super().__init__(automaton_type, author, state_types_with_design, token_lists, changeable_token_lists, transition_pattern)
 
+        self.signal_bus = SignalBus()
+        self.signal_bus.request_method.connect(self.call_method)
+
         self._type: str = automaton_type
 
         self._states: OrderedSet[UiState] = OrderedSet()
@@ -266,6 +270,18 @@ class UiAutomaton(IUiAutomaton):
         self._pointer_index: int = 0
 
         self._bridge: UiBridge = UiBridge()
+
+    def call_method(self, method_name, args, kwargs):
+        if hasattr(self, method_name):
+            method = getattr(self, method_name)
+            if callable(method):
+                result = method(*args, **kwargs)
+                print(f'UiAutomaton: {method_name} -> {result}')
+                self.signal_bus.send_response.emit(method_name, result)
+            else:
+                print(f'UiAutomaton: {method_name} ist keine aufrufbare Methode!')
+        else:
+            print(f'UiAutomaton: Methode {method_name} existiert nicht!')
 
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)

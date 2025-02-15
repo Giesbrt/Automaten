@@ -73,7 +73,7 @@ class State(QGraphicsEllipseItem):
         self.height: int = height
         self.color: QColor = color
 
-        self.setBrush(self.color)
+        self.setBrush(QColor(self.color))
         self.setPen(Qt.PenStyle.NoPen)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
@@ -595,7 +595,7 @@ class TempTransition(QGraphicsLineItem):
 
 
 class StateGroup(QGraphicsItemGroup):
-    def __init__(self, x: float, y: float, width: int, height: int, number: int, default_color: QColor,
+    def __init__(self, x: float, y: float, width: int, height: int, number: int | str, default_color: QColor,
                  default_selection_color: QColor, parent: QGraphicsItem | None = None) -> None:
         """Initializes a state group with a graphical representation and interaction elements.
 
@@ -629,13 +629,13 @@ class StateGroup(QGraphicsItemGroup):
         self.ui_state = UiState(
             colour = default_color,
             position = (x, y),
-            display_text = f'q{number}',
+            display_text = f'q{number}' if isinstance(number, int) else number,
             node_type = self.get_type()
         )
 
         self.state: State = State(x, y, width, height, default_color, self)
         self.addToGroup(self.state)
-        self.label: Label = Label(f'q{number}', self)
+        self.label: Label = Label(f'q{number}' if isinstance(number, int) else number, self)
         self.label.setParentItem(self)
 
         self.connection_positions: dict[str, tuple[float, float, QColor]] = self.create_connection_positions(self.state.rect())
@@ -685,6 +685,15 @@ class StateGroup(QGraphicsItemGroup):
         """
         for line in self.connected_transitions:
             line.arrow_size = size
+
+    def set_state_type(self, state_type: _ty.Literal['default', 'start', 'end']):
+        """Updates the type of the state
+
+        :param state_type: The new state type
+        """
+        self.get_ui_state().set_type(state_type)
+        self.state_type = state_type
+        self.state.update(self.state.rect())
 
     def get_size(self) -> int:
         """Gets the current size of the state.
@@ -778,14 +787,6 @@ class StateGroup(QGraphicsItemGroup):
         """Deactivates the state, removing its selection and updating its UI state."""
         self.setSelected(False)
         self.ui_state.set_active(False)
-
-    def change_type(self, state_type: str):
-        """Changes the type of the state and updates its appearance.
-
-        :param state_type: The new state type.
-        """
-        self.state_type = state_type
-        self.state.update(self.state.rect())
 
     def update_shadow_effect(self) -> None:
         """Updates the shadow effect based on the selection state of the state."""

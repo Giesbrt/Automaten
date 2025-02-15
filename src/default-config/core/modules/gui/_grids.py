@@ -15,6 +15,7 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 
+from ..signal_bus import SignalBus
 from ..automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 
 
@@ -189,11 +190,36 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._default_color: QColor = default_color
         self._default_selection_color: QColor = default_selection_color
 
+        self.signal_bus = SignalBus()
+        self.signal_bus.send_response.connect(self.handle_response)
+
+    def request_method(self, method_name, *args, **kwargs):
+        print(f'GridView: Anfrage an {method_name}')
+        # signal_bus = SignalBus()
+        self.signal_bus.request_method.emit(method_name, args, kwargs)
+
+    def handle_response(self, method_name, response):
+        """Empfängt das Ergebnis und gibt es aus."""
+        print(f"GridView: Antwort von {method_name} -> {response}")
+
+        if method_name == 'get_states':
+            self.render_states(response)
+        elif method_name == 'get_transitions':
+            self.render_transitions(response)
+
     def render_ui_automaton(self):
         """Renders the UiAutomaton"""
-        self.get_states.emit()
+        self.request_method('get_states')
+        self.request_method('get_transitions')
 
-        print(self.parent().parent())
+    def render_states(self, states):
+        """Renders the StateGroups"""
+        for state in states:
+            self.create_state_from_automaton(state)
+
+    def render_transitions(self, transitions):
+        for transition in transitions:
+            self.create_transition_from_automaton(transition)
 
     def _setup_automaton_view(self) -> None:
         """
@@ -272,19 +298,74 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             item: State | StateGroup = item.parentItem()
         return item
 
-    def create_state(self, pos: QPointF) -> None:
+    def create_state_from_automaton(self, state: UiState):
+        color: QColor = state.get_colour()
+        position: tuple[float, float] = state.get_position()
+        display_text: str = state.get_display_text()
+        state_type: _ty.Literal['default', 'start', 'end'] = state.get_type()
+        is_active: bool = state.is_active()
+
+        # - self.grid_size / 2
+        # - self.grid_size / 2
+
+        state_group = StateGroup(position[0],
+                                 position[1],
+                                 self.grid_size, self.grid_size,
+                                 display_text, color, self._default_selection_color)
+        self.scene().addItem(state_group)
+        state_group.set_state_type(state_type)
+        state_group.update_shadow_effect() # Todo: States disable after adding
+        state_group.update_label_position()
+
+    def create_transition_from_automaton(self, ui_transition: UiTransition):
+        from_state: UiState = ui_transition.get_from_state()
+        from_connection_point: _ty.Literal['n', 's', 'e', 'w'] = ui_transition.get_from_state_connecting_point()
+        to_state: UiState = ui_transition.get_to_state()
+        to_connection_point: _ty.Literal['n', 's', 'e', 'w'] = ui_transition.get_to_state_connecting_point()
+        condition: _ty.List[str] = ui_transition.get_condition()
+
+        # print('create_transition_from_automaton')
+
+        start_state, end_state = None, None
+        start_point, end_point = None, None
+        for state in self.scene().items():
+            if isinstance(state, StateGroup):
+                # print(f'UiState: {state.get_ui_state()} \nfrom_state: {from_state} \nto_state: {to_state}\n')
+                if state.get_ui_state() == from_state:
+                    start_state: StateGroup = state
+                elif state.get_ui_state() == to_state:
+                    end_state: StateGroup = state
+        if start_state and end_state:
+            for connection_point in start_state.connection_points:
+                if connection_point.get_flow() == 'out' and connection_point.get_direction() == from_connection_point:
+                    start_point: ConnectionPoint = connection_point
+            for connection_point in end_state.connection_points:
+                if connection_point.get_flow() == 'in' and connection_point.get_direction() == to_connection_point:
+                    end_point: ConnectionPoint = connection_point
+            if start_point and end_point:
+                transition = Transition(start_point, end_point, end_state)
+                transition_function = TransitionFunction(self.get_tokens(), self._automaton_settings['transition_sections'], transition)
+                transition.set_transition_function(transition_function)
+                transition_function.set_condition(condition)
+                transition.update_position()
+                self.scene().addItem(transition_function)
+
+    def create_state(self, pos: QPointF, display_text=None) -> None:
         """
         Create a new state at the given position.
 
         Args:
             pos (QPointF): The position where the new state should be created.
         """
+        # print(pos)
         state = StateGroup(pos.x() - self.grid_size / 2,
                            pos.y() - self.grid_size / 2,
                            self.grid_size, self.grid_size,
-                           self._counter, self._default_color, self._default_selection_color)
-        self.scene().addItem(state)
+                           self._counter if display_text is None else display_text,
+                           self._default_color, self._default_selection_color)
         self.add_state.emit(state.get_ui_state())
+        print(state.get_ui_state())
+        self.scene().addItem(state)
         parent: UserPanel = self.parent()
         parent.toggle_condition_edit_menu(True)
         parent.state_menu.set_state(state)
@@ -293,9 +374,10 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._counter += 1
 
     def create_transition(self, start_point, end_point, state_group):
-        transition = Transition(start_point, end_point, state_group)
+        transition: Transition = Transition(start_point, end_point, state_group)
+        # print(transition.get_ui_transition())
         self.add_transition.emit(transition.get_ui_transition())
-        transition_function = TransitionFunction(self.get_tokens(),
+        transition_function: TransitionFunction = TransitionFunction(self.get_tokens(),
                                                  self._automaton_settings['transition_sections'],
                                                  transition)
         transition.set_transition_function(transition_function)

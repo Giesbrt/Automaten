@@ -20,13 +20,13 @@
 		{
 			"name": "q0",
 			"type": "end",
-			"position": [1.0, 20.0],
+			"position": [250.0, 52.0],
 			"background_color": "#ffffff"
 		},
 		{
 			"name": "q1",
 			"type": "default",
-			"position": [21.0, 20.0],
+			"position": [-751.0, 52.0],
 			"background_color": "#ffffff"
 		}
 	],

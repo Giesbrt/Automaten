@@ -1,6 +1,6 @@
 from core.modules.serializer import serialize, deserialize
 from core.modules.automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
-from PySide6.QtGui import Qt
+from PySide6.QtGui import QColor
 from pprint import pprint
 
 states_with_design: dict = {"end": "Circle: ((180.0, 180.0), 162.0), 2##000000;",
@@ -12,8 +12,8 @@ transition_pattern: list[int] = [0]
 
 uiAutomaton = UiAutomaton("dfa", "Giesbrt", states_with_design)
 # States
-stateA = UiState(Qt.GlobalColor.blue, (0.0, 0.0), "q0", "default")
-stateB = UiState(Qt.GlobalColor.blue, (0.0, 0.0), "q1", "end")
+stateA = UiState(QColor(255, 0, 0), (0.0, 0.0), "q0", "default")
+stateB = UiState(QColor(0, 255, 0), (0.0, 0.0), "q1", "end")
 
 uiAutomaton.add_state(stateA)
 uiAutomaton.add_state(stateB)

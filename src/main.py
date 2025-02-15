@@ -255,13 +255,27 @@ class App:
         """Loads a UIAutomaton from a serialized file.
         Returns an UIAutomaton upon successful load or None if an error occurred."""
         end = filepath.rsplit(".", maxsplit=1)[1]
-        with os_open(filepath, "rb") as f:
-            content: bytes = f.read()
-        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
-        if filetype is None:
-            ...  # Error case
+        try:
+            with os_open(filepath, "rb") as f:
+                content: bytes = f.read()
+        except OSError as e:  # File locking problems
+            ErrorCache().warning(
+                f"The loading of the file '{os.path.basename(filepath)}' has failed.\nThe file could not be locked.",
+                format_exc(), True, True)
             return None
-        automaton: UiAutomaton = deserialize(content, filetype)
+        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
+        if filetype is None:  # Error case
+            ErrorCache().warning(
+                f"The loading of the file '{os.path.basename(filepath)}' has failed.\nIncompatible file extension.", "",
+                True, True)
+            return None
+        try:
+            automaton: UiAutomaton = deserialize(content, filetype)
+        except Exception as e:
+            ErrorCache().warning(
+                f"The loading of the file '{os.path.basename(filepath)}' has failed.\nThe file may be corrupted.",
+                format_exc(), True, True)
+            return None
         return automaton
 
     @staticmethod
@@ -270,13 +284,26 @@ class App:
         Returns the filepath upon successful save or None if an error occurred."""
         end = filepath.rsplit(".", maxsplit=1)[1]
         filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
-        if filetype is None:
-            ...  # Error case
+        if filetype is None:  # Error case
+            ErrorCache().warning(
+                f"The saving to the file '{os.path.basename(filepath)}' has failed.\nIncompatible file extension.", "",
+                True, True)
             return None
-        content: bytes = serialize(automaton, "", filetype)
-        with os_open(filepath, "wb") as f:
-            f.write(content)
-        return filepath
+        try:
+            content: bytes = serialize(automaton, "", filetype)
+            with os_open(filepath, "wb") as f:
+                f.write(content)
+        except OSError as e:  # File locking problems
+            ErrorCache().warning(
+                f"The saving to the file '{os.path.basename(filepath)}' has failed.\nThe file could not be locked.",
+                format_exc(), True, True)
+        except Exception as e:  # serialization error
+            ErrorCache().warning(
+                f"The saving to the file '{os.path.basename(filepath)}' has failed.\nThere was an internal serialization error.",
+                format_exc(), True, True)
+        else:
+            return filepath
+        return None
 
     def get_update_result(self) -> tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]:
         """

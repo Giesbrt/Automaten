@@ -100,7 +100,7 @@ class Automaton(_abc.ABC):
             Abstract method to get the output alphabet for the automaton.
     """
 
-    def __init__(self, author: str) -> None:
+    def __init__(self) -> None:
         """
         Initializes an automaton with no states, transitions, or current state.
 
@@ -115,11 +115,6 @@ class Automaton(_abc.ABC):
         self.current_state: State = None
         self.start_state: State = None
         self.end_states: _ty.Set[State] = set()
-
-        self._author: str = author
-
-    def get_author(self) -> str:
-        return self._author
 
     def get_states(self) -> OrderedSet[State]:
         """

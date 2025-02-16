@@ -183,9 +183,6 @@ def _serialize_to_binary(serialisation_target: DCGDictT) -> bytes:
     return buffer.getvalue()
 
 
-def _convert_state_
-
-
 def serialize(
         automaton: IUiAutomaton, custom_python: str = "",
         format_: _ty.Literal["json", "yaml", "binary"] = "json"

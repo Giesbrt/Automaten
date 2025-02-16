@@ -1,10 +1,5 @@
 """TBA"""
 
-# Abstract Machine related imports
-from extensions.DFA import DFAAutomaton, DFAState, DFATransition
-from extensions.TM import TMAutomaton, TMState, TMTransition
-from extensions.mealy import MealyAutomaton, MealyState, MealyTransition
-
 from aplustools.io import ActLogger
 
 # Standard typing imports for aps
@@ -21,9 +16,9 @@ class AutomatonProvider:
         self.automaton_type: str = automaton_type
 
         # registered Automatons
-        self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
-        self.register_automaton('tm', TMAutomaton, TMState, TMTransition)
-        self.register_automaton("mealy", MealyAutomaton, MealyState, MealyTransition)
+        # self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
+        # self.register_automaton('tm', TMAutomaton, TMState, TMTransition)
+        # self.register_automaton("mealy", MealyAutomaton, MealyState, MealyTransition)
 
     def load_from_dict(self, loaded_automatons: _ty.Dict[str, _ty.List[_ty.Callable]], override: bool = False) -> None:
         """ Loads the required automatons classes from a dictionary

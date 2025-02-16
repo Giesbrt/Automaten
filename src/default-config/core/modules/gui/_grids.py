@@ -74,7 +74,7 @@ class InteractiveGridView(StaticGridView):
     MAX_TOTAL_UPDATE_FPS: int = 15
 
     def __init__(self, grid_size: int = 100, scene_rect: tuple[int, int, int, int] = (-10_000, -10_000, 20_000, 20_000),
-                 zoom_level: float = 1.0, zoom_step: float = 0.1, min_zoom: float = 0.2, max_zoom: float = 5.0,
+                 zoom_level: float = 1.0, zoom_step: float = 0.1, min_zoom: float = 0.5, max_zoom: float = 2.0,
                  parent: QWidget | None = None) -> None:
         super().__init__(grid_size, None, parent)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)

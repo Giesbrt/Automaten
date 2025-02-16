@@ -159,11 +159,12 @@ class _PainterCoord:
 PainterCoordT = _PainterCoord
 PainterLineT = tuple[PainterCoordT, PainterCoordT]
 PainterCircleT = tuple[PainterCoordT, float]
+PainterEllipseT = tuple[PainterCoordT, float, float]
 PainterArcT = tuple[float, float]
 
 
 class PainterToStr:
-    """Converts Painter commands to a string that can be shared between threads"""
+    """Converts Painter commands to a string"""
     def __init__(self, diameter_scale: float = 360.0) -> None:
         self._diameter: float = diameter_scale
         self._radius: float = diameter_scale / 2
@@ -177,7 +178,7 @@ class PainterToStr:
         """TBA"""
         return self._radius
 
-    def line(self, line: PainterLineT, thickness: int = 1, color: PainterColor | None = None) -> None:
+    def line(self, line: PainterLineT, thickness: int = 1, color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
         """
         Draw a line from one angle to another within a radius range.
 
@@ -191,116 +192,93 @@ class PainterToStr:
         (start_point, end_point) = line
         self._curr_style_str += f"Line: ({start_point}, {end_point}), {thickness}{color.as_hex()};"
 
-    def arc(self, base_circle: PainterCircleT, arc: PainterArcT, thickness: int = 1, color: PainterColor | None = None
-            ) -> None:
+    def arc(self, base_ellipse: PainterEllipseT, arc: PainterArcT, color: PainterColor = PainterColor(0, 0, 0, 0),
+            border_thickness: int = 1, border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
         """
         Draw an arc within the circle canvas.
 
-        :param base_circle: tuple[PainterCoordT, radius scalar (0 to 1)]
+        :param base_ellipse: tuple[PainterCoordT, x_radius scalar (0 to 1), y_radius scalar (0 to 1)]
         :param arc: tuple[Starting angle in degrees, Span angle in degrees]
-        :param thickness: int
         :param color: PainterColor
+        :param border_thickness: int
+        :param border_color: PainterColor
         """
-        if color is None:
-            color = PainterColor(0, 0, 0)
-
-        (base_point, radius_scalar) = base_circle
+        (base_point, x_radius_scalar, y_radius_scalar) = base_ellipse
         (start_deg, end_deg) = arc
-        radius_scaled = min(1.0, radius_scalar) * self._radius
-        self._curr_style_str += (f"Arc: ({base_point}, {radius_scaled}), ({start_deg}, {end_deg}), "
-                                 f"{thickness}{color.as_hex()};")
+        x_radius_scaled = min(1.0, x_radius_scalar) * self._radius
+        y_radius_scaled = min(1.0, y_radius_scalar) * self._radius
+        self._curr_style_str += (f"Arc: ({base_point}, {x_radius_scaled}, {y_radius_scaled}), ({start_deg}, {end_deg}), "
+                                 f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
-    def circle(self, circle: PainterCircleT, thickness: int = 1, color: PainterColor | None = None) -> None:
+    def ellipse(self, ellipse: PainterEllipseT, color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 1,
+                border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
         """
-        Draw a circle.
+        Draw an ellipse.
 
-        :param circle: tuple[PainterCoordT, radius scalar (0 to 1)]
-        :param thickness: int
+        :param ellipse: tuple[PainterCoordT, x_radius scalar (0 to 1), y_radius scalar (0 to 1)]
         :param color: PainterColor
+        :param border_thickness: int
+        :param border_color: PainterColor
         """
-        if color is None:
-            color = PainterColor(0, 0, 0)
-
-        (base_point, radius_scalar) = circle
-        radius_scaled = min(1.0, radius_scalar) * self._radius
-        self._curr_style_str += f"Circle: ({base_point}, {radius_scaled}), {thickness}{color.as_hex()};"
+        (base_point, x_radius_scalar, y_radius_scalar) = ellipse
+        x_radius_scaled = min(1.0, x_radius_scalar) * self._radius
+        y_radius_scaled = min(1.0, y_radius_scalar) * self._radius
+        self._curr_style_str += (f"Ellipse: ({base_point}, {x_radius_scaled}, {y_radius_scaled}), "
+                                 f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
     def base_rect(self, base_circle: PainterCircleT, top_left_deg: float, bottom_right_deg: float,
-                  thickness: int = 1, color: PainterColor | None = None) -> None:
+                  color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 1,
+                  border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
         """
         Draw a rectangle based on circular references.
 
         :param base_circle: tuple[PainterCoordT, radius scalar (0 to 1)]
         :param top_left_deg: float, the top left deg for the point of the rectangle
         :param bottom_right_deg: float, the top right deg for the point of the rectangle
-        :param thickness: int
         :param color: PainterColor
+        :param border_thickness: int
+        :param border_color: PainterColor
         """
-        if color is None:
-            color = PainterColor(0, 0, 0)
-
         (base_point, radius_scalar) = base_circle
         base_x, base_y = base_point.get_point()
         scaled_x = base_x - self._diameter
         scaled_y = base_y - self._diameter
         rel_tl_x, rel_tl_y = self.coord().polar_to_cartesian(top_left_deg, min(1.0, radius_scalar))
         rel_br_x, rel_br_y = self.coord().polar_to_cartesian(bottom_right_deg, min(1.0, radius_scalar))
-        self._curr_style_str += f"Rect: (({rel_tl_x + scaled_x}, {rel_tl_y + scaled_y}), ({rel_br_x + scaled_x}, {rel_br_y + scaled_y})), {thickness}{color.as_hex()};"
+        self._curr_style_str += (f"Rect: (({rel_tl_x + scaled_x}, {rel_tl_y + scaled_y}), "
+                                 f"({rel_br_x + scaled_x}, {rel_br_y + scaled_y})), "
+                                 f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
     def rect(self, top_left_point: PainterCoordT, bottom_right_point: PainterCoordT,
-             thickness: int = 1, color: PainterColor | None = None) -> None:
+                  color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 1,
+                  border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
         """
-        Draw a rectangle based on circular references.
+        Draw a rectangle.
 
         :param top_left_point: PainterCoordT, the top left point of the rectangle
         :param bottom_right_point: PainterCoordT, the top left point of the rectangle
-        :param thickness: int
         :param color: PainterColor
+        :param border_thickness: int
+        :param border_color: PainterColor
         """
-        if color is None:
-            color = PainterColor(0, 0, 0)
+        self._curr_style_str += (f"Rect: ({top_left_point}, {bottom_right_point}), "
+                                 f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
-        self._curr_style_str += f"Rect: ({top_left_point}, {bottom_right_point}), {thickness}{color.as_hex()};"
-
-    def base_polygon(self, base_circle: PainterCircleT, degs: list[float], thickness: int = 1,
-                     color: PainterColor | None = None) -> None:
+    def polygon(self, points: list[PainterCoordT], color: PainterColor = PainterColor(0, 0, 0, 0),
+                border_thickness: int = 1, border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
         """
-        Draw a polygon using polar coordinates.
-
-        :param base_circle: tuple[PainterCoordT, radius scalar (0 to 1)]
-        :params degs: list[float], the degs for the points of the polygon
-        :param thickness: int
-        :param color: PainterColor
-        """
-        if color is None:
-            color = PainterColor(0, 0, 0)
-
-        (base_point, radius_scalar) = base_circle
-        base_x, base_y = base_point.get_point()
-        scaled_x = base_x - self._diameter
-        scaled_y = base_y - self._diameter
-
-        points: list[tuple[float, float]] = []
-        for deg in degs:
-            rel_x, rel_y = self.coord().polar_to_cartesian(deg, min(1.0, radius_scalar))
-            points.append((rel_x + scaled_x, rel_y + scaled_y))
-        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}{color.as_hex()};"
-
-    def polygon(self, points: list[PainterCoordT], thickness: int = 1, color: PainterColor | None = None) -> None:
-        """
-        Draw a polygon using polar coordinates.
+        Draw a polygon.
 
         :param points: list[PainterCoordT]
-        :param thickness: int
         :param color: PainterColor
+        :param border_thickness: int
+        :param border_color: PainterColor
         """
-        if color is None:
-            color = PainterColor(0, 0, 0)
-
-        self._curr_style_str += f"Polygon: ({', '.join(str(x) for x in points)}), {thickness}{color.as_hex()};"
+        self._curr_style_str += (f"Polygon: ({', '.join(str(x) for x in points)}), "
+                                 f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
     def text(self, start_point: PainterCoordT, text: str, bold: bool = False, italic: bool = False,
-             underline: bool = False, strikethrough: bool = False, color: PainterColor | None = None) -> None:
+             underline: bool = False, strikethrough: bool = False, color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
         """
         Draw text from a specific start point.
 
@@ -312,9 +290,6 @@ class PainterToStr:
         :param strikethrough: bool
         :param color: PainterColor
         """
-        if color is None:
-            color = PainterColor(0, 0, 0)
-
         empty_flag: int = 0
         for i, flag in enumerate((bold, italic, underline, strikethrough)):
             empty_flag |= (1 if flag else 0) << i

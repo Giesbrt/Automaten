@@ -2,7 +2,8 @@
 import numpy as np
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor
-from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal
+from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
 # from core.modules.automaton.base.transition import Transition
 # from core.modules.automaton.base.state import State
@@ -26,7 +27,9 @@ class StaticGridView(QGraphicsView):
         super().__init__(parent=parent)
         self.setCacheMode(QGraphicsView.CacheModeFlag.CacheBackground)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.SmartViewportUpdate)
+        self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.BoundingRectViewportUpdate)
+        # self.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontSavePainterState, True)
+        self.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontAdjustForAntialiasing, True)
 
         if scene is not None:
             self.setScene(scene)
@@ -67,6 +70,9 @@ class StaticGridView(QGraphicsView):
 
 class InteractiveGridView(StaticGridView):
     """Represents an interactable GridView, it creates its own scene"""
+
+    MAX_TOTAL_UPDATE_FPS: int = 15
+
     def __init__(self, grid_size: int = 100, scene_rect: tuple[int, int, int, int] = (-10_000, -10_000, 20_000, 20_000),
                  zoom_level: float = 1.0, zoom_step: float = 0.1, min_zoom: float = 0.2, max_zoom: float = 5.0,
                  parent: QWidget | None = None) -> None:
@@ -89,7 +95,15 @@ class InteractiveGridView(StaticGridView):
 
         # Panning attributes
         self._is_panning: bool = False
-        self._pan_start: QPointF = QPointF(0.0, 0.0)
+        self._previous_pan: QPointF = QPointF(0.0, 0.0)
+        self._pan_delta: QPointF = QPointF(0.0, 0.0)
+        self._pending_zoom: float = 1.0
+
+        # Timer for limiting updates
+        self._update_timer = QTimer(self)
+        self._update_timer.setInterval(1000 // self.MAX_TOTAL_UPDATE_FPS)  # Max FPS update rate
+        self._update_timer.timeout.connect(self.apply_pending_updates)
+        self._update_timer.start()
 
     def setSceneRect(self, rect: tuple[int, int, int, int]):
         self.scene().setSceneRect(QRect(*rect))
@@ -103,33 +117,61 @@ class InteractiveGridView(StaticGridView):
 
         new_zoom: float = self.zoom_level * zoom_factor
         if self.min_zoom <= new_zoom <= self.max_zoom:
-            self.scale(zoom_factor, zoom_factor)
+            self._pending_zoom *= zoom_factor  # Accumulate zoom requests
             self.zoom_level = new_zoom
+        if zoom_factor > 2.0:
+            self.scale(self._pending_zoom, self._pending_zoom)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.RightButton:  # Start panning the view
+            self._is_panning = True
+            self._previous_pan = event.position()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
+        else:
+            super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._is_panning:
-            delta = event.position() - self._pan_start
+            self._pan_delta += (event.position() - self._previous_pan)
+            self._previous_pan = event.position()
 
             # Only process significant deltas
-            if abs(delta.x()) > 2 or abs(delta.y()) > 2:
+            if abs(self._pan_delta.x()) > 16 or abs(self._pan_delta.y()) > 16:
                 self.horizontalScrollBar().setValue(
-                    self.horizontalScrollBar().value() - int(delta.x())
+                    self.horizontalScrollBar().value() - int(self._pan_delta.x())
                 )
                 self.verticalScrollBar().setValue(
-                    self.verticalScrollBar().value() - int(delta.y())
+                    self.verticalScrollBar().value() - int(self._pan_delta.y())
                 )
-                self._pan_start = event.position()
+                self._pan_delta = QPointF(0.0, 0.0)
+            # self.resetCachedContent()
             event.accept()
         else:
             super().mouseMoveEvent(event)
-        self.resetCachedContent()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Stop panning on mouse button release."""
-        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+        if event.button() == Qt.MouseButton.RightButton:
             self._is_panning = False
             self.setCursor(Qt.CursorShape.ArrowCursor)
-        super().mouseReleaseEvent(event)
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
+
+    def apply_pending_updates(self) -> None:
+        """Apply batched pan and zoom updates."""
+        if self._pending_zoom != 1.0:
+            self.scale(self._pending_zoom, self._pending_zoom)
+            self._pending_zoom = 1.0
+
+        self.horizontalScrollBar().setValue(
+            self.horizontalScrollBar().value() - int(self._pan_delta.x())
+        )
+        self.verticalScrollBar().setValue(
+            self.verticalScrollBar().value() - int(self._pan_delta.y())
+        )
+        self._pan_delta = QPointF(0.0, 0.0)
 
 
 class AutomatonInteractiveGridView(InteractiveGridView):
@@ -445,12 +487,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 context_menu.exec(event.globalPos())
                 return
             else:
-                # Start panning the view
-                self._is_panning = True
-                self._pan_start = event.position()
-                # self.setCursor(Qt.CursorShape.ClosedHandCursor)
-                event.accept()
-                # self.setCursor(Qt.CursorShape.ArrowCursor)
+                super().mousePressEvent(event)
                 return
 
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.button() == Qt.MouseButton.LeftButton:

@@ -610,6 +610,8 @@ class StateGroup(QGraphicsItemGroup):
         """
         super().__init__(parent)
 
+        self.setCacheMode(QGraphicsItem.CacheMode.ItemCoordinateCache)
+
         self.setSelected(False)
         self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable, True)

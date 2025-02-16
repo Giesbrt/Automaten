@@ -15,6 +15,7 @@ import types as _ts
 import numpy as np
 
 from core.modules.automaton.UIAutomaton import UiState, UiTransition
+from core.modules.painter import StrToPainter
 
 
 class Label(QGraphicsTextItem):
@@ -86,19 +87,15 @@ class State(QGraphicsEllipseItem):
         state_type = self.parentItem().get_type()
 
         painter.save()
-        painter.setPen(QPen(QColor('black'), 1))
-        painter.setBrush(self.brush())
-        painter.drawEllipse(self.boundingRect())
+        # Create StrToPainter instance
+        center: QPointF = self.boundingRect().center()
+        str_painter = StrToPainter(painter, center, min(self.boundingRect().width(), self.boundingRect().height()))
+        # print("BR", self.boundingRect(), center)
+        if state_type == "default":
+            str_painter.draw_string("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;")
+        elif state_type == "end":
+            str_painter.draw_string("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
         painter.restore()
-
-        if state_type == 'end':
-            painter.save()
-            inner_margin = 7.5
-            inner_rect = self.boundingRect().adjusted(inner_margin, inner_margin, -inner_margin, -inner_margin)
-            painter.setPen(QPen(QColor('black'), 2))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawEllipse(inner_rect)
-            painter.restore()
 
 
 class ConnectionPoint(QGraphicsEllipseItem):

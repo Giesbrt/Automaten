@@ -15,7 +15,7 @@ class PainterColor:
     ColorSpace = QColor.Spec
     Color = Qt.GlobalColor
 
-    def __init__(self, r: int, g: int, b: int, a: int = 255) -> None:
+    def __init__(self, r: int = 0, g: int = 0, b: int = 0, a: int = 255) -> None:
         """
         Initialize the PainterColor with a color representation.
 
@@ -178,21 +178,21 @@ class PainterToStr:
         """TBA"""
         return self._radius
 
-    def line(self, line: PainterLineT, thickness: int = 1, fill_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
+    def line(self, line: PainterLineT, thickness: int = 1, color: PainterColor = PainterColor(a=0)) -> None:
         """
         Draw a line from one angle to another within a radius range.
 
         :param line: tuple[PainterCoordT, PainterCoordT]
         :param thickness: int
-        :param fill_color: PainterColor
+        :param color: PainterColor
         """
-        if fill_color is None:
-            fill_color = PainterColor(0, 0, 0)
+        if color is None:
+            color = PainterColor(0, 0, 0)
 
         (start_point, end_point) = line
-        self._curr_style_str += f"Line: ({start_point}, {end_point}), {thickness}{fill_color.as_hex()};"
+        self._curr_style_str += f"Line: ({start_point}, {end_point}), {thickness}{color.as_hex()};"
 
-    def arc(self, base_ellipse: PainterEllipseT, arc: PainterArcT, fill_color: PainterColor = PainterColor(0, 0, 0, 0),
+    def arc(self, base_ellipse: PainterEllipseT, arc: PainterArcT, fill_color: PainterColor = PainterColor(a=0),
             border_thickness: int = 0, border_color: PainterColor | None = None) -> None:
         """
         Draw an arc within the circle canvas.
@@ -212,7 +212,7 @@ class PainterToStr:
         self._curr_style_str += (f"Arc: ({base_point}, {x_radius_scaled}, {y_radius_scaled}), ({start_deg}, {end_deg}), "
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
-    def ellipse(self, ellipse: PainterEllipseT, fill_color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 0,
+    def ellipse(self, ellipse: PainterEllipseT, fill_color: PainterColor = PainterColor(a=0), border_thickness: int = 0,
                 border_color: PainterColor | None = None) -> None:
         """
         Draw an ellipse.
@@ -231,7 +231,7 @@ class PainterToStr:
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
     def base_rect(self, base_circle: PainterCircleT, top_left_deg: float, bottom_right_deg: float,
-                  fill_color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 0,
+                  fill_color: PainterColor = PainterColor(a=0), border_thickness: int = 0,
                   border_color: PainterColor | None = None) -> None:
         """
         Draw a rectangle based on circular references.
@@ -256,7 +256,7 @@ class PainterToStr:
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
     def rect(self, top_left_point: PainterCoordT, bottom_right_point: PainterCoordT,
-                  fill_color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 0,
+                  fill_color: PainterColor = PainterColor(a=0), border_thickness: int = 0,
              border_color: PainterColor | None = None) -> None:
         """
         Draw a rectangle.
@@ -272,7 +272,7 @@ class PainterToStr:
         self._curr_style_str += (f"Rect: ({top_left_point}, {bottom_right_point}), "
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
-    def polygon(self, points: list[PainterCoordT], fill_color: PainterColor = PainterColor(0, 0, 0, 0),
+    def polygon(self, points: list[PainterCoordT], fill_color: PainterColor = PainterColor(a=0),
                 border_thickness: int = 0, border_color: PainterColor | None = None) -> None:
         """
         Draw a polygon.
@@ -288,7 +288,7 @@ class PainterToStr:
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
     def text(self, start_point: PainterCoordT, text: str, bold: bool = False, italic: bool = False,
-             underline: bool = False, strikethrough: bool = False, fill_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
+             underline: bool = False, strikethrough: bool = False, fill_color: PainterColor = PainterColor(a=0)) -> None:
         """
         Draw text from a specific start point.
 
@@ -315,11 +315,18 @@ class PainterToStr:
 
 class StrToPainter:
     """Converts a string to Painter commands"""
-    def __init__(self, painter: QPainter, center: QRectF, diameter: float) -> None:
+    def __init__(self, painter: QPainter, center: QPointF, diameter: float, diameter_scale: float = 360.0) -> None:
         self._painter: QPainter = painter
-        self._center: QRectF = center
+        self._center: QPointF = center
         self._diameter: float = diameter
         self._radius: float = diameter / 2
+
+        self._start_point: QPointF = center - QPointF(self._radius, self._radius)
+        # print(self._start_point)
+
+        self._diameter_scale: float = diameter_scale
+        self._magic_scale: float = self._diameter / self._diameter_scale
+        # print(self._diameter, self._radius, self._diameter_scale, self._magic_scale)
 
         # Set clipping path for circular drawing
         clip_path: QPainterPath = QPainterPath()
@@ -328,9 +335,18 @@ class StrToPainter:
 
     def draw_string(self, command_str: str) -> None:
         """Parses a PainterStr and draws the commands using the QPainter"""
+        # size = self._diameter
+        # for x in range(size):
+        #     for y in range(size):
+        #         color = QColor(min(x, 255), min(y, 255), 0)  # Ensure RGB values are within 0-255
+        #         self._painter.setPen(color)
+        #         self._painter.drawPoint(self._center.x() + x, self._center.y() + y)
+        # return
         commands: list[str] = command_str.strip().split(";")
+        # print(commands)
         for cmd in commands:
-            match cmd:
+            cmd_start: str = cmd.split(":", maxsplit=1)[0]
+            match cmd_start:
                 case "Line":
                     self._draw_line(cmd)
                 case "Arc":
@@ -343,10 +359,16 @@ class StrToPainter:
                     self._draw_polygon(cmd)
                 case "Text":
                     self._draw_text(cmd)
+                case "":  # End of string
+                    break
                 case _:
                     ...  # Error Case. Skip?
                     break
         return None
+
+    def _scale(self, value: float) -> float:
+        """Scale measurement based on diameter scale."""
+        return value * self._magic_scale
 
     def _draw_line(self, cmd_str: str) -> None:
         """Parse and draw line cmd string"""
@@ -382,11 +404,16 @@ class StrToPainter:
             ...
             return None
         x, y, x_radius, y_radius, border_thickness, border_color, fill_color = match.groups()
-        rect: QRectF = QRectF(float(x) - float(x_radius), float(y) - float(y_radius), float(x_radius) * 2, float(y_radius) * 2)
+        rect: QRectF = QRectF(
+            self._scale(float(x) - float(x_radius)) + self._start_point.x(),
+            self._scale(float(y) - float(y_radius)) + self._start_point.y(),
+            self._scale(float(x_radius) * 2),
+            self._scale(float(y_radius) * 2))
         pen: QPen = QPen(QColor.fromString(border_color), int(border_thickness))
         self._painter.setPen(pen)
         brush: QColor = QColor.fromString(fill_color)
         self._painter.setBrush(brush)
+        # print(pen, brush, rect)
         self._painter.drawEllipse(rect)
         return None
 
@@ -446,7 +473,7 @@ class StrToPainter:
             ...
             return None
         x, y, text, style_flags, color = match.groups()
-        
+
         return None
 
 
@@ -498,6 +525,7 @@ if __name__ == "__main__":
     print(f"Fehler zustand design (red cross): {painter.clean_out_style_str()}")
 
     # Draw Circle
-    smaller_radius: float = 0.9
-    painter.circle((center, smaller_radius), thickness=2, color=PainterColor(0, 0, 0))
+    smaller_radius: float = 0.85
+    painter.ellipse((center, 1.0, 1.0), PainterColor(255, 255, 255), 6, PainterColor(0, 0, 0))
+    painter.ellipse((center, smaller_radius, smaller_radius), PainterColor(a=0), 2, PainterColor(0, 0, 0))
     print(f"Endzustand (Smaller Circle) design: {painter.clean_out_style_str()}")

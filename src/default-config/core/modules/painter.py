@@ -193,7 +193,7 @@ class PainterToStr:
         self._curr_style_str += f"Line: ({start_point}, {end_point}), {thickness}{color.as_hex()};"
 
     def arc(self, base_ellipse: PainterEllipseT, arc: PainterArcT, color: PainterColor = PainterColor(0, 0, 0, 0),
-            border_thickness: int = 1, border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
+            border_thickness: int = 0, border_color: PainterColor | None = None) -> None:
         """
         Draw an arc within the circle canvas.
 
@@ -201,8 +201,10 @@ class PainterToStr:
         :param arc: tuple[Starting angle in degrees, Span angle in degrees]
         :param color: PainterColor
         :param border_thickness: int
-        :param border_color: PainterColor
+        :param border_color: PainterColor | None
         """
+        if border_color is None:
+            border_color = color
         (base_point, x_radius_scalar, y_radius_scalar) = base_ellipse
         (start_deg, end_deg) = arc
         x_radius_scaled = min(1.0, x_radius_scalar) * self._radius
@@ -210,16 +212,18 @@ class PainterToStr:
         self._curr_style_str += (f"Arc: ({base_point}, {x_radius_scaled}, {y_radius_scaled}), ({start_deg}, {end_deg}), "
                                  f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
-    def ellipse(self, ellipse: PainterEllipseT, color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 1,
-                border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
+    def ellipse(self, ellipse: PainterEllipseT, color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 0,
+                border_color: PainterColor | None = None) -> None:
         """
         Draw an ellipse.
 
         :param ellipse: tuple[PainterCoordT, x_radius scalar (0 to 1), y_radius scalar (0 to 1)]
         :param color: PainterColor
         :param border_thickness: int
-        :param border_color: PainterColor
+        :param border_color: PainterColor | None
         """
+        if border_color is None:
+            border_color = color
         (base_point, x_radius_scalar, y_radius_scalar) = ellipse
         x_radius_scaled = min(1.0, x_radius_scalar) * self._radius
         y_radius_scaled = min(1.0, y_radius_scalar) * self._radius
@@ -227,8 +231,8 @@ class PainterToStr:
                                  f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
     def base_rect(self, base_circle: PainterCircleT, top_left_deg: float, bottom_right_deg: float,
-                  color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 1,
-                  border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
+                  color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 0,
+                  border_color: PainterColor | None = None) -> None:
         """
         Draw a rectangle based on circular references.
 
@@ -237,8 +241,10 @@ class PainterToStr:
         :param bottom_right_deg: float, the top right deg for the point of the rectangle
         :param color: PainterColor
         :param border_thickness: int
-        :param border_color: PainterColor
+        :param border_color: PainterColor | None
         """
+        if border_color is None:
+            border_color = color
         (base_point, radius_scalar) = base_circle
         base_x, base_y = base_point.get_point()
         scaled_x = base_x - self._diameter
@@ -250,8 +256,8 @@ class PainterToStr:
                                  f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
     def rect(self, top_left_point: PainterCoordT, bottom_right_point: PainterCoordT,
-                  color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 1,
-                  border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
+                  color: PainterColor = PainterColor(0, 0, 0, 0), border_thickness: int = 0,
+             border_color: PainterColor | None = None) -> None:
         """
         Draw a rectangle.
 
@@ -259,21 +265,25 @@ class PainterToStr:
         :param bottom_right_point: PainterCoordT, the top left point of the rectangle
         :param color: PainterColor
         :param border_thickness: int
-        :param border_color: PainterColor
+        :param border_color: PainterColor | None
         """
+        if border_color is None:
+            border_color = color
         self._curr_style_str += (f"Rect: ({top_left_point}, {bottom_right_point}), "
                                  f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
     def polygon(self, points: list[PainterCoordT], color: PainterColor = PainterColor(0, 0, 0, 0),
-                border_thickness: int = 1, border_color: PainterColor = PainterColor(0, 0, 0, 0)) -> None:
+                border_thickness: int = 0, border_color: PainterColor | None = None) -> None:
         """
         Draw a polygon.
 
         :param points: list[PainterCoordT]
         :param color: PainterColor
         :param border_thickness: int
-        :param border_color: PainterColor
+        :param border_color: PainterColor | None
         """
+        if border_color is None:
+            border_color = color
         self._curr_style_str += (f"Polygon: ({', '.join(str(x) for x in points)}), "
                                  f"{border_thickness}{border_color.as_hex()}#{color.as_hex()};")
 
@@ -304,51 +314,52 @@ class PainterToStr:
 
 
 class StrToPainter:
+    """Converts a string to Painter commands"""
     def __init__(self, painter: QPainter, center: QRectF, diameter: float) -> None:
-        self.painter: QPainter = painter
-        self.center: QRectF = center
-        self.diameter: float = diameter
-        self.radius: float = diameter / 2
+        self._painter: QPainter = painter
+        self._center: QRectF = center
+        self._diameter: float = diameter
+        self._radius: float = diameter / 2
 
         # Set clipping path for circular drawing
         clip_path: QPainterPath = QPainterPath()
-        clip_path.addEllipse(QRectF(center.x() - self.radius, center.y() - self.radius, diameter, diameter))
-        self.painter.setClipPath(clip_path)
+        clip_path.addEllipse(QRectF(center.x() - self._radius, center.y() - self._radius, diameter, diameter))
+        self._painter.setClipPath(clip_path)
 
-    def parse_command(self, command_str: str) -> None:
+    def draw_string(self, command_str: str) -> None:
         """Parses a PainterStr and draws the commands using the QPainter"""
         commands: list[str] = command_str.strip().split(";")
         for cmd in commands:
             match cmd:
                 case "Line":
-                    self.draw_line(cmd)
+                    self._draw_line(cmd)
                 case "Arc":
-                    self.draw_arc(cmd)
-                case "Circle":
-                    self.draw_circle(cmd)
+                    self._draw_arc(cmd)
+                case "Ellipse":
+                    self._draw_ellipse(cmd)
                 case "Rect":
-                    self.draw_rect(cmd)
+                    self._draw_rect(cmd)
                 case "Polygon":
-                    self.draw_polygon(cmd)
+                    self._draw_polygon(cmd)
                 case "Text":
-                    self.draw_text(cmd)
+                    self._draw_text(cmd)
                 case _:
                     ...  # Error Case. Skip?
                     break
         return None
 
-    def draw_line(self, cmd_str: str) -> None:
+    def _draw_line(self, cmd_str: str) -> None:
         """Parse and draw line cmd string"""
         match: re.Match[str] | None = re.search(r"Line: \(\(([^,]+), ([^,]+)\), \(([^,]+), ([^,]+)\)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
         if match is None:  # Error case
             ...
         x1, y1, x2, y2, thickness, color = match.groups()
         pen: QPen = QPen(QColor.fromString(color), int(thickness))
-        self.painter.setPen(pen)
-        self.painter.drawLine(QPointF(float(x1), float(y1)), QPointF(float(x2), float(y2)))
+        self._painter.setPen(pen)
+        self._painter.drawLine(QPointF(float(x1), float(y1)), QPointF(float(x2), float(y2)))
         return None
 
-    def draw_arc(self, cmd_str: str) -> None:
+    def _draw_arc(self, cmd_str: str) -> None:
         """Parse and draw arc cmd string"""
         match: re.Match[str] | None = re.search(r"Arc: \(\(([^,]+), ([^,]+)\), ([^,]+)\), \(([^,]+), ([^,]+)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
         if match is None:  # Error case
@@ -356,11 +367,11 @@ class StrToPainter:
         x, y, radius, start_deg, span_deg, thickness, color = match.groups()
         rect: QRectF = QRectF(float(x) - float(radius), float(y) - float(radius), float(radius) * 2, float(radius) * 2)
         pen: QPen = QPen(QColor.fromString(color), int(thickness))
-        self.painter.setPen(pen)
-        self.painter.drawArc(rect, int(float(start_deg) * 16), int(float(span_deg) * 16))
+        self._painter.setPen(pen)
+        self._painter.drawArc(rect, int(float(start_deg) * 16), int(float(span_deg) * 16))
         return None
 
-    def draw_circle(self, cmd_str: str) -> None:
+    def _draw_ellipse(self, cmd_str: str) -> None:
         """Parse and draw circle cmd string"""
         match: re.Match[str] | None = re.search(r"Circle: \(\(([^,]+), ([^,]+)\), ([^,]+)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
         if match is None:  # Error case
@@ -368,33 +379,33 @@ class StrToPainter:
         x, y, radius, thickness, color = match.groups()
         rect: QRectF = QRectF(float(x) - float(radius), float(y) - float(radius), float(radius) * 2, float(radius) * 2)
         pen: QPen = QPen(QColor.fromString(color), int(thickness))
-        self.painter.setPen(pen)
-        self.painter.drawEllipse(rect)
+        self._painter.setPen(pen)
+        self._painter.drawEllipse(rect)
         return None  # Draw ellipse?????? Fill in????
 
-    def draw_rect(self, cmd_str: str) -> None:
+    def _draw_rect(self, cmd_str: str) -> None:
         """Parse and draw rect cmd string"""
         match: re.Match[str] | None = re.search(r"Rect: \(\(([^,]+), ([^,]+)\), \(([^,]+), ([^,]+)\)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
         if match is None:  # Error case
             ...
         x1, y1, x2, y2, thickness, color = match.groups()
         pen: QPen = QPen(QColor.fromString(color), int(thickness))
-        self.painter.setPen(pen)
-        self.painter.drawRect(QRectF(float(x1), float(y1), float(x2) - float(x1), float(y2) - float(y1)))
+        self._painter.setPen(pen)
+        self._painter.drawRect(QRectF(float(x1), float(y1), float(x2) - float(x1), float(y2) - float(y1)))
         return None
 
-    def draw_polygon(self, cmd_str: str) -> None:
+    def _draw_polygon(self, cmd_str: str) -> None:
         """Parse and draw polygon cmd string"""
         match: re.Match[str] | None = re.search(r"Polygon: \((.+)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
         if match is None:  # Error case
             ...
         points_str, thickness, color = match.groups()
         pen: QPen = QPen(QColor.fromString(color), int(thickness))
-        self.painter.setPen(pen)
-        self.painter.drawRect(QRectF(float(x1), float(y1), float(x2) - float(x1), float(y2) - float(y1)))
+        self._painter.setPen(pen)
+        self._painter.drawRect(QRectF(float(x1), float(y1), float(x2) - float(x1), float(y2) - float(y1)))
         return None
 
-    def draw_text(self, cmd_str: str) -> None:
+    def _draw_text(self, cmd_str: str) -> None:
         """Parse and draw text cmd string"""
         return None
 
@@ -403,13 +414,12 @@ if __name__ == "__main__":
     obj = PainterToStr()
     obj.line((obj.coord().load_from_polar(102, 0.3), obj.coord().load_from_polar(230, 1.0)),
              color=PainterColor(245, 22, 1, 0))
-    obj.arc((obj.coord().load_from_cartesian(180, 180), 0.9), (0, 360), 2, PainterColor(0, 255, 0))
+    obj.arc((obj.coord().load_from_cartesian(180, 180), 0.9, 0.9), (0, 360), PainterColor(0, 255, 0), 2, PainterColor(0, 255, 0))
     obj.circle((obj.coord().load_from_cartesian(180, 180), 0.9), 3, PainterColor(255, 0, 0))
     print(obj.clean_out_style_str())
     obj.base_rect((obj.coord().load_from_cartesian(180, 180), 1.0), 80, 270)
     obj.rect(obj.coord().load_from_polar(80, 1.0), obj.coord().load_from_polar(270, 1.0))
     print(obj.clean_out_style_str())
-    obj.base_polygon((obj.coord().load_from_cartesian(180, 180), 1.0), [80.0, 270.0])
     obj.polygon([obj.coord().load_from_polar(80, 1.0), obj.coord().load_from_polar(270, 1.0)])
     print(obj.clean_out_style_str())
     obj.text(obj.coord().load_from_polar(80, 0.5), "MyText", True, False, True, True,

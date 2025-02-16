@@ -6,7 +6,7 @@ import returns.result as _result
 # from DFATransition import DFATransition
 # from DFAAutomaton import DFAAutomaton
 
-from core.extensions.DFA import DFATransition, DFAState, DFAAutomaton
+from extensions.DFA import DFATransition, DFAState, DFAAutomaton
 
 # Standard typing imports for aps
 

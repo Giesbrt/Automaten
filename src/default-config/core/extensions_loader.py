@@ -107,10 +107,10 @@ class Extensions_Loader:
         except SyntaxError:
             return False
         
-    def load_content(self, onestep = False):
+    def load_content(self, base_dir: str, onestep = False):
         modules = {}
-        base_dir = os.path.dirname(os.path.abspath(__file__))
         extensions_path = os.path.join(base_dir, "extensions", '*.py')
+        print("EP",extensions_path)
         dir_list = glob.glob(extensions_path)
         
         for path in dir_list:
@@ -168,4 +168,4 @@ class Extensions_Loader:
 
 if __name__ == "__main__":
     loader = Extensions_Loader()
-    print(loader.load_content()) 
+    print(loader.load_content())

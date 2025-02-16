@@ -1,17 +1,14 @@
 """TBA"""
 
 # Abstract Machine related imports
-from core.extensions.DFA import DFAAutomaton, DFAState, DFATransition
-from core.extensions.TM import TMAutomaton, TMState, TMTransition
-from core.extensions.mealy import MealyAutomaton, MealyState, MealyTransition
+from extensions.DFA import DFAAutomaton, DFAState, DFATransition
+from extensions.TM import TMAutomaton, TMState, TMTransition
+from extensions.mealy import MealyAutomaton, MealyState, MealyTransition
 
 from aplustools.io import ActLogger
 
 # Standard typing imports for aps
-import collections.abc as _a
-import abc as _abc
 import typing as _ty
-import types as _ts
 
 
 # Docs generated with Github Copilot

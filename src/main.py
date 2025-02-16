@@ -38,6 +38,7 @@ from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, S
 from core.modules.abstract import IMainWindow, IBackend
 from core.modules.automaton_loader import start
 from utils.errorCache import ErrorCache, ErrorSeverity
+from core.extensions_loader import Extensions_Loader
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -65,6 +66,18 @@ class App:
             self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
             self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
             self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
+
+            # Thread pool
+            self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
+            self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
+            self.pool.submit(lambda :
+                             self.for_loop_list.append(
+                                 (
+                                     (lambda arg: setattr(self, "extensions", arg)),
+                                     (Extensions_Loader().load_content(self.base_app_dir),)
+                                 )
+                             ))
+            self.extensions: list[dict[str, _ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             self.window.setup_gui()
 
@@ -132,13 +145,9 @@ class App:
             # Setup values, signals, ...
             # TODO: self.window.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))
 
-            # Thread pool
-            self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
-
             self.connect_signals()
             # Show gui
             self.pool.submit(lambda : self.check_for_update())
-            self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
             self.window.start()
 
             self.timer: QtTimidTimer = QtTimidTimer()
@@ -598,6 +607,7 @@ class App:
                 func, args = entry
                 func(*args)
                 num_handled += 1
+            print(self.extensions)
         else:
             print("Tock")
         # if not self.threading:

@@ -21,7 +21,8 @@ class DFASettings(BaseSettings):
     def __init__(self):
         super().__init__("dfa", "Deterministic Finite Automaton", "Giesbrt",
                          [[], ], [True, ], [0, ],
-                         {"end": "Circle: ((180.0, 180.0), 162.0), 2##000000;", "default": ""})
+                         {"end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
+                          "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
 
 
 class DFAState(BaseState):

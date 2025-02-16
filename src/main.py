@@ -32,6 +32,7 @@ from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
 from core.modules.automaton.UIAutomaton import UiAutomaton
+from core.modules.automaton.automatonProvider import AutomatonProvider
 from core.modules.serializer import serialize, deserialize
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
@@ -73,7 +74,7 @@ class App:
             self.pool.submit(lambda :
                              self.for_loop_list.append(
                                  (
-                                     (lambda arg: setattr(self, "extensions", arg)),
+                                     self.set_extensions,
                                      (Extensions_Loader().load_content(self.base_app_dir),)
                                  )
                              ))
@@ -200,7 +201,9 @@ class App:
 
         sender_signal = self.window.user_panel.grid_view.sender()
 
-
+    def set_extensions(self, extensions: list[dict[str, _ty.Type[_ty.Any]]]) -> None:
+        self.extensions = extensions
+        AutomatonProvider(None).load_from_dict(extensions)
 
     @staticmethod
     def _order_logs(directory: str) -> None:

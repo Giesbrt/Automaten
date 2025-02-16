@@ -160,7 +160,7 @@ class IUiState(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
-    def get_colour(self) -> str:
+    def get_colour(self) -> QColor:
         """Gets the colour of the state."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 

@@ -8,6 +8,8 @@ from io import BytesIO, StringIO
 import json
 import yaml
 
+from PySide6.QtGui import QColor
+
 from aplustools.data.bintools import (get_variable_bytes_like, encode_float, encode_integer, read_variable_bytes_like,
                                       decode_integer, decode_float)
 
@@ -181,6 +183,9 @@ def _serialize_to_binary(serialisation_target: DCGDictT) -> bytes:
     return buffer.getvalue()
 
 
+def _convert_state_
+
+
 def serialize(
         automaton: IUiAutomaton, custom_python: str = "",
         format_: _ty.Literal["json", "yaml", "binary"] = "json"
@@ -202,7 +207,7 @@ def serialize(
     counted_nodes: dict[IUiState, int] = {content_root: 0}
     stack: Queue[IUiState] = Queue(maxsize=100)  # Stack for traversal
     stack.put(content_root)
-    nodes_lst: list[dict[str, str | list[tuple[int, list[int]]]]] = dcg_dict["content"]  # type: ignore # List is the same object
+    nodes_lst: list[dict[str, str | tuple[float, float]]] = dcg_dict["content"]  # type: ignore # List is the same object
     nodes_lst.append({
         "name": content_root.get_display_text(),
         "type": content_root.get_type(),
@@ -229,11 +234,12 @@ def serialize(
                 new_idx: int = len(nodes_lst)
                 counted_nodes[connected_node] = new_idx
                 # Add the connected node to the nodes list
+                color: QColor = connected_node.get_colour()
                 nodes_lst.append({
                     "name": connected_node.get_display_text(),
                     "type": connected_node.get_type(),
                     "position": connected_node.get_position(),
-                    "background_color": connected_node.get_colour()
+                    "background_color": color.name(QColor.NameFormat.HexArgb if color.alpha() < 255 else QColor.NameFormat.HexRgb)
                 })
                 stack.put(connected_node)  # Push the connected node onto the stack
             # Append the connection using the index of the connected node
@@ -414,7 +420,7 @@ def deserialize(bytes_like: bytes,
         node_position: tuple[float, float] = tuple(node["position"])  # type: ignore
         node_background_color: str = node["background_color"]  # type: ignore
 
-        node_obj: UiState = UiState(node_background_color, node_position, node_name,
+        node_obj: UiState = UiState(QColor.fromString(node_background_color), node_position, node_name,
                                      node_type)
         node_lookup_dict[i] = node_obj
         automaton.add_state(node_obj)

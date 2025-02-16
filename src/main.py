@@ -78,7 +78,7 @@ class App:
                                      (Extensions_Loader().load_content(self.base_app_dir),)
                                  )
                              ))
-            self.extensions: list[dict[str, _ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
+            self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             self.window.setup_gui()
 
@@ -201,7 +201,7 @@ class App:
 
         sender_signal = self.window.user_panel.grid_view.sender()
 
-    def set_extensions(self, extensions: list[dict[str, _ty.Type[_ty.Any]]]) -> None:
+    def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
         AutomatonProvider(None).load_from_dict(extensions)
 

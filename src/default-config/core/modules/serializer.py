@@ -381,7 +381,7 @@ def _deserialize_from_binary(bytes_like: bytes) -> DCGDictT:
 
 
 def deserialize(bytes_like: bytes,
-                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> UiAutomaton:
+                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> IUiAutomaton:
     """TBA"""
     dcg_dict: DCGDictT = {"json": _deserialize_from_json,
                           "yaml": _deserialize_from_yaml,
@@ -404,7 +404,7 @@ def deserialize(bytes_like: bytes,
         for i in dcg_dict["abs_transition_idxs"]  # type: ignore
     ]
 
-    automaton: UiAutomaton = UiAutomaton(name, author, types)
+    automaton: IUiAutomaton = UiAutomaton(name, author, types)
     automaton.set_token_lists(token_lsts)
     automaton.set_is_changeable_token_list(is_custom_token_lst)
     automaton.set_transition_pattern(abs_transition_idxs)
@@ -426,11 +426,15 @@ def deserialize(bytes_like: bytes,
 
     for transition in content_transitions:
         ((from_idx, to_idx), (from_side, to_side), transition_pattern) = transition
+        if from_side not in ("n", "e", "s", "w") or to_side not in ("n", "e", "s", "w"):  # Fehler
+            raise Exception("From or To side do not have proper formatting")
+        clean_from_side: _ty.Literal["n", "e", "s", "w"] = from_side  # type: ignore
+        clean_to_side: _ty.Literal["n", "e", "s", "w"] = to_side  # type: ignore
         transition_obj: IUiTransition = UiTransition(
             node_lookup_dict[from_idx],
-            from_side,
+            clean_from_side,
             node_lookup_dict[to_idx],
-            to_side,
+            clean_to_side,
             [transition_tokens[i][j]
              for i, j in zip(abs_transition_idxs, transition_pattern)]
         )

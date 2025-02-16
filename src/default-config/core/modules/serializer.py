@@ -209,7 +209,7 @@ def serialize(
         "name": content_root.get_display_text(),
         "type": content_root.get_type(),
         "position": content_root.get_position(),
-        "background_color": content_root.get_colour()
+        "background_color": content_root.get_colour().name(QColor.NameFormat.HexArgb)
     })
     transition_tokens: list[list[str]] = [
         dcg_dict["token_lsts"][i]  # type: ignore

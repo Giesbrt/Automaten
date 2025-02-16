@@ -75,7 +75,7 @@ class App:
                              self.for_loop_list.append(
                                  (
                                      self.set_extensions,
-                                     (Extensions_Loader().load_content(self.base_app_dir),)
+                                     (Extensions_Loader(self.base_app_dir).load_content(),)
                                  )
                              ))
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded

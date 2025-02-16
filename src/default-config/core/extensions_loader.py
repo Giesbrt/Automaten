@@ -13,8 +13,9 @@ import ast
 sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
 
 class Extensions_Loader:
-    def __init__(self):
-        self.cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ext_cache")
+    def __init__(self, base_dir: str):
+        self.base_dir: str = base_dir
+        self.cache_path = os.path.join(base_dir, "ext_cache")
         if not os.path.exists(self.cache_path):
             os.mkdir(self.cache_path)
             with open(os.path.join(self.cache_path, "cache.json"), 'w') as file:
@@ -107,17 +108,16 @@ class Extensions_Loader:
         except SyntaxError:
             return False
         
-    def load_content(self, base_dir: str, onestep = False):
+    def load_content(self, onestep = False):
         modules = {}
-        extensions_path = os.path.join(base_dir, "extensions", '*.py')
-        print("EP",extensions_path)
+        extensions_path = os.path.join(self.base_dir, "extensions", '*.py')
         dir_list = glob.glob(extensions_path)
         
         for path in dir_list:
             self.content[os.path.splitext(os.path.basename(path))[0]] = lambda: self.prioritise(path)
 
         for path in dir_list:
-            rel_path = os.path.relpath(path, start=base_dir)
+            rel_path = os.path.relpath(path, start=self.base_dir)
             rel_path_m = os.path.splitext(rel_path)[0]
             module_path = rel_path_m.replace(os.path.sep, ".")
             last_change = os.path.getmtime(path)

@@ -1,6 +1,5 @@
 """TBA"""
 import config
-from core.modules.signal_bus import SignalBus
 
 config.check()
 config.setup()
@@ -34,6 +33,7 @@ from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeL
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
+from core.modules.signal_bus import SignalBus
 from core.modules.automaton.UIAutomaton import UiAutomaton
 from core.modules.automaton.automatonProvider import AutomatonProvider
 from core.modules.serializer import serialize, deserialize

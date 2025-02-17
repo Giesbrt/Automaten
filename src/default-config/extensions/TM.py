@@ -1,5 +1,5 @@
 from returns import result as _result
-#from aplustools.io import ActLogger
+from aplustools.io import ActLogger
 import sys
 import os
 
@@ -8,13 +8,21 @@ import os
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 # Abstract Machine related imports
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
-
+from core.modules.automaton.base.settings import settings as BaseSettings
 # Comments generated with Chat-GPT
+
+class TmSettings(BaseSettings):
+
+    def __init__(self):
+        super().__init__("tm", "touring machine", "Fa4953",
+                         [[], ], [True, ], [0, ],
+                         {"end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
+                          "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
 
 
 class TMState(BaseState):
@@ -79,9 +87,6 @@ class TMState(BaseState):
 
         # If no valid transitions exist, return a failure result
         return _result.Failure(f"No transition found for state {self.get_name()}!")
-
-
-        from returns import result as _result
 
 class TMTransition(BaseTransition):
     """
@@ -349,8 +354,10 @@ class TMAutomaton(BaseAutomaton):
         """
         Writes the current character to the tape at the head's position.
         """
-        self.memoryTape[self.head] = self.current_char
-        print(self.memoryTape, "memory")
+        if self.current_char != "B":
+            self.memoryTape[self.head] = self.current_char
+        else: 
+            del self.memoryTape[self.head]
 
     def set_end_states(self, new_end_states: _ty.Set[TMState]) -> None:
         """
@@ -490,6 +497,10 @@ class TMAutomaton(BaseAutomaton):
             If no start state is set or the start state is not part of the automaton's states,
             an error is logged and the simulation returns a failure.
         """
+        for state in self.states:
+            state.deactivate()
+        for transition in self.transitions:
+            transition.deactivate()
         if not self.start_state:
             #ActLogger().error("Tried to start simulation of DFA-Automaton without start state!")
             return _result.Failure("No start state found")
@@ -521,7 +532,7 @@ class TMAutomaton(BaseAutomaton):
             return _result.Failure("Automaton failed to terminate in an end state!")
 
     def add_state(self, state: BaseState, state_type: str) -> None:
-        self.add_state(state)
+        self.states.add(state)
         match state_type:
             case "end":
                 self.end_states.add(state)
@@ -533,7 +544,7 @@ class TMAutomaton(BaseAutomaton):
         return self.head
 
     def get_current_return_value(self) -> _ty.Any:
-        pass
+        return self.memoryTape
 
 
 

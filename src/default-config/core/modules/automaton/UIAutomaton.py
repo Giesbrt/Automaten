@@ -330,6 +330,10 @@ class UiAutomaton(IUiAutomaton):
         """
         return self._type
 
+    def set_automaton_type(self, automaton_type: str) -> None:
+        """Sets the type of the Automaton"""
+        self._type = automaton_type
+
     def set_start_state(self, state: UiState) -> None:
         """Sets the start state of the automaton.
 

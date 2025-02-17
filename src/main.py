@@ -1,9 +1,12 @@
 """TBA"""
 import config
+from core.modules.signal_bus import SignalBus
+
 config.check()
 config.setup()
 
 # Standard imports
+from returns import result as _result
 from pathlib import Path as PLPath
 from traceback import format_exc
 import multiprocessing
@@ -52,8 +55,6 @@ multiprocessing.freeze_support()
 
 class App:
     """The main logic and gui are separated"""
-
-    get_states: Signal = Signal()
 
     def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str, logging_level: int | None = None
                  ) -> None:
@@ -104,17 +105,24 @@ class App:
                                                                      args=(self.backend_stop_event,))
             self.backend_thread.start()
 
+            self.signal_bus = SignalBus()
+
             # Automaton backend init
             if input_path != "":
                 self.ui_automaton: UiAutomaton | None = self.load_file(input_path)
                 if self.ui_automaton is None:
                     input_path = ""
+                else:
+                    self.signal_bus.emit_automaton_changed(
+                        is_loaded=True,
+                        token_list=self.ui_automaton.get_token_lists()
+                    )
             if input_path == "":
                 states_with_design = {
                     'end': '',
                     'default': ''
                 }
-
+                self.signal_bus.emit_automaton_changed(is_loaded=False)
                 self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
 
             self.load_themes(os.path.join(self.styling_folder, "themes"))
@@ -161,10 +169,22 @@ class App:
             raise Exception("Exception occurred during initialization of the App class") from e
 
     def connect_signals(self):
+        self.overlay = self.window.user_panel.overlay
         grid_view = self.window.user_panel.grid_view
         automaton: UiAutomaton = self.ui_automaton
 
-        grid_view.get_start_state.connect(automaton.get_start_state)
+        self.overlay.play_button.clicked.connect(self.start_simulation)
+        self.overlay.stop_button.clicked.connect(self.stop_simulation)
+        self.overlay.next_button.clicked.connect(self.next_step)
+
+        grid_view.set_ui_automaton_type.connect(automaton.set_automaton_type)
+
+        grid_view.add_state.connect(automaton.add_state)
+        grid_view.add_transition.connect(automaton.add_transition)
+        grid_view.delete_state.connect(automaton.delete_state)
+        grid_view.delete_transition.connect(automaton.delete_transition)
+
+        """grid_view.get_start_state.connect(automaton.get_start_state)
         grid_view.get_state_types_with_design.connect(automaton.get_state_types_with_design)
         grid_view.set_state_types_with_design.connect(automaton.set_state_types_with_design)
         grid_view.get_author.connect(automaton.get_author)
@@ -174,8 +194,6 @@ class App:
         grid_view.set_token_lists.connect(automaton.set_token_lists)
         grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
         grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
-
-        grid_view.get_states.connect(self.process_signals) # automaton.get_states
 
         grid_view.get_transitions.connect(automaton.get_transitions)
         grid_view.get_automaton_type.connect(automaton.get_automaton_type)
@@ -189,17 +207,58 @@ class App:
         grid_view.handle_bridge_updates.connect(automaton.handle_bridge_updates)
         grid_view.has_simulation_data.connect(automaton.has_simulation_data)
         grid_view.has_bridge_updates.connect(automaton.has_bridge_updates)
-        grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)
+        grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)"""
 
-        grid_view.add_state.connect(automaton.add_state)
-        grid_view.add_transition.connect(automaton.add_transition)
-        grid_view.delete_state.connect(automaton.delete_state)
-        grid_view.delete_transition.connect(automaton.delete_transition)
+    def start_simulation(self):
+        if not self.ui_automaton:
+            ErrorCache().waring('No Automaton loaded!', '', True, True)
+            return
 
-    def process_signals(self):
-        # methods = [func for func in dir(self.ui_automaton) if callable(getattr(self.ui_automaton, func)) and not func.startswith("__")]
+        overlay = self.window.user_panel.overlay
 
-        sender_signal = self.window.user_panel.grid_view.sender()
+        if self.ui_automaton:
+            # Hole die aktuelle Eingabe (muss an deine Implementierung angepasst werden)
+            current_input = ['Apfel', 'Birne']
+
+            print(self.ui_automaton.get_automaton_type(), self.ui_automaton.get_author())
+            result = self.ui_automaton.simulate(current_input)
+            if isinstance(result, _result.Success):
+                overlay.play_button.setEnabled(False)
+                overlay.next_button.setEnabled(False)
+                overlay.stop_button.setEnabled(True)
+                # self.simulation_state_changed.emit(True)
+
+                # Verarbeite Simulationsupdates
+                while self.ui_automaton.is_simulation_data_available():
+                    sim_result = self.ui_automaton.handle_simulation_updates()
+                    if sim_result:
+                        if isinstance(sim_result, _result.Failure):
+                            print(f"Simulationsfehler: {sim_result.value_or('Unbekannter Fehler')}")
+                            self.stop_simulation()
+                            break
+            else:
+                print(f"Fehler beim Starten der Simulation: {result.value_or('Unbekannter Fehler')}")
+
+    def stop_simulation(self):
+        if self.ui_automaton:
+            self.overlay.play_button.setEnabled(True)
+            self.overlay.next_button.setEnabled(True)
+            self.overlay.stop_button.setEnabled(False)
+            # self.simulation_state_changed.emit(False)
+
+    def next_step(self):
+        if self.ui_automaton:
+            # Hole die aktuelle Eingabe
+            current_input = []
+
+            # Führe einen Simulationsschritt aus
+            result = self.ui_automaton.simulate(current_input)
+            if isinstance(result, _result.Success):
+                # Verarbeite das Update des aktuellen Schritts
+                sim_result = self.ui_automaton.handle_simulation_updates()
+                if sim_result and isinstance(sim_result, _result.Failure):
+                    print(f"Fehler im Simulationsschritt: {sim_result.value_or('Unbekannter Fehler')}")
+                    self.stop_simulation()
 
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
@@ -610,7 +669,7 @@ class App:
                 func, args = entry
                 func(*args)
                 num_handled += 1
-            print(self.extensions)
+            # print(self.extensions)
         else:
             print("Tock")
         # if not self.threading:

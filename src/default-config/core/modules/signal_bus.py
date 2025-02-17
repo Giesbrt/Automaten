@@ -2,7 +2,15 @@
 This module defines the SignalBus class, a singleton for signal-based communication
 between GridView and UiAutomaton using PySide6 signals.
 """
+from dataclasses import dataclass
 from PySide6.QtCore import Signal, QObject
+
+import typing as _ty
+
+@dataclass
+class AutomatonEvent:
+    is_loaded: bool
+    token_list: _ty.List[str] = None
 
 class SignalBus(QObject):
     """
@@ -18,6 +26,8 @@ class SignalBus(QObject):
     request_method = Signal(str, tuple, dict)
     send_response = Signal(str, object)
 
+    automaton_changed = Signal(AutomatonEvent)
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -31,4 +41,8 @@ class SignalBus(QObject):
         super().__init__()
 
         self._initialized = True
+
+    def emit_automaton_changed(self, is_loaded: bool, token_list: _ty.List[str]=None):
+        event = AutomatonEvent(is_loaded=is_loaded, token_list=token_list)
+        self.automaton_changed.emit(event)
 

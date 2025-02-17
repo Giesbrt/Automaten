@@ -10,6 +10,7 @@ from ..abstract import IMainWindow
 from ._panels import Panel, UserPanel, SettingsPanel
 
 # Standard typing imports for aps
+import re as _re
 import collections.abc as _a
 import typing as _ty
 import types as _ts
@@ -46,7 +47,8 @@ class AutomatonSelectionDialog(QDialog):
     def select_type(self):
         button = self.sender()
         if button:
-            self.selected_type = button.text()
+            self.selected_type = _re.findall(r'\((.*?)\)', button.text())
+            print(self.selected_type, self.parent().user_panel.grid_view)
         self.parentWidget().user_panel.grid_view.set_automaton_type(self.selected_type)
         self.accept()
 

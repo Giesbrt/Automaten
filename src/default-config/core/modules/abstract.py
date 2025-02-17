@@ -274,7 +274,7 @@ class IUiAutomaton(_abc.ABC):
                  token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
                  transition_pattern: _ty.List[int] = []):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
-        self._type: str = automaton_type
+        self._type: str | None = automaton_type
 
         self._states: _ty.Set[IUiState] = set()
         self._transitions: _ty.Set[IUiTransition] = set()
@@ -320,6 +320,11 @@ class IUiAutomaton(_abc.ABC):
     @_abc.abstractmethod
     def get_transition_pattern(self) -> _ty.List[int]:
         """Returns the transition pattern of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_automaton_type(self, automaton_type: str) -> None:
+        """Sets the type of the Automaton"""
         raise NotImplementedError("This method must be implemented by subclasses.")
     
     @_abc.abstractmethod

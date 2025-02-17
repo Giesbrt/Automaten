@@ -313,37 +313,15 @@ class PainterToStr:
         return result
 
 
-class StrToPainter:
-    """Converts a string to Painter commands"""
-    def __init__(self, painter: QPainter, center: QPointF, diameter: float, diameter_scale: float = 360.0) -> None:
-        self._painter: QPainter = painter
-        self._center: QPointF = center
-        self._diameter: float = diameter
-        self._radius: float = diameter / 2
+class PainterStr:
+    """Deserializes a PainterString into something that can be drawn"""
+    def __init__(self, painter_str: str) -> None:
+        self._painter_str: str = painter_str
+        self.painter_cache: list[tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]] = []
+        self._draw(painter_str)
 
-        self._start_point: QPointF = center - QPointF(self._radius, self._radius)
-        # print(self._start_point)
-
-        self._diameter_scale: float = diameter_scale
-        self._magic_scale: float = self._diameter / self._diameter_scale
-        # print(self._diameter, self._radius, self._diameter_scale, self._magic_scale)
-
-        # Set clipping path for circular drawing
-        clip_path: QPainterPath = QPainterPath()
-        clip_path.addEllipse(QRectF(center.x() - self._radius, center.y() - self._radius, diameter, diameter))
-        self._painter.setClipPath(clip_path)
-
-    def draw_string(self, command_str: str) -> None:
-        """Parses a PainterStr and draws the commands using the QPainter"""
-        # size = self._diameter
-        # for x in range(size):
-        #     for y in range(size):
-        #         color = QColor(min(x, 255), min(y, 255), 0)  # Ensure RGB values are within 0-255
-        #         self._painter.setPen(color)
-        #         self._painter.drawPoint(self._center.x() + x, self._center.y() + y)
-        # return
+    def _draw(self, command_str: str) -> None:
         commands: list[str] = command_str.strip().split(";")
-        # print(commands)
         for cmd in commands:
             cmd_start: str = cmd.split(":", maxsplit=1)[0]
             match cmd_start:
@@ -366,10 +344,6 @@ class StrToPainter:
                     break
         return None
 
-    def _scale(self, value: float) -> float:
-        """Scale measurement based on diameter scale."""
-        return value * self._magic_scale
-
     def _draw_line(self, cmd_str: str) -> None:
         """Parse and draw line cmd string"""
         match: re.Match[str] | None = re.search(r"Line: \(\(([^,]+), ([^,]+)\), \(([^,]+), ([^,]+)\)\), (\d+)(#[0-9A-Fa-f]+)", cmd_str)
@@ -378,8 +352,7 @@ class StrToPainter:
             return None
         x1, y1, x2, y2, thickness, fill_color = match.groups()
         pen: QPen = QPen(QColor.fromString(fill_color), int(thickness))
-        self._painter.setPen(pen)
-        self._painter.drawLine(QPointF(float(x1), float(y1)), QPointF(float(x2), float(y2)))
+        self.painter_cache.append((pen, None, "line", (float(x1), float(y1), float(x2), float(y2))))
         return None
 
     def _draw_arc(self, cmd_str: str) -> None:
@@ -389,12 +362,9 @@ class StrToPainter:
             ...
             return None
         x, y, x_radius, y_radius, start_deg, span_deg, border_thickness, border_color, fill_color = match.groups()
-        rect: QRectF = QRectF(float(x) - float(x_radius), float(y) - float(y_radius), float(x_radius) * 2, float(y_radius) * 2)
         pen: QPen = QPen(QColor.fromString(border_color), int(border_thickness))
-        self._painter.setPen(pen)
         brush: QColor = QColor.fromString(fill_color)
-        self._painter.setBrush(brush)
-        self._painter.drawArc(rect, int(float(start_deg) * 16), int(float(span_deg) * 16))
+        self.painter_cache.append((pen, brush, "arc", (float(x), float(y), float(x_radius), float(y_radius), float(start_deg), float(span_deg))))
         return None
 
     def _draw_ellipse(self, cmd_str: str) -> None:
@@ -404,17 +374,9 @@ class StrToPainter:
             ...
             return None
         x, y, x_radius, y_radius, border_thickness, border_color, fill_color = match.groups()
-        rect: QRectF = QRectF(
-            self._scale(float(x) - float(x_radius)) + self._start_point.x(),
-            self._scale(float(y) - float(y_radius)) + self._start_point.y(),
-            self._scale(float(x_radius) * 2),
-            self._scale(float(y_radius) * 2))
         pen: QPen = QPen(QColor.fromString(border_color), int(border_thickness))
-        self._painter.setPen(pen)
         brush: QColor = QColor.fromString(fill_color)
-        self._painter.setBrush(brush)
-        # print(pen, brush, rect)
-        self._painter.drawEllipse(rect)
+        self.painter_cache.append((pen, brush, "ellipse", (float(x), float(y), float(x_radius), float(y_radius))))
         return None
 
     def _draw_rect(self, cmd_str: str) -> None:
@@ -425,10 +387,8 @@ class StrToPainter:
             return None
         x1, y1, x2, y2, border_thickness, border_color, fill_color = match.groups()
         pen: QPen = QPen(QColor.fromString(border_color), int(border_thickness))
-        self._painter.setPen(pen)
         brush: QColor = QColor.fromString(fill_color)
-        self._painter.setBrush(brush)
-        self._painter.drawRect(QRectF(float(x1), float(y1), float(x2) - float(x1), float(y2) - float(y1)))
+        self.painter_cache.append((pen, brush, "rect", (float(x1), float(y1), float(x2), float(y2))))
         return None
 
     def _draw_polygon(self, cmd_str: str) -> None:
@@ -451,7 +411,6 @@ class StrToPainter:
         except ValueError:  # Error case
             ...
             return None
-
         # polygon: QPainterPath = QPainterPath()
         # if points:
         #     polygon.moveTo(QPointF(points[0][0], points[0][1]))
@@ -460,10 +419,8 @@ class StrToPainter:
         #     polygon.closeSubpath()
 
         pen: QPen = QPen(QColor.fromString(border_color), int(border_thickness))
-        self._painter.setPen(pen)
         brush: QColor = QColor.fromString(fill_color)
-        self._painter.setBrush(brush)
-        self._painter.drawPolygon(points)
+        self.painter_cache.append((pen, brush, "polygon", (points,)))
         return None
 
     def _draw_text(self, cmd_str: str) -> None:
@@ -473,7 +430,167 @@ class StrToPainter:
             ...
             return None
         x, y, text, style_flags, color = match.groups()
+        pen: QPen = QPen(QColor.fromString(color))
+        self.painter_cache.append((pen, None, "text", (float(x), float(y), text, int(style_flags))))
+        return None
 
+
+class StrToPainter:
+    """Converts a string to Painter commands"""
+    def __init__(self, painter: QPainter, center: QPointF, diameter: float, diameter_scale: float = 360.0) -> None:
+        self._painter: QPainter = painter
+        self._center: QPointF = center
+        self._diameter: float = diameter
+        self._radius: float = diameter / 2
+
+        self._start_point: QPointF = center - QPointF(self._radius, self._radius)
+
+        self._diameter_scale: float = diameter_scale
+        self._magic_scale: float = self._diameter / self._diameter_scale
+
+        # Set clipping path for circular drawing
+        clip_path: QPainterPath = QPainterPath()
+        clip_path.addEllipse(QRectF(center.x() - self._radius, center.y() - self._radius, diameter, diameter))
+        self._painter.setClipPath(clip_path)
+
+    def draw_painter_str(self, painter_str: PainterStr) -> None:
+        """Draws a PainterStr using the QPainter"""
+        commands: list[tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]] = painter_str.painter_cache
+        for cmd in commands:
+            match cmd[2]:
+                case "line":
+                    self._draw_line(cmd)
+                case "arc":
+                    self._draw_arc(cmd)
+                case "ellipse":
+                    self._draw_ellipse(cmd)
+                case "rect":
+                    self._draw_rect(cmd)
+                case "polygon":
+                    self._draw_polygon(cmd)
+                case "text":
+                    self._draw_text(cmd)
+                case _:
+                    ...  # Error Case. Skip?
+                    break
+        return None
+
+    def _scale(self, value: float) -> float:
+        """Scale measurement based on diameter scale."""
+        return value * self._magic_scale
+
+    def _is_of_type(self, value: _ty.Any, expected_type: _ty.Any) -> bool:
+        """Recursively checks if a value matches the given type annotation."""
+        origin = _ty.get_origin(expected_type)
+        args = _ty.get_args(expected_type)
+        if origin is None:  # Base case: check direct instance
+            return isinstance(value, expected_type)
+        if origin is tuple:
+            if not isinstance(value, tuple) or len(value) != len(args):
+                return False
+            return all(self._is_of_type(v, t) for v, t in zip(value, args))
+        if origin is _ty.Literal:
+            return value in args  # Ensure it's one of the allowed literal values
+        # Fallback
+        return isinstance(value, expected_type)
+
+    def _draw_line(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
+        """Draw line cmd"""
+        if not self._is_of_type(cmd, tuple[QPen, None, _ty.Literal["line"], tuple[float, float, float, float]]):  # Error case
+            ...
+            return None
+        pen, _, _, (x1, y1, x2, y2) = cmd
+        self._painter.setPen(pen)
+        self._painter.drawLine(
+            QPointF(self._scale(x1), self._scale(y1)) + self._start_point,
+            QPointF(self._scale(x2), self._scale(y2)) + self._start_point
+        )
+        return None
+
+    def _draw_arc(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
+        """Draw arc cmd"""
+        if not self._is_of_type(cmd, tuple[QPen, QColor, _ty.Literal["arc"], tuple[float, float, float, float, float, float]]):  # Error case
+            ...
+            return None
+        pen, brush, _, (x, y, x_radius, y_radius, start_deg, span_deg) = cmd
+        rect: QRectF = QRectF(
+            self._scale(x - x_radius) + self._start_point.x(),
+            self._scale(y - y_radius) + self._start_point.y(),
+            self._scale(x_radius * 2),
+            self._scale(y_radius * 2)
+        )
+        self._painter.setPen(pen)
+        self._painter.setBrush(brush)
+        self._painter.drawArc(rect, int(start_deg * 16), int(span_deg * 16))
+        return None
+
+    def _draw_ellipse(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
+        """Draw ellipse cmd"""
+        if not self._is_of_type(cmd, tuple[QPen, QColor, _ty.Literal["ellipse"], tuple[float, float, float, float]]):  # Error case
+            ...
+            return None
+        pen, brush, _, (x, y, x_radius, y_radius) = cmd
+        rect: QRectF = QRectF(
+            self._scale(x - x_radius) + self._start_point.x(),
+            self._scale(y - y_radius) + self._start_point.y(),
+            self._scale(x_radius * 2),
+            self._scale(y_radius * 2)
+        )
+        self._painter.setPen(pen)
+        self._painter.setBrush(brush)
+        self._painter.drawEllipse(rect)
+        return None
+
+    def _draw_rect(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
+        """Draw rect cmd"""
+        if not self._is_of_type(cmd, tuple[QPen, QColor, _ty.Literal["rect"], tuple[float, float, float, float]]):  # Error case
+            ...
+            return None
+        pen, brush, _, (x1, y1, x2, y2) = cmd
+        rect: QRectF = QRectF(
+            self._scale(x1) + self._start_point.x(),
+            self._scale(y1) + self._start_point.y(),
+            self._scale(x2 - x1),
+            self._scale(y2 - y1)
+        )
+        self._painter.setPen(pen)
+        self._painter.setBrush(brush)
+        self._painter.drawRect(rect)
+        return None
+
+    def _draw_polygon(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
+        """Draw polygon cmd"""
+        if not self._is_of_type(cmd, tuple[QPen, QColor, _ty.Literal["polygon"], tuple[list[QPointF]]]):  # Error case
+            ...
+            return None
+        pen, brush, _, (points,) = cmd
+
+        # Scale the points
+        scaled_points: list[QPointF] = []
+        for point in points:
+            scaled_points.append(
+                QPointF(
+                    self._scale(point.x()) + self._start_point.x(),
+                    self._scale(point.y()) + self._start_point.y()
+                )
+            )
+
+        self._painter.setPen(pen)
+        self._painter.setBrush(brush)
+        self._painter.drawPolygon(scaled_points)
+        return None
+
+    def _draw_text(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
+        """Draw text cmd"""
+        if not self._is_of_type(cmd, tuple[QPen, None, _ty.Literal["text"], tuple[float, float, str, int]]):  # Error case
+            ...
+            return None
+        pen, _, _, (x, y, text, style_flags) = cmd
+        point: QPointF = QPointF(
+            self._scale(x) + self._start_point.x(),
+            self._scale(y) + self._start_point.y()
+        )
+        self._painter.drawText(point, text)
         return None
 
 

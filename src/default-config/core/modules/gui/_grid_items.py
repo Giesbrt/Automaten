@@ -15,7 +15,7 @@ import types as _ts
 import numpy as np
 
 from core.modules.automaton.UIAutomaton import UiState, UiTransition
-from core.modules.painter import StrToPainter
+from core.modules.painter import StrToPainter, PainterStr
 
 
 class Label(QGraphicsTextItem):
@@ -77,6 +77,9 @@ class State(QGraphicsEllipseItem):
         self.setBrush(QColor(self.color))
         self.setPen(Qt.PenStyle.NoPen)
 
+        self.default_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;")
+        self.end_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
+
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """Paints the state as an ellipse and adds an inner circle if the state type is 'end'.
 
@@ -94,9 +97,9 @@ class State(QGraphicsEllipseItem):
         str_painter = StrToPainter(painter, center, min(self.boundingRect().width(), self.boundingRect().height()))
         # print("BR", self.boundingRect(), center)
         if state_type == "default":
-            str_painter.draw_string("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;")
+            str_painter.draw_painter_str(self.default_painter_str)
         elif state_type == "end":
-            str_painter.draw_string("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
+            str_painter.draw_painter_str(self.end_painter_str)
         painter.restore()
 
 

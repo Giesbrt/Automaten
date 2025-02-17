@@ -5,6 +5,11 @@ from aplustools.io import ActLogger
 # Standard typing imports for aps
 import typing as _ty
 
+# Abstract Machine related
+from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
+from extensions.TM import TMAutomaton, TMState, TMTransition, TmSettings
+from extensions.mealy import MealyState, MealyTransition, MealyAutomaton
+
 
 # Docs generated with Github Copilot
 
@@ -12,13 +17,14 @@ import typing as _ty
 class AutomatonProvider:
     registered_automatons: _ty.Dict[str, _ty.Dict[str, _ty.Callable]] = {}
 
-    def __init__(self, automaton_type: str) -> None:
+    def __init__(self, automaton_type: str, test_mode: bool = False) -> None:
         self.automaton_type: str = automaton_type
 
         # registered Automatons
-        # self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
-        # self.register_automaton('tm', TMAutomaton, TMState, TMTransition)
-        # self.register_automaton("mealy", MealyAutomaton, MealyState, MealyTransition)
+        if test_mode:
+            self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
+            self.register_automaton('tm', TMAutomaton, TMState, TMTransition)
+            self.register_automaton("mealy", MealyAutomaton, MealyState, MealyTransition)
 
     def load_from_dict(self, loaded_automatons: _ty.Dict[str, _ty.List[_ty.Callable]], override: bool = False) -> None:
         """ Loads the required automatons classes from a dictionary

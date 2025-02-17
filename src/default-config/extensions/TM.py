@@ -497,10 +497,6 @@ class TMAutomaton(BaseAutomaton):
             If no start state is set or the start state is not part of the automaton's states,
             an error is logged and the simulation returns a failure.
         """
-        for state in self.states:
-            state.deactivate()
-        for transition in self.transitions:
-            transition.deactivate()
         if not self.start_state:
             #ActLogger().error("Tried to start simulation of DFA-Automaton without start state!")
             return _result.Failure("No start state found")
@@ -508,7 +504,13 @@ class TMAutomaton(BaseAutomaton):
         if self.start_state not in self.states:
             #ActLogger().error("Tried to start simulation of DFA-Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
-
+        
+        for state in self.states:
+            state.deactivate()
+            
+        for transition in self.transitions:
+            transition.deactivate()
+            
         if self.current_state is None:
             self.current_state = self.start_state
             self.current_state.activate()

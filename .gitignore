@@ -18,6 +18,7 @@ test_compilation/
 
 # project related
 src/default-config/core/ext_cache
+src/default-config/ext_cache
 
 # Distribution / packaging
 .Python

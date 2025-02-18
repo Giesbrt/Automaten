@@ -4,13 +4,15 @@ import importlib
 import sys
 import json
 import inspect
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from core.modules.automaton.base.settings import settings as BaseSettings
 import ast
-sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
+
+#sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
 
 class Extensions_Loader:
     def __init__(self, base_dir: str):
@@ -45,50 +47,58 @@ class Extensions_Loader:
         for name, element in classes:
             if element.__module__ == module.__name__ : 
                 classes_in_module.append((name, element))
-        check = ["s","a","t"]
+        check = ["st","a","t", "se"]
 
         for name, element in classes_in_module:
-            if name.endswith("State"):
-                if issubclass(element, BaseState):
-                    if "s" in  check:
-                        implemented_methods = {name for name, _ in inspect.getmembers(BaseState, inspect.isroutine)}
-                        abstract_methods = BaseState.__abstractmethods__
-                        for method in abstract_methods:
-                            if method not in implemented_methods:
-                                return False
-                            else:
-                                break
-                        check.remove("s")
-                    else:
-                        return False
-            elif name.endswith("Automaton"):
-                if issubclass(element, BaseAutomaton):
-                    if "a" in  check:
-                        implemented_methods = {name for name, _ in inspect.getmembers(BaseAutomaton, inspect.isroutine)}
-                        abstract_methods = BaseAutomaton.__abstractmethods__
-                        for method in abstract_methods:
-                            if method not in implemented_methods:
-                                return False
-                            else:
-                                break
-                        check.remove("a")
-                    else:
-                        return False
-            elif name.endswith("Transition"):
-                if issubclass(element, BaseTransition):
-                    if "t" in  check:
-                        implemented_methods = {name for name, _ in inspect.getmembers(BaseTransition, inspect.isfunction)}
-                        abstract_methods = BaseTransition.__abstractmethods__
-                        for method in abstract_methods:
-                            if method not in implemented_methods:
-                                return False
-                            else:
-                                break
-                        check.remove("t")
+            if issubclass(element, BaseState):
+                if "st" in  check:
+                    implemented_methods = {name for name, _ in inspect.getmembers(BaseState, inspect.isroutine)}
+                    abstract_methods = BaseState.__abstractmethods__
+                    for method in abstract_methods:
+                        if method not in implemented_methods:
+                            return False
+                        else:
+                            break
+                    check.remove("s")
+                else:
+                    print(check)
+                    return False
+            elif issubclass(element, BaseAutomaton):
+                if "a" in  check:
+                    implemented_methods = {name for name, _ in inspect.getmembers(BaseAutomaton, inspect.isroutine)}
+                    abstract_methods = BaseAutomaton.__abstractmethods__
+                    for method in abstract_methods:
+                        if method not in implemented_methods:
+                            return False
+                        else:
+                            break
+                    check.remove("a")
                 else:
                     return False
-            else:
-                return False
+            elif issubclass(element, BaseTransition):
+                if "t" in  check:
+                    implemented_methods = {name for name, _ in inspect.getmembers(BaseTransition, inspect.isfunction)}
+                    abstract_methods = BaseTransition.__abstractmethods__
+                    for method in abstract_methods:
+                        if method not in implemented_methods:
+                            return False
+                        else:
+                            break
+                    check.remove("t")
+                else:
+                    return False
+            elif issubclass(element, BaseSettings):
+                if "se" in  check:
+                    implemented_methods = {name for name, _ in inspect.getmembers(BaseTransition, inspect.isfunction)}
+                    abstract_methods = BaseTransition.__abstractmethods__
+                    for method in abstract_methods:
+                        if method not in implemented_methods:
+                            return False
+                        else:
+                            break
+                    check.remove("t")
+                else:
+                    return False
         if check == []:
             return True
         else:
@@ -168,4 +178,4 @@ class Extensions_Loader:
 
 if __name__ == "__main__":
     loader = Extensions_Loader()
-    print(loader.load_content())
+    

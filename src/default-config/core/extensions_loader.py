@@ -4,7 +4,7 @@ import importlib
 import sys
 import json
 import inspect
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
@@ -12,7 +12,7 @@ from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 from core.modules.automaton.base.settings import Settings as BaseSettings
 import ast
 
-#sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
 
 class Extensions_Loader:
     def __init__(self, base_dir: str):
@@ -59,7 +59,7 @@ class Extensions_Loader:
                             return False
                         else:
                             break
-                    check.remove("s")
+                    check.remove("st")
                 else:
                     print(check)
                     return False
@@ -89,14 +89,14 @@ class Extensions_Loader:
                     return False
             elif issubclass(element, BaseSettings):
                 if "se" in  check:
-                    implemented_methods = {name for name, _ in inspect.getmembers(BaseTransition, inspect.isfunction)}
-                    abstract_methods = BaseTransition.__abstractmethods__
+                    implemented_methods = {name for name, _ in inspect.getmembers(BaseSettings, inspect.isfunction)}
+                    abstract_methods = BaseSettings.__abstractmethods__
                     for method in abstract_methods:
                         if method not in implemented_methods:
                             return False
                         else:
                             break
-                    check.remove("t")
+                    check.remove("se")
                 else:
                     return False
         if check == []:
@@ -179,4 +179,3 @@ class Extensions_Loader:
 if __name__ == "__main__":
     loader = Extensions_Loader("../")
     print(loader.load_content())
-    

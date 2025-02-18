@@ -13,7 +13,7 @@ import types as _ts
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
-from core.modules.automaton.base.settings import settings as BaseSettings
+from core.modules.automaton.base.settings import Settings as BaseSettings
 # Comments generated with Chat-GPT
 
 class TmSettings(BaseSettings):

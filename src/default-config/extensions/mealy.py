@@ -11,7 +11,7 @@ from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-from core.modules.automaton.base.settings import settings as BaseSettings
+from core.modules.automaton.base.settings import Settings as BaseSettings
 # Comments generated with Chat-GPT
 
 class MealySettings(BaseSettings):

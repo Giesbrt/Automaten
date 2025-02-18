@@ -9,7 +9,7 @@ import inspect
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from core.modules.automaton.base.settings import settings as BaseSettings
+from core.modules.automaton.base.settings import Settings as BaseSettings
 import ast
 
 #sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
@@ -177,5 +177,6 @@ class Extensions_Loader:
         return self.content
 
 if __name__ == "__main__":
-    loader = Extensions_Loader()
+    loader = Extensions_Loader("../")
+    print(loader.load_content())
     

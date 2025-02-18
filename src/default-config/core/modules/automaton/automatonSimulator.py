@@ -71,7 +71,7 @@ class AutomatonSimulator:
         success: bool = self._init_automaton(automaton_type)
         print(success)
         if not success:
-            log_message: str = f"Could not recognise automaton of type {automaton_type}"
+            log_message: str = f"Could not recognise automaton of type '{automaton_type}'"
             ActLogger().error(log_message)
             return _result.Failure(log_message)
 

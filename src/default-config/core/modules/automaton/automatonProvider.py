@@ -6,7 +6,7 @@ from aplustools.io import ActLogger
 import typing as _ty
 
 # Abstract Machine related
-#from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
+from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
 #from extensions.TM import TMAutomaton, TMState, TMTransition, TmSettings  TODO: Use loader, TM currently has an import error
 #from extensions.mealy import MealyState, MealyTransition, MealyAutomaton
 
@@ -18,13 +18,16 @@ class AutomatonProvider:
     registered_automatons: _ty.Dict[str, _ty.Dict[str, _ty.Callable]] = {}
 
     def __init__(self, automaton_type: str, test_mode: bool = False) -> None:
-        self.automaton_type: str = automaton_type
+        if automaton_type is not None:
+            self.automaton_type: str = automaton_type.lower()
+        else:
+            self.automaton_type: str = "N/A"
 
         # registered Automatons
         if test_mode:
             self.register_automaton('dfa', DFAAutomaton, DFAState, DFATransition)
-            self.register_automaton('tm', TMAutomaton, TMState, TMTransition)
-            self.register_automaton("mealy", MealyAutomaton, MealyState, MealyTransition)
+            # self.register_automaton('tm', TMAutomaton, TMState, TMTransition)
+            # self.register_automaton("mealy", MealyAutomaton, MealyState, MealyTransition)
 
     def load_from_dict(self, loaded_automatons: _ty.Dict[str, _ty.List[_ty.Callable]], override: bool = False) -> None:
         """ Loads the required automatons classes from a dictionary

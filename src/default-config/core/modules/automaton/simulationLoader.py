@@ -97,9 +97,10 @@ class SimulationLoader:
 
         except Exception as e:
             error_packet: _ty.Dict[str, _ty.Any] = {}
-            ActLogger().error(f"An error occurred whilst handling bridge requests")
-
             traceback_message: str = traceback.format_exc()
+            ActLogger().error(f"An error occurred whilst handling bridge requests ({str(e)})\n{traceback_message}")
+
+
 
             error_packet["type"] = f"ERROR: {str(e)}"
             error_packet["message"] = traceback_message

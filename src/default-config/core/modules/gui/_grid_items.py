@@ -79,6 +79,7 @@ class State(QGraphicsEllipseItem):
 
         self.default_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;")
         self.end_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
+        self.start_painter_str: PainterStr = PainterStr("Text: (195.62833599002374, 91.36730222890128), 'MyText', 13#0000ff;Polygon: ((211.25667198004749, 2.7346044578025612), (179.99999999999997, 360.0), (0.0, 179.99999999999997)), 0#000000##00000000;Rect: ((205.005337584038, 38.18768356624204), (179.99999999999997, 324.0)), 0#000000##00000000;Arc: ((360.0, 360.0), 162.0, 162.0), (270, 360), 2#00ff00##00ff00;Arc: ((180.0, 180.0), 162.0, 162.0), (0, 90), 2#00ff00##00ff00;")
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """Paints the state as an ellipse and adds an inner circle if the state type is 'end'.
@@ -100,6 +101,8 @@ class State(QGraphicsEllipseItem):
             str_painter.draw_painter_str(self.default_painter_str)
         elif state_type == "end":
             str_painter.draw_painter_str(self.end_painter_str)
+        elif state_type == "start":
+            str_painter.draw_painter_str(self.start_painter_str)
         painter.restore()
 
 

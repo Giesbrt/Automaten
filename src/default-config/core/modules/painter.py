@@ -2,7 +2,7 @@
 import math
 import re
 
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtCore import Qt, QRectF, QPointF
 
 # Standard typing imports for aps
@@ -192,7 +192,7 @@ class PainterToStr:
         (start_point, end_point) = line
         self._curr_style_str += f"Line: ({start_point}, {end_point}), {thickness}{color.as_hex()};"
 
-    def arc(self, base_ellipse: PainterEllipseT, arc: PainterArcT, fill_color: PainterColor = PainterColor(a=0),
+    def arc(self, base_ellipse: PainterEllipseT, arc: PainterArcT, fill_color: PainterColor,
             border_thickness: int = 0, border_color: PainterColor | None = None) -> None:
         """
         Draw an arc within the circle canvas.
@@ -212,7 +212,7 @@ class PainterToStr:
         self._curr_style_str += (f"Arc: ({base_point}, {x_radius_scaled}, {y_radius_scaled}), ({start_deg}, {end_deg}), "
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
-    def ellipse(self, ellipse: PainterEllipseT, fill_color: PainterColor = PainterColor(a=0), border_thickness: int = 0,
+    def ellipse(self, ellipse: PainterEllipseT, fill_color: PainterColor, border_thickness: int = 0,
                 border_color: PainterColor | None = None) -> None:
         """
         Draw an ellipse.
@@ -231,7 +231,7 @@ class PainterToStr:
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
     def base_rect(self, base_circle: PainterCircleT, top_left_deg: float, bottom_right_deg: float,
-                  fill_color: PainterColor = PainterColor(a=0), border_thickness: int = 0,
+                  fill_color: PainterColor, border_thickness: int = 0,
                   border_color: PainterColor | None = None) -> None:
         """
         Draw a rectangle based on circular references.
@@ -256,7 +256,7 @@ class PainterToStr:
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
     def rect(self, top_left_point: PainterCoordT, bottom_right_point: PainterCoordT,
-                  fill_color: PainterColor = PainterColor(a=0), border_thickness: int = 0,
+                  fill_color: PainterColor, border_thickness: int = 0,
              border_color: PainterColor | None = None) -> None:
         """
         Draw a rectangle.
@@ -272,7 +272,7 @@ class PainterToStr:
         self._curr_style_str += (f"Rect: ({top_left_point}, {bottom_right_point}), "
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
-    def polygon(self, points: list[PainterCoordT], fill_color: PainterColor = PainterColor(a=0),
+    def polygon(self, points: list[PainterCoordT], fill_color: PainterColor,
                 border_thickness: int = 0, border_color: PainterColor | None = None) -> None:
         """
         Draw a polygon.
@@ -287,8 +287,8 @@ class PainterToStr:
         self._curr_style_str += (f"Polygon: ({', '.join(str(x) for x in points)}), "
                                  f"{border_thickness}{border_color.as_hex()}#{fill_color.as_hex()};")
 
-    def text(self, start_point: PainterCoordT, text: str, bold: bool = False, italic: bool = False,
-             underline: bool = False, strikethrough: bool = False, fill_color: PainterColor = PainterColor(a=0)) -> None:
+    def text(self, start_point: PainterCoordT, text: str, fill_color: PainterColor, bold: bool = False, italic: bool = False,
+             underline: bool = False, strikethrough: bool = False) -> None:
         """
         Draw text from a specific start point.
 
@@ -304,7 +304,7 @@ class PainterToStr:
         for i, flag in enumerate((bold, italic, underline, strikethrough)):
             empty_flag |= (1 if flag else 0) << i
 
-        self._curr_style_str += f"Text: {start_point} ,('{text}', {empty_flag}{fill_color.as_hex()})"
+        self._curr_style_str += f"Text: {start_point}, '{text}', {empty_flag}{fill_color.as_hex()};"
 
     def clean_out_style_str(self) -> str:
         """Returns the current style string and then resets it"""
@@ -399,7 +399,7 @@ class PainterStr:
             return None
         points_str, border_thickness, border_color, fill_color = match.groups()
 
-        points: list[QPointF] = []
+        points: list[tuple[float, float]] = []
         try:
             raw_points: list[str] = points_str.removeprefix("(").removesuffix(")").split("), (")
             for p in raw_points:
@@ -407,16 +407,10 @@ class PainterStr:
                 if len(values) != 2:
                     raise ValueError
                 x, y = float(values[0]), float(values[1])
-                points.append(QPointF(x, y))
+                points.append((x, y))
         except ValueError:  # Error case
             ...
             return None
-        # polygon: QPainterPath = QPainterPath()
-        # if points:
-        #     polygon.moveTo(QPointF(points[0][0], points[0][1]))
-        #     for x, y in points[1:]:
-        #         polygon.lineTo(QPointF(x, y))
-        #     polygon.closeSubpath()
 
         pen: QPen = QPen(QColor.fromString(border_color), int(border_thickness))
         brush: QColor = QColor.fromString(fill_color)
@@ -425,7 +419,7 @@ class PainterStr:
 
     def _draw_text(self, cmd_str: str) -> None:
         """Parse and draw text cmd string"""
-        match: re.Match[str] | None = re.search(r"Text: \(([^,]+), ([^,]+)\), \('([^']+)', (\d+)(#[0-9A-Fa-f]+)\)", cmd_str)
+        match: re.Match[str] | None = re.search(r"Text: \(([^,]+), ([^,]+)\), '([^']+)', (\d+)(#[0-9A-Fa-f]+)", cmd_str)
         if match is None:  # Error case
             ...
             return None
@@ -489,6 +483,8 @@ class StrToPainter:
             if not isinstance(value, tuple) or len(value) != len(args):
                 return False
             return all(self._is_of_type(v, t) for v, t in zip(value, args))
+        if origin is list:
+            return all(self._is_of_type(v, t) for v, t in zip(value, args))
         if origin is _ty.Literal:
             return value in args  # Ensure it's one of the allowed literal values
         # Fallback
@@ -496,7 +492,7 @@ class StrToPainter:
 
     def _draw_line(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
         """Draw line cmd"""
-        if not self._is_of_type(cmd, tuple[QPen, None, _ty.Literal["line"], tuple[float, float, float, float]]):  # Error case
+        if not self._is_of_type(cmd, tuple[QPen, _ts.NoneType, _ty.Literal["line"], tuple[float, float, float, float]]):  # Error case
             ...
             return None
         pen, _, _, (x1, y1, x2, y2) = cmd
@@ -560,29 +556,29 @@ class StrToPainter:
 
     def _draw_polygon(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
         """Draw polygon cmd"""
-        if not self._is_of_type(cmd, tuple[QPen, QColor, _ty.Literal["polygon"], tuple[list[QPointF]]]):  # Error case
+        if not self._is_of_type(cmd, tuple[QPen, QColor, _ty.Literal["polygon"], tuple[list[tuple[float, float]]]]):  # Error case
             ...
             return None
         pen, brush, _, (points,) = cmd
 
         # Scale the points
-        scaled_points: list[QPointF] = []
-        for point in points:
-            scaled_points.append(
+        polygon: QPolygonF = QPolygonF()
+        for (x, y) in points:
+            polygon.append(
                 QPointF(
-                    self._scale(point.x()) + self._start_point.x(),
-                    self._scale(point.y()) + self._start_point.y()
+                    self._scale(x) + self._start_point.x(),
+                    self._scale(y) + self._start_point.y()
                 )
             )
 
         self._painter.setPen(pen)
         self._painter.setBrush(brush)
-        self._painter.drawPolygon(scaled_points)
+        self._painter.drawPolygon(polygon)
         return None
 
     def _draw_text(self, cmd: tuple[QPen, QColor | None, str, tuple[_ty.Any, ...]]) -> None:
         """Draw text cmd"""
-        if not self._is_of_type(cmd, tuple[QPen, None, _ty.Literal["text"], tuple[float, float, str, int]]):  # Error case
+        if not self._is_of_type(cmd, tuple[QPen, _ts.NoneType, _ty.Literal["text"], tuple[float, float, str, int]]):  # Error case
             ...
             return None
         pen, _, _, (x, y, text, style_flags) = cmd
@@ -598,16 +594,15 @@ if __name__ == "__main__":
     obj = PainterToStr()
     obj.line((obj.coord().load_from_polar(102, 0.3), obj.coord().load_from_polar(230, 1.0)),
              color=PainterColor(245, 22, 1, 0))
-    obj.arc((obj.coord().load_from_cartesian(180, 180), 0.9, 0.9), (0, 360), PainterColor(0, 255, 0), 2, PainterColor(0, 255, 0))
+    obj.arc((obj.coord().load_from_cartesian(0, 0), 0.9, 0.9), (0, 90), PainterColor(0, 255, 0), 2, PainterColor(0, 255, 0))
     obj.ellipse((obj.coord().load_from_cartesian(180, 180), 0.9, 0.9), PainterColor(255, 0, 0))
     print(obj.clean_out_style_str())
-    obj.base_rect((obj.coord().load_from_cartesian(180, 180), 1.0), 80, 270)
-    obj.rect(obj.coord().load_from_polar(80, 1.0), obj.coord().load_from_polar(270, 1.0))
+    obj.base_rect((obj.coord().load_from_cartesian(180, 180), 0.8), 80, 270, PainterColor())
+    obj.rect(obj.coord().load_from_polar(80, 0.8), obj.coord().load_from_polar(270, 0.8), PainterColor())
     print(obj.clean_out_style_str())
-    obj.polygon([obj.coord().load_from_polar(80, 1.0), obj.coord().load_from_polar(270, 1.0)])
+    obj.polygon([obj.coord().load_from_polar(80, 1.0), obj.coord().load_from_polar(270, 1.0), obj.coord().load_from_polar(180, 1.0)], PainterColor())
     print(obj.clean_out_style_str())
-    obj.text(obj.coord().load_from_polar(80, 0.5), "MyText", True, False, True, True,
-             PainterColor.from_color(PainterColor.Color.white))
+    obj.text(obj.coord().load_from_polar(80, 0.5), "MyText", PainterColor.from_color(PainterColor.Color.blue), True, False, True, True)
     print(obj.clean_out_style_str())
 
     # Demonstration

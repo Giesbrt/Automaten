@@ -6,9 +6,9 @@ from aplustools.io import ActLogger
 import typing as _ty
 
 # Abstract Machine related
-from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
-from extensions.TM import TMAutomaton, TMState, TMTransition, TmSettings
-from extensions.mealy import MealyState, MealyTransition, MealyAutomaton
+#from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
+#from extensions.TM import TMAutomaton, TMState, TMTransition, TmSettings  TODO: Use loader, TM currently has an import error
+#from extensions.mealy import MealyState, MealyTransition, MealyAutomaton
 
 
 # Docs generated with Github Copilot

@@ -1,12 +1,21 @@
 """TBA"""
 
 from aplustools.io import ActLogger
+from utils.errorCache import ErrorCache
 
 # Standard typing imports for aps
 import typing as _ty
+import types as _ts
 
 # Abstract Machine related
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from core.modules.automaton.base.state import State as BaseState
+from core.modules.automaton.base.transition import Transition as BaseTransition
+from core.modules.automaton.base.settings import Settings as BaseSettings
+
 from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
+
+
 #from extensions.TM import TMAutomaton, TMState, TMTransition, TmSettings  TODO: Use loader, TM currently has an import error
 #from extensions.mealy import MealyState, MealyTransition, MealyAutomaton
 
@@ -39,7 +48,35 @@ class AutomatonProvider:
         # 0: base; 1: State; 2: Transition
         for key in list(loaded_automatons.keys()):
             data = loaded_automatons[key]
-            self.register_automaton(key, data[0], data[1], data[2], override)
+            print(data)
+
+            automaton: BaseAutomaton | None = None
+            state: BaseState | None = None
+            transition: BaseTransition | None = None
+            settings: BaseSettings | None = None
+
+            for automaton_class in data:
+                automaton = self._check_for_classes(automaton_class, automaton, BaseAutomaton)
+                state = self._check_for_classes(automaton_class, state, BaseState)
+                transition = self._check_for_classes(automaton_class, transition, BaseTransition)
+                settings = self._check_for_classes(automaton_class, settings, BaseSettings)
+
+            integrity_check: _ty.List[bool] = [automaton is not None, state is not None,
+                                               transition is not None, settings is not None]
+
+            if not all(integrity_check):
+                ErrorCache().error(f"Failed to load {key}-automaton!",
+                                   f"Could not load {key}-Automaton due to a class mismatching!\n "
+                                   f"{automaton}, {state}, {transition}, {settings}", True)
+                return
+
+            self.register_automaton(key, automaton, state, transition, override)
+
+    def _check_for_classes(self, check_object: _ty.Any, class_variable: _ty.Any | None, class_type: type) -> _ty.Any:
+        if class_variable is None and issubclass(check_object, class_type):
+            return check_object
+
+        return class_variable
 
     def set_automaton_type(self, new_type: str) -> None:
         """Set the type of the automaton
@@ -56,7 +93,8 @@ class AutomatonProvider:
         """
         return self.automaton_type
 
-    def register_automaton(self, name: str, base: _ty.Callable, state: _ty.Callable, transition: _ty.Callable, override: bool = False) -> None:
+    def register_automaton(self, name: str, base: BaseAutomaton, state: BaseState, transition: BaseTransition,
+                           override: bool = False) -> None:
         """Register a new automaton
         
         :param name: The name of the automaton

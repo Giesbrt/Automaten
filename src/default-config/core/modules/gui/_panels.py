@@ -2,21 +2,20 @@
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
                                QFormLayout, QLineEdit,
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
-                               QHBoxLayout, QColorDialog, QComboBox)
-from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QEvent, Signal
-from PySide6.QtGui import QColor, QIcon, QPen
+                               QHBoxLayout, QColorDialog, QComboBox, QMenu)
+from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QEvent, Signal, QParallelAnimationGroup
+from PySide6.QtGui import QColor, QIcon, QPen, QAction
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
 from ._grid_items import StateGroup
+from ..signal_bus import SingletonObserver
 
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
 import types as _ts
 
-from ..automaton.UIAutomaton import UiAutomaton
-from ..signal_bus import SignalBus
 
 
 class Panel(QWidget):
@@ -30,8 +29,11 @@ class StateMenu(QFrame):
         super().__init__(parent)
         self.setAutoFillBackground(True)
 
+        self.singleton_observer = SingletonObserver()
+
         self.visible: bool = False
         self.state: StateGroup | None = None
+        self.token_list: _ty.List[str] | None = None
         self.selected_color: QColor = QColor(52, 152, 219)
 
         main_layout: QVBoxLayout = QVBoxLayout(self)
@@ -116,11 +118,10 @@ class StateMenu(QFrame):
             target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             target_item.setData(Qt.ItemDataRole.UserRole, transition)
 
+            token_list = self.singleton_observer.get('token_list')
             condition_edit: QComboBox = QComboBox()
-            condition_edit.addItems(self.parentWidget().get_token_list())
+            condition_edit.addItems(token_list if token_list else [])
             condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
-
-            # condition_edit = MultiSectionLineEdit(len(transition.get_ui_transition().get_condition()))
 
             self.transitions_table.setItem(i, 0, target_item)
             self.transitions_table.setCellWidget(i, 1, condition_edit)
@@ -132,7 +133,9 @@ class StateMenu(QFrame):
         self.layout.addRow(label, widget)
 
     def change_state_type(self):
-        state_type = self.type_input.currentText().lower()
+        state_type: _ty.Literal['default', 'start', 'end'] = self.type_input.currentText().lower()
+        if state_type == 'start':
+            self.singleton_observer.set('start_state', self.state.get_ui_state())
         self.state.set_state_type(state_type)
 
     def on_current_item_changed(self, current: QTableWidgetItem | QComboBox, previous: QTableWidgetItem | QComboBox | None) -> None:
@@ -149,34 +152,21 @@ class StateMenu(QFrame):
         self.size_input.valueChanged.disconnect()
 
 
-class OverlayFrame(QFrame):
-
-    token_list_changed: Signal(list) = Signal(list)
-
+class ControlMenu(QFrame):
     def __init__(self, grid_view: 'AutomatonInteractiveGridView', parent=None):
         super().__init__(parent)
-        self.signal_bus = SignalBus()
-        self.signal_bus.automaton_changed.connect(self.handle_automaton_changed)
+        self.singleton_observer = SingletonObserver()
+        self.singleton_observer.subscribe('token_list', self.update_token_list)
 
         self.grid_view = grid_view
         self.token_list: _ty.List[str] = self.grid_view.get_token_list()
 
         self.init_ui()
 
-        if self.parent():
-            self.parent().installEventFilter(self)
         self.adjustSize()
-        self.update_position()
+        self.setGeometry(QRect(self.parent().width() - self.width() - 10, 10, self.width(), self.height()))
 
     def init_ui(self):
-        self.setStyleSheet(
-            "background: rgba(255, 255, 255, 0.5); border-radius: 15px; padding: 5px;"
-        )
-
-        # Transparenter Hintergrund, kein Rahmen
-        # self.setAttribute(Qt.WA_TranslucentBackground)
-        # self.setFrameStyle(QFrame.NoFrame)
-
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
@@ -197,71 +187,61 @@ class OverlayFrame(QFrame):
         self.next_button.setStyleSheet("background: transparent; color: blue; border: none; font-size: 50px;")
 
         # Token-Box als editierbare ComboBox
-        self.token_box = QComboBox(self)
-        self.token_box.setEditable(True)
-        self.token_box.addItems(self.token_list)
-        self.token_box.lineEdit().returnPressed.connect(self.add_token)
-        self.token_box.setStyleSheet("background: #555; color: white; border-radius: 5px; padding: 5px;")
+        self.token_list_box = QComboBox(self)
+        self.token_list_box.setEditable(True)
+        self.token_list_box.addItems(self.token_list)
+        self.token_list_box.lineEdit().returnPressed.connect(self.add_token)
+
+        self.token_list_box.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.token_list_box.customContextMenuRequested.connect(self.show_context_menu)
 
         layout.addWidget(self.play_button)
         layout.addWidget(self.stop_button)
         layout.addWidget(self.next_button)
-        layout.addWidget(self.token_box)
+        layout.addWidget(self.token_list_box)
         self.setLayout(layout)
 
-        self.token_list_changed.emit(self.token_list)
+        self.singleton_observer.set('token_list', self.token_list)
+
+    def show_context_menu(self, pos):
+        """Zeigt das Kontextmenü bei Rechtsklick"""
+        menu = QMenu(self)
+        delete_action = menu.addAction("Ausgewähltes Element löschen")
+        action = menu.exec_(self.token_list_box.mapToGlobal(pos))
+
+        if action == delete_action:
+            self.remove_token(self.token_list_box.currentText().strip(), self.token_list_box.currentIndex())
 
     def add_token(self):
-        token = self.token_box.currentText().strip()
-        if token and not any(self.token_box.itemText(i) == token for i in range(self.token_box.count())):
-            self.token_box.addItem(token)
-        self.token_box.setCurrentText("")
+        token = self.token_list_box.currentText().strip()
+        if not token in self.token_list:
+            self.token_list_box.addItem(token)
+        self.token_list_box.setCurrentText('')
         self.token_list.append(token)
-        print(f'_panels: {self.token_list}')
-        self.token_list_changed.emit(self.token_list)
 
-    def remove_token(self, token):
-        self.token_box.removeItem(token)
+        self.singleton_observer.set('token_list', self.token_list)
+
+    def remove_token(self, token, token_index: int=None):
+        self.token_list_box.removeItem(token_index)
         self.token_list.remove(token)
 
-        self.token_list_changed.emit(self.token_list)
+        self.singleton_observer.set('token_list', self.token_list)
 
-    def update_token_box(self, token_list: _ty.List[str]):
-        self.token_box.clear()
+    def update_token_list(self, token_list: _ty.List[str]):
+        self.token_list_box.clear()
 
-        if len(token_list) > 1:
-            self.token_box.addItems(token_list[0])
+        if isinstance(self.token_list, list) and self.token_list and all(isinstance(item, list) for item in self.token_list):
+            self.token_list_box.addItems(token_list[0])
         else:
-            self.token_box.addItems(token_list)
-
-        self.token_box.setCurrentText(token_list[0])
+            self.token_list_box.addItems(token_list)
 
     def handle_automaton_changed(self, event: 'AutomatonEvent'):
         if event.is_loaded:
-            self.token_list = event.token_list
-            self.update_token_box(self.token_list)
+            self.token_list = event.token_list_box
+            self.update_token_list(self.token_list)
         else:
             self.token_list = []
-            self.update_token_box([])
-
-    def eventFilter(self, obj, event):
-        # Bei Resize-Events des Parents Position aktualisieren
-        if obj == self.parent() and event.type() == QEvent.Resize:
-            self.update_position()
-        return super().eventFilter(obj, event)
-
-    def update_position(self):
-        margin = 10  # Abstand in Pixel
-        parent = self.parent()
-        if parent:
-            # Wenn ein state_menu vorhanden und sichtbar ist, positioniere das Overlay links davon.
-            if hasattr(parent, 'state_menu') and parent.state_menu.isVisible():
-                state_menu_x = parent.state_menu.x()
-                new_x = state_menu_x - self.width() - margin
-            else:
-                new_x = parent.width() - self.width() - margin
-            new_y = margin
-            self.move(new_x, new_y)
+            self.update_token_list([])
 
 
 class UserPanel(Panel):
@@ -271,20 +251,23 @@ class UserPanel(Panel):
         from ._grids import AutomatonInteractiveGridView
         self.setLayout(QNoSpacingBoxLayout(QBoxDirection.TopToBottom))
 
-        self.token_list: _ty.List[str] = ['Apfel', 'Birne', 'Orange', 'Blaubeere', 'Aubergine', 'Erdbeere']
+        # self.token_list: _ty.List[str] = ['Apfel', 'Birne', 'Orange', 'Blaubeere', 'Aubergine', 'Erdbeere']
 
-        self.grid_view = AutomatonInteractiveGridView(self.token_list)  # Get values from settings
+        self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
         self.layout().addWidget(self.grid_view)
 
-        self.overlay = OverlayFrame(self.grid_view, self)
-        self.overlay.token_list_changed.connect(self.grid_view.set_token_list)
+        # Control Menu
+        self.control_menu = ControlMenu(self.grid_view, self)
+        # Animation for Control Menu
+        self.control_menu_animation = QPropertyAnimation(self.control_menu, b'geometry')
+        self.control_menu_animation.setDuration(500)
 
         # Side Menu
         self.side_menu = QFrame(self)
         self.side_menu.setFrameShape(QFrame.Shape.StyledPanel)
         self.side_menu.setAutoFillBackground(True)
         # Animation for Side Menu
-        self.side_menu_animation = QPropertyAnimation(self.side_menu, b"geometry")
+        self.side_menu_animation = QPropertyAnimation(self.side_menu, b'geometry')
         self.side_menu_animation.setDuration(500)
 
         # Condition Edit Menu
@@ -295,7 +278,7 @@ class UserPanel(Panel):
         self.state_menu_animation.setDuration(500)
 
         # Menu Button
-        self.menu_button = QPushButton(QIcon(), "", self)
+        self.menu_button = QPushButton(QIcon(), '', self)
         self.menu_button.setFixedSize(40, 40)
 
         # Settings button
@@ -338,23 +321,32 @@ class UserPanel(Panel):
         self.side_menu_animation.start()
 
     def toggle_condition_edit_menu(self, to_state: bool) -> None:
-        """True: opened Sidepanel, False: closed Sidepanel"""
         width = max(200, int(self.width() / 4))
         height = self.height()
+        c_menu_width = self.control_menu.width()
+        c_menu_height = self.control_menu.height()
         self.state_menu.visible = not self.state_menu.visible
 
         if to_state:
-            start_value = QRect(self.width(), 0, width, height)
-            end_value = QRect(self.width() - width, 0, width, height)
+            state_start = QRect(self.width(), 0, width, height)
+            state_end = QRect(self.width() - width, 0, width, height)
+            control_start = QRect(self.width() - c_menu_width - 10, 0, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 0, c_menu_width, c_menu_height)
         else:
-            start_value = QRect(self.width() - width, 0, width, height)
-            end_value = QRect(self.width(), 0, width, height)
+            state_start = QRect(self.width() - width, 0, width, height)
+            state_end = QRect(self.width(), 0, width, height)
+            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 0, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - c_menu_width - 10, 0, c_menu_width, c_menu_height)
 
-        if (self.state_menu.x() >= self.width() and to_state
-                or self.state_menu.x() < self.width() and not to_state):
-            self.state_menu_animation.setStartValue(start_value)
-            self.state_menu_animation.setEndValue(end_value)
-            self.state_menu_animation.start()
+        self.state_menu_animation.setStartValue(state_start)
+        self.state_menu_animation.setEndValue(state_end)
+        self.control_menu_animation.setStartValue(control_start)
+        self.control_menu_animation.setEndValue(control_end)
+
+        animation_group = QParallelAnimationGroup(self)
+        animation_group.addAnimation(self.state_menu_animation)
+        animation_group.addAnimation(self.control_menu_animation)
+        animation_group.start()
 
     # Window Methods
     def resizeEvent(self, event):
@@ -374,8 +366,6 @@ class UserPanel(Panel):
         self.settings_button.move(self.width() - 60, 100)
 
         super().resizeEvent(event)
-
-        self.overlay.update_position()
 
 
 class SettingsPanel(Panel):

@@ -3,7 +3,7 @@ from PySide6.QtGui import QColor
 
 from returns import result as _result
 
-from core.modules.signal_bus import SignalBus
+from core.modules.signal_bus import SignalBus, SingletonObserver
 # Bridge Import
 from core.modules.automaton.UiBridge import UiBridge
 
@@ -260,6 +260,11 @@ class UiAutomaton(IUiAutomaton):
         self.signal_bus = SignalBus()
         self.signal_bus.request_method.connect(self.call_method)
 
+        self.singleton_observer = SingletonObserver()
+        self.singleton_observer.subscribe('token_list', self.set_token_lists)
+        self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
+        self.singleton_observer.subscribe('start_state', self.set_start_state)
+
         self._type: str = automaton_type
 
         self._states: OrderedSet[UiState] = OrderedSet()
@@ -276,12 +281,12 @@ class UiAutomaton(IUiAutomaton):
             method = getattr(self, method_name)
             if callable(method):
                 result = method(*args, **kwargs)
-                print(f'UiAutomaton: {method_name} -> {result}')
+                # print(f'UiAutomaton: {method_name} -> {result}')
                 self.signal_bus.send_response.emit(method_name, result)
             else:
-                print(f'UiAutomaton: {method_name} ist keine aufrufbare Methode!')
+                ErrorCache().warning(f'UiAutomaton: {method_name} is not a callable method!', '', True, True)
         else:
-            print(f'UiAutomaton: Methode {method_name} existiert nicht!')
+            ErrorCache().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)
 
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)

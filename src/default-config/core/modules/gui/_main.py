@@ -7,6 +7,7 @@ from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QPara
 from aplustools.io.qtquick import QQuickMessageBox
 
 from ..abstract import IMainWindow
+from ..signal_bus import SingletonObserver
 from ._panels import Panel, UserPanel, SettingsPanel
 
 # Standard typing imports for aps
@@ -23,9 +24,11 @@ class AutomatonSelectionDialog(QDialog):
         self.setModal(True)
 
         palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(0, 0, 0, 128))
+        palette.setColor(QPalette.ColorRole.Window, QColor(0, 0, 0, 128))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
+
+        self.singleton_observer = SingletonObserver()
 
         layout = QVBoxLayout(self)
 
@@ -33,7 +36,7 @@ class AutomatonSelectionDialog(QDialog):
         title.setStyleSheet("color: white; font-size: 18px;")
         layout.addWidget(title)
 
-        types = ["Deterministic Finite Automaton (DFA)", "Mealy-Machine (MM)", "Turing Machine (TM)"]
+        types = ["Deterministic Finite Automaton (DFA)", "Mealy-Machine (Mealy)", "Turing Machine (TM)"]
         self.buttons = {}
 
         for automaton_type in types:
@@ -48,8 +51,7 @@ class AutomatonSelectionDialog(QDialog):
         button = self.sender()
         if button:
             self.selected_type = _re.findall(r'\((.*?)\)', button.text())
-            print(self.selected_type, self.parent().user_panel.grid_view)
-        self.parentWidget().user_panel.grid_view.set_automaton_type(self.selected_type)
+        self.singleton_observer.set('automaton_type', self.selected_type[0])
         self.accept()
 
 

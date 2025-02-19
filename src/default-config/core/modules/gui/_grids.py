@@ -3,21 +3,20 @@ import numpy as np
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
 # from core.modules.automaton.base.transition import Transition
 # from core.modules.automaton.base.state import State
 
 from ._grid_items import State, StateGroup, Label, ConnectionPoint, TempTransition, Transition, TransitionFunction
 from ._panels import UserPanel
+from ..signal_bus import SignalBus, AutomatonEvent, SingletonObserver
+from ..automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
 import types as _ts
 
-from ..signal_bus import SignalBus
-from ..automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 
 
 class StaticGridView(QGraphicsView):
@@ -206,25 +205,20 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     has_bridge_updates: Signal = Signal()
     is_simulation_data_available: Signal = Signal()
 
-    set_token_lists: Signal = Signal(list)
-    set_ui_automaton_type: Signal = Signal(str)
-
     add_state: Signal = Signal(UiState)
     add_transition: Signal = Signal(UiTransition)
     delete_state: Signal = Signal(UiState)
     delete_transition: Signal = Signal(UiTransition)
 
-    def __init__(self, token_list: _ty.List[str], default_color: QColor=QColor('white'),
-                 default_selection_color: QColor=QColor('red')) -> None:
-        """
-        Initialize the automaton grid view.
+    def __init__(self, default_color: QColor=QColor('white'), default_selection_color: QColor=QColor('red')) -> None:
+        """Initialize the automaton grid view.
 
-        Args:
-            default_color (QColor): The default color of the states.
+        :param default_color (QColor): The default color of the states.
         """
         super().__init__()
         self.automaton_type: str | None = None
-        self.token_list : _ty.List[str] | [] = token_list or []
+        self.token_list: _ty.List[str] | [] = []
+        self.loaded_automaton: bool | None = None
         self._counter: int = 0
         self._last_active: State | None = None
         self._last_hovered: StateGroup | None = None
@@ -236,6 +230,11 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
         self.signal_bus = SignalBus()
         self.signal_bus.send_response.connect(self.handle_response)
+        self.signal_bus.automaton_changed.connect(self.set_loaded_automaton)
+
+        self.singleton_observer = SingletonObserver()
+        self.singleton_observer.subscribe('token_list', self.set_token_list)
+        self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
 
     def request_method(self, method_name, *args, **kwargs):
         # print(f'GridView: Anfrage an {method_name}')
@@ -251,11 +250,11 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self.render_transitions(response)
         elif method_name == 'get_token_lists':
             self.set_token_list(response)
+        elif method_name == 'get_automaton_type':
+            print(response)
 
     def render_ui_automaton(self):
         """Renders the UiAutomaton"""
-        # self.signal_bus.emit_automaton_changed(is_loaded=True, token_list=self.token_list) # TODO: TOKEN LIST UPDATE
-
         self.request_method('get_states')
         self.request_method('get_transitions')
         self.request_method('get_token_lists')
@@ -266,6 +265,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self.create_state_from_automaton(state)
 
     def render_transitions(self, transitions):
+        """Renders the Transitions"""
         for transition in transitions:
             self.create_transition_from_automaton(transition)
 
@@ -274,19 +274,22 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         Configure settings based on the selected automaton type.
         This method sets the number of sections required in a transition function.
         """
-        # print(self.automaton_type)
-        if self.automaton_type == ['DFA']:
+        if self.automaton_type == 'DFA':
             self._automaton_settings: dict = {
-                'transition_sections': 1
+                'transition_sections': 1,
+                'transition_pattern': []
             }
-        elif self.automaton_type == ['MM']:
+        elif self.automaton_type == 'Mealy':
             self._automaton_settings: dict = {
                 'transition_sections': 2
             }
-        elif self.automaton_type == ['TM']:
+        elif self.automaton_type == 'TM':
             self._automaton_settings: dict = {
                 'transition_sections': 3
             }
+
+    def set_loaded_automaton(self, value: AutomatonEvent):
+        self.loaded_automaton = value.is_loaded
 
     def set_token_list(self, token_list: _ty.List[str]) -> None:
         """Set the token list in GridView & UiAutomaton,
@@ -295,11 +298,10 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         :param token_list: The new token list
         """
         self.token_list = token_list
-        self.set_token_lists.emit(self.token_list)
         self.update_all_transition_functions()
 
     def update_all_transition_functions(self):
-        """TBA"""
+        """Updates all TransitionFunction to the new token_list"""
         for item in self.scene().items():
             if isinstance(item, TransitionFunction):
                 item.update_token_list(self.token_list)
@@ -312,13 +314,10 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             automaton_type (str): The new automaton type.
         """
         self.automaton_type = automaton_type
-        self.set_ui_automaton_type.emit(automaton_type)
         self._setup_automaton_view()
 
-        # self.signal_bus.
-        self.render_ui_automaton()
-
-        # self.set_token_lists.emit(self.token_list)
+        if self.loaded_automaton:
+            self.render_ui_automaton()
 
     def get_token_list(self) -> _ty.List[str]:
         return self.token_list
@@ -366,12 +365,10 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     def add_item_to_token_list(self, token: str) -> None:
         if token not in self.token_list:
             self.token_list.append(token)
-            self.set_token_lists.emit(self.token_list)
 
     def remove_item_from_token_list(self, token: str) -> None:
         if token in self.token_list:
             self.token_list.remove(token)
-            self.set_token_lists.emit(self.token_list)
 
     def create_state_from_automaton(self, state: UiState):
         color: QColor = state.get_colour()
@@ -395,8 +392,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         to_state: UiState = ui_transition.get_to_state()
         to_connection_point: _ty.Literal['n', 's', 'e', 'w'] = ui_transition.get_to_state_connecting_point()
         condition: _ty.List[str] = ui_transition.get_condition()
-
-        # print('create_transition_from_automaton')
 
         start_state, end_state = None, None
         start_point, end_point = None, None
@@ -429,14 +424,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         Args:
             pos (QPointF): The position where the new state should be created.
         """
-        # print(pos)
         state = StateGroup(pos.x() - self.grid_size / 2,
                            pos.y() - self.grid_size / 2,
                            self.grid_size, self.grid_size,
                            self._counter if display_text is None else display_text,
                            self._default_color, self._default_selection_color)
         self.add_state.emit(state.get_ui_state())
-        print(state.get_ui_state())
         self.scene().addItem(state)
         parent: UserPanel = self.parent()
         parent.toggle_condition_edit_menu(True)
@@ -447,14 +440,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
     def create_transition(self, start_point, end_point, state_group):
         transition: Transition = Transition(start_point, end_point, state_group)
-        # print(transition.get_ui_transition())
         self.add_transition.emit(transition.get_ui_transition())
         transition_function: TransitionFunction = TransitionFunction(self.get_token_list(),
                                                                      self._automaton_settings['transition_sections'],
                                                                      transition)
         transition.set_transition_function(transition_function)
         transition.update_position()
-        # print(transition.get_ui_transition())
         self.scene().addItem(transition_function)
 
     def remove_transition(self, transition: 'Transition') -> None:

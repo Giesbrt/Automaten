@@ -291,7 +291,7 @@ class Transition(QGraphicsLineItem):
             center = self.get_center(start_scene_pos, end_scene_pos)
 
             button_size = self.transition_function.token_buttons.size()
-            token_list_size = self.transition_function.token_list.size()
+            token_list_size = self.transition_function.token_selection_list.size()
 
             button_x = center.x() - button_size.width() / 2
             button_y = center.y() - button_size.height() / 2
@@ -301,7 +301,7 @@ class Transition(QGraphicsLineItem):
 
             token_list_x = center.x() - token_list_size.width() / 2
             token_list_y = button_y + button_size.height() + gap
-            self.transition_function.token_list.setPos(token_list_x, token_list_y)
+            self.transition_function.token_selection_list.setPos(token_list_x, token_list_y)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         """Renders the transition line and arrow head.
@@ -358,7 +358,7 @@ class RoundedFrameWidget(QWidget):
 
 
 class TokenButton(QPushButton):
-    def __init__(self, text: str, toggle_token_selection_list, button_index: int, parent=None):
+    def __init__(self, text: str, toggle_token_selection_list, button_index: int, parent: QWidget=None) -> None:
         """Initializes the token button.
 
         :param text: The initial text of the button.
@@ -383,29 +383,21 @@ class TokenButton(QPushButton):
 
 
 class TokenSelectionButton(QGraphicsProxyWidget):
+    """Initializes the token selection button container.
 
-    all_token_set: Signal(list) = Signal(list)
+    :param token_list_box: The associated token selection list.
+    :param sections: The number of token sections/buttons.
+    :param parent: The parent graphics item, defaults to None.
+    """
+    all_token_set: Signal = Signal(list)
 
-    def __init__(self, token_list, sections, parent=None):
-        """Initializes the token selection button container.
-
-        :param token_list: The associated token selection list.
-        :param sections: The number of token sections/buttons.
-        :param parent: The parent graphics item, defaults to None.
-        """
+    def __init__(self, token_list_box, sections: int, parent: QWidget = None) -> None:
         super().__init__(parent)
-        self.token_list = token_list
+        self.token_list_box = token_list_box
         self.sections = sections
+        self.token_buttons: _ty.List[TokenButton] = []
 
-        self.token_buttons = []
-
-        container = RoundedFrameWidget(
-            bg_color=QColor("white"),
-            border_color=QColor("lightgray"),
-            border_radius=2,
-            border_width=1
-        )
-
+        container = self._create_container()
         layout = QHBoxLayout(container)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setSpacing(0)
@@ -413,40 +405,68 @@ class TokenSelectionButton(QGraphicsProxyWidget):
         for i in range(self.sections):
             token_button = TokenButton('...', self.toggle_token_selection_list, i, container)
             layout.addWidget(token_button)
-            if (self.sections == 2 and i == 0) or (self.sections == 3 and i == 0) or (self.sections == 3 and i == 1):
-                seperator = QWidget(container)
-                seperator.setFixedWidth(1)
-                seperator.setStyleSheet('background-color: black;')
-                layout.addWidget(seperator)
             self.token_buttons.append(token_button)
+            if i < self.sections - 1:
+                layout.addWidget(self._create_separator(container))
 
         container.setLayout(layout)
         self.setWidget(container)
 
-    def set_token(self, values: tuple[int, str]) -> None:
+    def _create_container(self) -> QWidget:
+        """Creates the container widget for token buttons.
+
+        :return: A new container widget.
+        """
+        return RoundedFrameWidget(
+            bg_color=QColor("white"),
+            border_color=QColor("lightgray"),
+            border_radius=2,
+            border_width=1
+        )
+
+    def _create_separator(self, parent: QWidget) -> QWidget:
+        """Creates a separator widget.
+
+        :param parent: The parent widget for the separator.
+        :return: A configured separator widget.
+        """
+        separator = QWidget(parent)
+        separator.setFixedWidth(1)
+        separator.setStyleSheet('background-color: black;')
+        return separator
+
+    def set_token(self, values: _ty.Tuple[int, str]) -> None:
         """Sets the token text for a specified button and checks if all tokens are filled.
 
         :param values: A tuple containing the button index and the new text.
         """
-        self.token_buttons[values[0]].setText(values[1])
+        index, text = values
+        self.token_buttons[index].setText(text)
         self.check_all_tokens_filled()
 
-    def set_condition(self, condition: _ty.List[str]):
+    def set_condition(self, condition: _ty.List[str]) -> None:
+        """Sets the condition for each token button.
+
+        :param condition: A list of tokens representing the condition.
+        """
         for i, token in enumerate(condition):
-            self.token_buttons[i].setText(token)
+            if i < len(self.token_buttons):
+                self.token_buttons[i].setText(token)
 
     def toggle_token_selection_list(self, button_index: int) -> None:
         """Toggles the visibility of the token selection list for the given button.
 
         :param button_index: The index of the token button.
         """
-        self.token_list.set_visible(not self.token_list.isVisible(), button_index)
+        self.token_list_box.set_visible(
+            not self.token_list_box.isVisible(),
+            button_index
+        )
 
     def check_all_tokens_filled(self) -> None:
         """Checks if all token buttons have a non-placeholder token and emits a signal if so."""
         if all(button.text() != '...' for button in self.token_buttons):
             tokens = [button.text() for button in self.token_buttons]
-            # print(tokens)
             self.all_token_set.emit(tokens)
 
 
@@ -454,15 +474,15 @@ class TokenSelectionList(QGraphicsProxyWidget):
 
     token_selected: Signal(tuple) = Signal(tuple)
 
-    def __init__(self, token_list: _ty.List[str], parent=None):
+    def __init__(self, token_list: _ty.Union[_ty.List[str], _ty.List[_ty.List[str]]], parent: QWidget=None) -> None:
         """Initializes the token selection list widget.
 
         :param token_list: A list of tokens to display.
         :param parent: The parent graphics item, defaults to None.
         """
         super().__init__(parent)
-        self.token_list: _ty.List[str] = token_list
-        self.button_index: int | None = None
+        self.token_list: _ty.Union[_ty.List[str], _ty.List[_ty.List[str]]] = token_list
+        self.button_index: _ty.Union[int, None] = None
 
         container = RoundedFrameWidget(bg_color=QColor("white"),
                                        border_color=QColor("white"),
@@ -526,18 +546,27 @@ class TokenSelectionList(QGraphicsProxyWidget):
         """
         self.button_index = button_index
         self.setVisible(visible)
+        if self.token_list:
+            self.update_token_list(self.token_list)
 
     def update_token_list(self, token_list: _ty.List[str]) -> None:
         """Updates the token list with view on the automaton type
 
         :param token_list: The new token list
         """
+        self.token_list = token_list
         self.list_widget.clear()
 
-        if len(token_list) > 1:
-            self.list_widget.addItems(token_list[0])
+        if isinstance(self.token_list, list) and self.token_list and all(isinstance(item, list) for item in self.token_list):
+            if self.button_index is None or self.button_index in [0, 1]:
+                tokens_to_show = self.token_list[0]
+            elif self.button_index == 2:
+                tokens_to_show = self.token_list[1]
+            else:
+                tokens_to_show = self.token_list[0]
+            self.list_widget.addItems(tokens_to_show)
         else:
-            self.list_widget.addItems(token_list)
+            self.list_widget.addItems(self.token_list)
 
     def filter_tokens(self, text) -> None:
         """Filters the token list based on the search text.
@@ -568,44 +597,41 @@ class TransitionFunction(QGraphicsProxyWidget):
         :param parent: The parent graphics item, defaults to None.
         """
         super().__init__(parent)
-        self.tokens = tokens
+        self.token_list = tokens
         self.transition = transition
         self.sections = sections
 
-        self.token_list = TokenSelectionList(self.tokens, self)
-        self.token_buttons = TokenSelectionButton(self.token_list, self.sections, self)
+        self.token_selection_list = TokenSelectionList(self.token_list, self)
+        self.token_buttons = TokenSelectionButton(self.token_selection_list, self.sections, self)
 
         self._setup_signals()
 
     def _setup_signals(self):
-        """Verbindet Signale mit den entsprechenden Slots."""
-        self.token_list.token_selected.connect(self.token_buttons.set_token)
+        """Connects signals to the corresponding slots."""
+        self.token_selection_list.token_selected.connect(self.token_buttons.set_token)
         self.token_buttons.all_token_set.connect(self.set_condition)
 
     def set_condition(self, condition: list[str]) -> None:
-        """Setzt die Bedingung der Transition und aktualisiert die UI-Elemente.
+        """Sets the condition of the transition and updates the UI elements.
 
-        :param condition: Eine Liste der aktuell gewählten Tokens.
+        :param condition: A list of the currently selected tokens.
         """
         validated_condition = self._validate_condition(condition)
         self.transition.get_ui_transition().set_condition(validated_condition)
         self.token_buttons.set_condition(validated_condition)
 
     def _validate_condition(self, condition: list[str]) -> list[str]:
-        """Überprüft und ersetzt ungültige Tokens in der Bedingung.
-
-        Falls ein Token nicht mehr existiert, wird es durch ein Platzhalter-Token ersetzt.
-        """
+        """Checks and replaces invalid tokens in the condition."""
         valid_condition = []
         for token in condition:
-            if token in self.tokens:
+            if token in self.token_list:
                 valid_condition.append(token)
         return valid_condition
 
-    def update_token_list(self, new_token_list: list[str]) -> None:
-        """Aktualisiert die Token-Liste und ersetzt ungültige Tokens in der Bedingung."""
-        self.tokens = new_token_list
-        self.token_list.update_token_list(new_token_list)
+    def update_token_list(self, token_list: list[str]) -> None:
+        """Updates the token list and replaces invalid tokens in the condition."""
+        self.token_list = token_list
+        self.token_selection_list.update_token_list(token_list)
 
         current_condition = self.token_buttons.token_buttons
         new_condition = self._validate_condition([btn.text() for btn in current_condition])
@@ -678,9 +704,9 @@ class StateGroup(QGraphicsItemGroup):
             node_type = self.get_type()
         )
 
-        self.state: State = State(x, y, width, height, default_color, self)
+        self.state: 'State' = State(x, y, width, height, default_color, self)
         self.addToGroup(self.state)
-        self.label: Label = Label(f'q{number}' if isinstance(number, int) else number, self)
+        self.label: 'Label' = Label(f'q{number}' if isinstance(number, int) else number, self)
         self.label.setParentItem(self)
 
         self.connection_positions: dict[str, tuple[float, float, QColor]] = self.create_connection_positions(self.state.rect())

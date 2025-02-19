@@ -18,7 +18,7 @@ QLineEdit#user_panel-state_menu-name_input, QSlider#user_panel-state_menu-size_i
     color: $color_primary;
 }
 QSlider#user_panel-state_menu-size_input::groove:horizontal {
-    background: $background_primary;
+    background: $background_secondary;
     height: 6px;
     border-radius: 3px;
 }
@@ -39,6 +39,18 @@ QPushButton#user_panel-state_menu-close_button {
 QPushButton#user_panel-state_menu-close_button:hover {
     color: #FF8533;
     rgb(0, 10, 33)
+}
+QFrame#user_panel-overlay {
+    background: #99c0ff;
+    border-radius: 15px;
+    padding: 5px;
+}
+QComboBox#user_panel-overlay-token_box {
+    background-color: $color_primary;
+    border: 1px solid $border_primary;
+    border-radius: 6px;
+    padding: 2px;
+    color: $color_primary;
 }
 /* End of QSS */
 

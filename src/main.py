@@ -82,6 +82,7 @@ class App:
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             self.window.setup_gui()
+            self.control_menu = self.window.user_panel.control_menu
 
             # Setup logger
             self._order_logs(f"{self.data_folder}/logs")
@@ -110,17 +111,20 @@ class App:
             # Automaton backend init
             if input_path != "":
                 self.ui_automaton: UiAutomaton | None = self.load_file(input_path)
+                self.loaded: bool = True
                 if self.ui_automaton is None:
                     input_path = ""
                 else:
+                    self.loaded = False
                     self.signal_bus.emit_automaton_changed(
                         is_loaded=True,
                         token_list=self.ui_automaton.get_token_lists()
                     )
             if input_path == "":
                 states_with_design = {
+                    'default': '',
                     'end': '',
-                    'default': ''
+                    'fehler': ''
                 }
                 self.signal_bus.emit_automaton_changed(is_loaded=False)
                 self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
@@ -169,15 +173,12 @@ class App:
             raise Exception("Exception occurred during initialization of the App class") from e
 
     def connect_signals(self):
-        self.overlay = self.window.user_panel.overlay
         grid_view = self.window.user_panel.grid_view
         automaton: UiAutomaton = self.ui_automaton
 
-        self.overlay.play_button.clicked.connect(self.start_simulation)
-        self.overlay.stop_button.clicked.connect(self.stop_simulation)
-        self.overlay.next_button.clicked.connect(self.next_step)
-
-        grid_view.set_ui_automaton_type.connect(automaton.set_automaton_type)
+        self.control_menu.play_button.clicked.connect(self.start_simulation)
+        self.control_menu.stop_button.clicked.connect(self.stop_simulation)
+        self.control_menu.next_button.clicked.connect(self.next_step)
 
         grid_view.add_state.connect(automaton.add_state)
         grid_view.add_transition.connect(automaton.add_transition)
@@ -214,21 +215,21 @@ class App:
             ErrorCache().waring('No Automaton loaded!', '', True, True)
             return
 
-        overlay = self.window.user_panel.overlay
+        overlay = self.window.user_panel.control_menu
 
         if self.ui_automaton:
-            # Hole die aktuelle Eingabe (muss an deine Implementierung angepasst werden)
-            current_input = ['Apfel', 'Birne']
+            current_input = ['a']
 
-            print(self.ui_automaton.get_automaton_type(), self.ui_automaton.get_author())
-            result = self.ui_automaton.simulate(current_input)
+            print(self.ui_automaton)
+            try:
+                result = self.ui_automaton.simulate(current_input)
+            except Exception as e:
+                ErrorCache().waring(e, '', True, True)
             if isinstance(result, _result.Success):
                 overlay.play_button.setEnabled(False)
                 overlay.next_button.setEnabled(False)
                 overlay.stop_button.setEnabled(True)
-                # self.simulation_state_changed.emit(True)
 
-                # Verarbeite Simulationsupdates
                 while self.ui_automaton.is_simulation_data_available():
                     sim_result = self.ui_automaton.handle_simulation_updates()
                     if sim_result:
@@ -241,10 +242,9 @@ class App:
 
     def stop_simulation(self):
         if self.ui_automaton:
-            self.overlay.play_button.setEnabled(True)
-            self.overlay.next_button.setEnabled(True)
-            self.overlay.stop_button.setEnabled(False)
-            # self.simulation_state_changed.emit(False)
+            self.control_menu.play_button.setEnabled(True)
+            self.control_menu.next_button.setEnabled(True)
+            self.control_menu.stop_button.setEnabled(False)
 
     def next_step(self):
         if self.ui_automaton:

@@ -290,7 +290,7 @@ class DFAAutomaton(BaseAutomaton):
 
         result: _result.Result = self.next_state()  # Transition to the next state.
         if not isinstance(result, _result.Success):
-            ActLogger().error(result.value_or("Failed to cache error message!"))
+            ActLogger().error(result._inner_value or "Failed to cache error message!")
             return result
 
         self.next_char()  # Move to the next character in the input.

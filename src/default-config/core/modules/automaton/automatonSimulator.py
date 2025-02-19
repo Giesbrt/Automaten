@@ -5,6 +5,8 @@ from core.modules.automaton.automatonBridge import AutomatonBridge
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 from core.modules.automaton.automatonProvider import AutomatonProvider
 
+from utils.errorCache import ErrorCache
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
@@ -34,6 +36,12 @@ class AutomatonSimulator:
         self._build_automaton()
 
         automaton_input: _ty.List[_ty.Any] = self._simulation_request["input"]
+
+        if self.automaton.automaton_impl is None:
+            log_message: str = "Failed to simulate automaton due to a failed initialisation"
+            ErrorCache().error(log_message, "", True)
+            return _result.Failure(log_message)
+
         self.automaton.set_input(automaton_input)
         print(self.automaton.get_input())
 

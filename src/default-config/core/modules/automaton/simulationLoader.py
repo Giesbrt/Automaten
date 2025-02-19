@@ -9,6 +9,7 @@ from queue import Queue
 
 from aplustools.io import ActLogger
 from core.modules.storage import JSONAppStorage
+from utils.errorCache import ErrorCache
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -37,11 +38,13 @@ class SimulationLoader:
         :return: None
         """
         ActLogger().info("Pushed simulation packet to bridge.")
-        self._bridge.add_simulation_item(item)
 
         # check if simulation result packet is send
         if "type" not in item:
+            ErrorCache().debug("Simulation tried to push malformed simulation-packet to bridge", "", True)
             return
+
+        self._bridge.add_simulation_item(item)
         if item["type"].lower() == "SIMULATION_RESULT".lower():
             self._bridge.set_simulation_data_status(True)
 
@@ -65,12 +68,16 @@ class SimulationLoader:
                 if clear_queue not in bridge_queue_callables:
                     ActLogger().debug(
                         f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge (CLEAR)")
+                    ErrorCache().debug(f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge "
+                                      f"(CLEAR)", "", True)
                     return
                 bridge_queue_callables[clear_queue][1]()  # Invoke the clear method
 
         # push error to queue
         if error_queue not in bridge_queue_callables:
             ActLogger().debug(f"Failed to recognise {error_queue} queue whilst trying to push error to bridge (PUSH)")
+            ErrorCache().debug(f"Failed to recognise {error_queue} queue whilst trying to push error to bridge (PUSH)",
+                              "", True)
             return
 
         bridge_queue_callables[error_queue][0]()

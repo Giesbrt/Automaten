@@ -112,8 +112,8 @@ class Automaton(_abc.ABC):
         self.states: OrderedSet[State] = OrderedSet()
         self.transitions: OrderedSet[Transition] = OrderedSet()
 
-        self.current_state: State = None
-        self.start_state: State = None
+        self.current_state: State | None = None
+        self.start_state: State | None = None
         self.end_states: _ty.Set[State] = set()
 
     def get_states(self) -> OrderedSet[State]:

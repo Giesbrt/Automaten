@@ -1,4 +1,3 @@
-
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc

@@ -328,7 +328,7 @@ class UiAutomaton(IUiAutomaton):
         """
         self._transitions.add(transition)
 
-    def get_automaton_type(self) -> str:  # TODO: maybe another name (is a little bit confusing)
+    def get_automaton_type(self) -> str:
         """Gets the automaton type of the automaton.
 
         :return: The automaton type of the automaton.
@@ -360,7 +360,7 @@ class UiAutomaton(IUiAutomaton):
         """
         return self._bridge.is_simulation_data_ready()
 
-    def handle_bridge_updates(self) -> None:  # todo req testing
+    def handle_bridge_updates(self) -> None:
         """Handles updates from the UI bridge.
 
         :return: None
@@ -507,6 +507,7 @@ class UiAutomaton(IUiAutomaton):
 
         if simulation_task["type"].upper() != "SIMULATION_UPDATE":
             if simulation_task["type"].upper() != "SIMULATION_RESULT":
+                ErrorCache().warn(f"Could not recognise simulation packet with header: {simulation_task["type"].upper()}", "")
                 return
 
             self._bridge.clear_simulation_queue()

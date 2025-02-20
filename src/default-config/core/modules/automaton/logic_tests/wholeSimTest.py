@@ -2,7 +2,10 @@ import threading
 from core.modules.automaton.UiBridge import UiBridge
 from core.modules.automaton_loader import start
 from core.modules.automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
+
+from PySide6.QtCore import Signal
 from time import sleep
+import types as _ts
 
 if __name__ == '__main__':
 
@@ -36,10 +39,16 @@ if __name__ == '__main__':
     uiAutomaton.add_transition(transitionBA)
     uiAutomaton.add_transition(transitionBB)
 
-    # Simulation
-    print(uiAutomaton.simulate(["a", "b", "b", "a"]))
-    print("-- SIMULATION SEND --")
+    # signal: Signal = Signal(_ts.FunctionType)
+    # signal.connect(lambda: print("SIM READY"))
+
     bridge = UiBridge()
+    # bridge.set_signal(signal)
+
+    # Simulation
+    print(uiAutomaton.simulate(list("a" * 10)))  #  ["a", "b", "b", "a"]
+    print("-- SIMULATION SEND --")
+
 
     # sleep(2)
     while not uiAutomaton.is_simulation_data_available() and not uiAutomaton.has_bridge_updates():
@@ -51,9 +60,14 @@ if __name__ == '__main__':
     while uiAutomaton.has_bridge_updates():
         uiAutomaton.handle_bridge_updates()
 
+    j = 0
+
     while uiAutomaton.has_simulation_data():
         while uiAutomaton.has_bridge_updates():
             uiAutomaton.handle_bridge_updates()
+        print(j)
+        # if j == 5:
+        #     uiAutomaton.stop_simulation()
 
         print("Output: ", uiAutomaton.handle_simulation_updates())
         for i in uiAutomaton.get_states():
@@ -66,6 +80,7 @@ if __name__ == '__main__':
                 continue
             print("(transition) Actually active:", uiAutomaton.get_transition_index(i))
         print("--")
+        j += 1
 
     print("-- SIMULATION FINISHED --")
     backend_stop_event.set()

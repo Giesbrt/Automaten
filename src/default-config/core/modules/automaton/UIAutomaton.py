@@ -648,6 +648,19 @@ class UiAutomaton(IUiAutomaton):
         # delete actual state
         self._states.remove(state)
 
+    def stop_simulation(self) -> None:
+        for state in self._states:
+            state._deactivate()
+
+        for transition in self._transitions:
+            transition._deactivate()
+
+        self._input = None
+        self._pointer_index = None
+
+        self._bridge.set_simulation_data_status(False)
+        self._bridge.clear_simulation_queue()
+
     def __eq__(self, other: _ty.Self):
         print(self._type)
         try:

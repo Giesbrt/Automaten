@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget, QDialog, \
     QVBoxLayout, QLabel
 from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont, QColor, QPalette
-from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl, Qt
+from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl, Qt, Signal
 
 from aplustools.io.qtquick import QQuickMessageBox
 
@@ -57,6 +57,9 @@ class AutomatonSelectionDialog(QDialog):
 
 class MainWindow(QMainWindow, IMainWindow):
     linked: bool = False
+
+    save_file_signal: Signal(str) = Signal(str)
+    open_file_signal: Signal(str) = Signal(str)
 
     # def __new__(cls, *args, **kwargs):
     #     return QMainWindow.__new__(cls,)
@@ -147,6 +150,7 @@ class MainWindow(QMainWindow, IMainWindow):
             self, "Open File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au);;All Files (*)"
         )
         if file_path:
+            self.open_file_signal.emit(file_path)
             QMessageBox.information(self, "File Opened", f"You opened: {file_path}")
 
     def save_file(self):
@@ -154,6 +158,7 @@ class MainWindow(QMainWindow, IMainWindow):
         file_path, _ = file_dialog.getSaveFileName(
             self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
         if file_path:
+            self.save_file_signal.emit(file_path)
             QMessageBox.information(self, "File Saved", f"File saved to: {file_path}")
 
     def show_about(self):
@@ -301,8 +306,10 @@ class MainWindow(QMainWindow, IMainWindow):
         self.show()
         self.raise_()
 
-        if not self.show_automaton_selection():
-            self.close()
+        self.singleton_observer = SingletonObserver()
+        if not self.singleton_observer.get('is_loaded'):
+            if not self.show_automaton_selection():
+                self.close()
 
     def close(self) -> None:
         QMainWindow.close(self)

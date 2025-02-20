@@ -68,7 +68,6 @@ class SingletonObserver:
 
     @classmethod
     def get(cls, key: str) -> any:
-        print(cls._state.get(key))
         return cls._state.get(key)
 
     @classmethod

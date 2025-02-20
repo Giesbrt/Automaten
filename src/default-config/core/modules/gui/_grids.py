@@ -188,7 +188,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     get_token_lists: Signal = Signal()
     get_is_changeable_token_list: Signal = Signal()
     get_transition_pattern: Signal = Signal()
-    set_is_changeable_token_list: Signal = Signal()
     set_transition_pattern: Signal = Signal()
     get_states: Signal = Signal()
     get_transitions: Signal = Signal()
@@ -205,6 +204,8 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     has_bridge_updates: Signal = Signal()
     is_simulation_data_available: Signal = Signal()
 
+    set_is_changeable_token_list: Signal = Signal(list)
+
     add_state: Signal = Signal(UiState)
     add_transition: Signal = Signal(UiTransition)
     delete_state: Signal = Signal(UiState)
@@ -217,7 +218,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         """
         super().__init__()
         self.automaton_type: str | None = None
-        self.token_list: _ty.List[str] | [] = []
+        self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = [[], ['L', 'R', 'H']]
         self.loaded_automaton: bool | None = None
         self._counter: int = 0
         self._last_active: State | None = None
@@ -250,8 +251,8 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self.render_transitions(response)
         elif method_name == 'get_token_lists':
             self.set_token_list(response)
-        elif method_name == 'get_automaton_type':
-            print(response)
+        """elif method_name == 'get_automaton_type':
+            print(response)"""
 
     def render_ui_automaton(self):
         """Renders the UiAutomaton"""
@@ -291,7 +292,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     def set_loaded_automaton(self, value: AutomatonEvent):
         self.loaded_automaton = value.is_loaded
 
-    def set_token_list(self, token_list: _ty.List[str]) -> None:
+    def set_token_list(self, token_list: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
         """Set the token list in GridView & UiAutomaton,
         updates all TransitionFunctions
 
@@ -299,6 +300,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         """
         self.token_list = token_list
         self.update_all_transition_functions()
+        self.set_is_changeable_token_list.emit([True, False])
 
     def update_all_transition_functions(self):
         """Updates all TransitionFunction to the new token_list"""
@@ -319,7 +321,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if self.loaded_automaton:
             self.render_ui_automaton()
 
-    def get_token_list(self) -> _ty.List[str]:
+    def get_token_list(self) -> _ty.Tuple[_ty.List[str], _ty.List[str]]:
         return self.token_list
 
     def get_mapped_position(self, item: QGraphicsItem) -> any:
@@ -363,12 +365,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         return item
 
     def add_item_to_token_list(self, token: str) -> None:
-        if token not in self.token_list:
-            self.token_list.append(token)
+        if token not in self.token_list[0]:
+            self.token_list[0].append(token)
 
     def remove_item_from_token_list(self, token: str) -> None:
-        if token in self.token_list:
-            self.token_list.remove(token)
+        if token in self.token_list[0]:
+            self.token_list[0].remove(token)
 
     def create_state_from_automaton(self, state: UiState):
         color: QColor = state.get_colour()
@@ -570,16 +572,17 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             if last_parent_item != current_parent_item:
                 parent.state_menu.disconnect_methods()
                 last_parent_item.deactivate()
-        elif not isinstance(item, State | Label | ConnectionPoint):
-            ...
 
-        if isinstance(item, State | Label):
+        if isinstance(item, State | Label) and not parent.state_menu.isVisible():
             parent.toggle_condition_edit_menu(True)
             parent.state_menu.set_state(current_parent_item)
             parent.state_menu.connect_methods()
             current_parent_item.activate()
+        elif isinstance(item, State | Label) and parent.state_menu.isVisible():
+            parent.state_menu.set_state(current_parent_item)
+            parent.state_menu.connect_methods()
+            current_parent_item.activate()
         else:
-            # transition.get_transition_function().close_token_selection_list()
             if parent.state_menu.x() < parent.width():
                 parent.toggle_condition_edit_menu(False)
 
@@ -609,11 +612,9 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         item = self.get_item_at(event.pos())
 
         if isinstance(item, ConnectionPoint) and item.flow == 'out' and not item.is_hovered:
-            # item.grow()
             self._last_connection_point = item
         elif not isinstance(item, ConnectionPoint):
             if self._last_connection_point:
-                # self._last_connection_point.shrink()
                 self._last_connection_point = None
 
         if isinstance(item, State | Label | ConnectionPoint):

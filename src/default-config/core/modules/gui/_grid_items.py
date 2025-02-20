@@ -474,14 +474,14 @@ class TokenSelectionList(QGraphicsProxyWidget):
 
     token_selected: Signal(tuple) = Signal(tuple)
 
-    def __init__(self, token_list: _ty.Union[_ty.List[str], _ty.List[_ty.List[str]]], parent: QWidget=None) -> None:
+    def __init__(self, token_list: _ty.Tuple[_ty.List[str], _ty.List[str]], parent: QWidget=None) -> None:
         """Initializes the token selection list widget.
 
         :param token_list: A list of tokens to display.
         :param parent: The parent graphics item, defaults to None.
         """
         super().__init__(parent)
-        self.token_list: _ty.Union[_ty.List[str], _ty.List[_ty.List[str]]] = token_list
+        self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = token_list
         self.button_index: _ty.Union[int, None] = None
 
         container = RoundedFrameWidget(bg_color=QColor("white"),
@@ -513,7 +513,7 @@ class TokenSelectionList(QGraphicsProxyWidget):
         layout.addWidget(self.search_separator)
 
         self.list_widget = QListWidget(container)
-        self.list_widget.addItems(self.token_list)
+        # self.list_widget.addItems(self.token_list)
         self.list_widget.setStyleSheet('''
             QListWidget { 
                 border: none; 
@@ -549,7 +549,7 @@ class TokenSelectionList(QGraphicsProxyWidget):
         if self.token_list:
             self.update_token_list(self.token_list)
 
-    def update_token_list(self, token_list: _ty.List[str]) -> None:
+    def update_token_list(self, token_list: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
         """Updates the token list with view on the automaton type
 
         :param token_list: The new token list
@@ -557,16 +557,13 @@ class TokenSelectionList(QGraphicsProxyWidget):
         self.token_list = token_list
         self.list_widget.clear()
 
-        if isinstance(self.token_list, list) and self.token_list and all(isinstance(item, list) for item in self.token_list):
-            if self.button_index is None or self.button_index in [0, 1]:
-                tokens_to_show = self.token_list[0]
-            elif self.button_index == 2:
-                tokens_to_show = self.token_list[1]
-            else:
-                tokens_to_show = self.token_list[0]
-            self.list_widget.addItems(tokens_to_show)
+        if self.button_index is None or self.button_index in [0, 1]:
+            tokens_to_show = self.token_list[0]
+        elif self.button_index == 2:
+            tokens_to_show = self.token_list[1]
         else:
-            self.list_widget.addItems(self.token_list)
+            tokens_to_show = self.token_list[0]
+        self.list_widget.addItems(tokens_to_show)
 
     def filter_tokens(self, text) -> None:
         """Filters the token list based on the search text.
@@ -624,7 +621,7 @@ class TransitionFunction(QGraphicsProxyWidget):
         """Checks and replaces invalid tokens in the condition."""
         valid_condition = []
         for token in condition:
-            if token in self.token_list:
+            if token in self.token_list[0]:
                 valid_condition.append(token)
         return valid_condition
 

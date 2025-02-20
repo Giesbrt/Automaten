@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSp
                                QFormLayout, QLineEdit,
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QHBoxLayout, QColorDialog, QComboBox, QMenu)
-from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QEvent, Signal, QParallelAnimationGroup
+from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QEvent, Signal, QParallelAnimationGroup, QTimer
 from PySide6.QtGui import QColor, QIcon, QPen, QAction
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
@@ -120,7 +120,7 @@ class StateMenu(QFrame):
 
             token_list = self.singleton_observer.get('token_list')
             condition_edit: QComboBox = QComboBox()
-            condition_edit.addItems(token_list if token_list else [])
+            condition_edit.addItems(token_list[0] if token_list else [])
             condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
 
             self.transitions_table.setItem(i, 0, target_item)
@@ -159,7 +159,7 @@ class ControlMenu(QFrame):
         self.singleton_observer.subscribe('token_list', self.update_token_list)
 
         self.grid_view = grid_view
-        self.token_list: _ty.List[str] = self.grid_view.get_token_list()
+        self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = self.grid_view.get_token_list()
 
         self.init_ui()
 
@@ -214,16 +214,16 @@ class ControlMenu(QFrame):
 
     def add_token(self):
         token = self.token_list_box.currentText().strip()
-        if not token in self.token_list:
+        if not token in self.token_list[0]:
             self.token_list_box.addItem(token)
-        self.token_list_box.setCurrentText('')
-        self.token_list.append(token)
+        QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
+        self.token_list[0].append(token)
 
         self.singleton_observer.set('token_list', self.token_list)
 
     def remove_token(self, token, token_index: int=None):
         self.token_list_box.removeItem(token_index)
-        self.token_list.remove(token)
+        self.token_list[0].remove(token)
 
         self.singleton_observer.set('token_list', self.token_list)
 

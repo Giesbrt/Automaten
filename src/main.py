@@ -8,6 +8,7 @@ config.setup()
 from returns import result as _result
 from pathlib import Path as PLPath
 from traceback import format_exc
+from functools import partial
 import multiprocessing
 from string import Template
 from argparse import ArgumentParser
@@ -33,7 +34,7 @@ from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeL
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
-from core.modules.signal_bus import SignalBus
+from core.modules.signal_bus import SignalBus, SingletonObserver
 from core.modules.automaton.UIAutomaton import UiAutomaton
 from core.modules.automaton.automatonProvider import AutomatonProvider
 from core.modules.serializer import serialize, deserialize
@@ -107,15 +108,16 @@ class App:
             self.backend_thread.start()
 
             self.signal_bus = SignalBus()
+            self.singleton_observer = SingletonObserver()
 
             # Automaton backend init
             if input_path != "":
                 self.ui_automaton: UiAutomaton | None = self.load_file(input_path)
-                self.loaded: bool = True
                 if self.ui_automaton is None:
                     input_path = ""
                 else:
-                    self.loaded = False
+                    self.singleton_observer.set('is_loaded', True)
+                    self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
                     self.signal_bus.emit_automaton_changed(
                         is_loaded=True,
                         token_list=self.ui_automaton.get_token_lists()
@@ -126,6 +128,7 @@ class App:
                     'end': '',
                     'fehler': ''
                 }
+                self.singleton_observer.set('is_loaded', False)
                 self.signal_bus.emit_automaton_changed(is_loaded=False)
                 self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
 
@@ -180,6 +183,11 @@ class App:
         self.control_menu.stop_button.clicked.connect(self.stop_simulation)
         self.control_menu.next_button.clicked.connect(self.next_step)
 
+        self.window.save_file_signal.connect(partial(self.save_to_file, automaton=self.ui_automaton))
+        self.window.open_file_signal.connect(self.load_file)
+
+        grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
+
         grid_view.add_state.connect(automaton.add_state)
         grid_view.add_transition.connect(automaton.add_transition)
         grid_view.delete_state.connect(automaton.delete_state)
@@ -193,7 +201,6 @@ class App:
         grid_view.get_is_changeable_token_list.connect(automaton.get_is_changeable_token_list)
         grid_view.get_transition_pattern.connect(automaton.get_transition_pattern)
         grid_view.set_token_lists.connect(automaton.set_token_lists)
-        grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
         grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
 
         grid_view.get_transitions.connect(automaton.get_transitions)
@@ -210,14 +217,13 @@ class App:
         grid_view.has_bridge_updates.connect(automaton.has_bridge_updates)
         grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)"""
 
-    def start_simulation(self):
+    def start_simulation(self) -> None:
+        overlay = self.window.user_panel.control_menu
+
         if not self.ui_automaton:
             ErrorCache().waring('No Automaton loaded!', '', True, True)
             return
-
-        overlay = self.window.user_panel.control_menu
-
-        if self.ui_automaton:
+        else:
             current_input = ['a']
 
             print(self.ui_automaton)
@@ -372,6 +378,7 @@ class App:
                 True, True)
             return None
         try:
+            print(automaton, filetype)
             content: bytes = serialize(automaton, "", filetype)
             with os_open(filepath, "wb") as f:
                 f.write(content)

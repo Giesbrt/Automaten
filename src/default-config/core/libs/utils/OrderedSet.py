@@ -169,13 +169,3 @@ class OrderedSet(_ty.Generic[T]):
             return NotImplemented
         return OrderedSet(item for item in self if item not in other)
 
-    def __xor__(self, other):
-        """
-        Returns the symmetric difference of the OrderedSet with another OrderedSet or set.
-        :param other: The other OrderedSet or set to be symmetric differenced with.
-        :return: The symmetric difference of the OrderedSet with the other OrderedSet or set.
-        """
-        if not isinstance(other, (OrderedSet, set)):
-            return NotImplemented
-        return OrderedSet(item for item in self if item not in other).union(
-            item for item in other if item not in self)

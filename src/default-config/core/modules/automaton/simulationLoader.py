@@ -47,6 +47,8 @@ class SimulationLoader:
         self._bridge.add_simulation_item(item)
         if item["type"].lower() == "SIMULATION_RESULT".lower():
             self._bridge.set_simulation_data_status(True)
+            if self._bridge.get_signal() is not None:
+                self._bridge.get_signal().emit()
 
     def _push_error_to_bridge(self, error: _ty.Dict[str, _ty.Any],
                               error_queue: _ty.Literal["ui", "simulation"] = "ui",

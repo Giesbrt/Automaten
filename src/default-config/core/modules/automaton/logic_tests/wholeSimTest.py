@@ -3,9 +3,44 @@ from core.modules.automaton.UiBridge import UiBridge
 from core.modules.automaton_loader import start
 from core.modules.automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 
-from PySide6.QtCore import Signal
+from utils.staticSignal import SignalCache, Signal
 from time import sleep
 import types as _ts
+
+
+def do_simulation():
+    print(f"-- SIMULATION DATA AVAILABLE  ({bridge.get_simulation_queue().qsize()} steps)--")
+
+    # Check for errors
+    while uiAutomaton.has_bridge_updates():
+        uiAutomaton.handle_bridge_updates()
+
+    j = 0
+
+    while uiAutomaton.has_simulation_data():
+        while uiAutomaton.has_bridge_updates():
+            uiAutomaton.handle_bridge_updates()
+        print(j)
+        # if j == 5:
+        #     uiAutomaton.stop_simulation()
+
+        print("Output: ", uiAutomaton.handle_simulation_updates())
+        for i in uiAutomaton.get_states():
+            if not i.is_active():
+                continue
+            print("(state) Actually active:", i.get_display_text())
+
+        for i in uiAutomaton.get_transitions():
+            if not i.is_active():
+                continue
+            print("(transition) Actually active:", uiAutomaton.get_transition_index(i))
+        print("--")
+        j += 1
+
+    print("-- SIMULATION FINISHED --")
+    backend_stop_event.set()
+    exit(0)
+
 
 if __name__ == '__main__':
 
@@ -39,49 +74,21 @@ if __name__ == '__main__':
     uiAutomaton.add_transition(transitionBA)
     uiAutomaton.add_transition(transitionBB)
 
-    # signal: Signal = Signal(_ts.FunctionType)
-    # signal.connect(lambda: print("SIM READY"))
+    signal: Signal = Signal()
+    signal.connect(do_simulation)
 
     bridge = UiBridge()
-    # bridge.set_signal(signal)
+    bridge.set_signal(signal)
 
     # Simulation
-    print(uiAutomaton.simulate(list("a" * 10)))  #  ["a", "b", "b", "a"]
+    print(uiAutomaton.simulate(list("a" * 100)))  #  ["a", "b", "b", "a"]
     print("-- SIMULATION SEND --")
 
-
     # sleep(2)
-    while not uiAutomaton.is_simulation_data_available() and not uiAutomaton.has_bridge_updates():
-        continue
+    # while not uiAutomaton.is_simulation_data_available() and not uiAutomaton.has_bridge_updates():
+    #     continue
 
-    print(f"-- SIMULATION DATA AVAILABLE  ({bridge.get_simulation_queue().qsize()} steps)--")
+    while True:
+        SignalCache().invoke()
 
-    # Check for erros
-    while uiAutomaton.has_bridge_updates():
-        uiAutomaton.handle_bridge_updates()
 
-    j = 0
-
-    while uiAutomaton.has_simulation_data():
-        while uiAutomaton.has_bridge_updates():
-            uiAutomaton.handle_bridge_updates()
-        print(j)
-        # if j == 5:
-        #     uiAutomaton.stop_simulation()
-
-        print("Output: ", uiAutomaton.handle_simulation_updates())
-        for i in uiAutomaton.get_states():
-            if not i.is_active():
-                continue
-            print("(state) Actually active:", i.get_display_text())
-
-        for i in uiAutomaton.get_transitions():
-            if not i.is_active():
-                continue
-            print("(transition) Actually active:", uiAutomaton.get_transition_index(i))
-        print("--")
-        j += 1
-
-    print("-- SIMULATION FINISHED --")
-    backend_stop_event.set()
-    exit(0)

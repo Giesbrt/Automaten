@@ -1,8 +1,7 @@
 import json
 from queue import Queue
 from utils.staticContainer import StaticContainer
-from PySide6.QtCore import Signal
-from utils.staticSignal import StaticSignal
+from utils.staticSignal import Signal
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -31,13 +30,13 @@ class UiBridge:
     _simulation_queue: Queue[_ty.Dict[str, str]] = Queue()
 
     _simulation_data_ready: StaticContainer[bool] = StaticContainer(False)
-    _data_ready_signal: StaticContainer[StaticSignal] = StaticContainer(None)
+    _data_ready_signal: StaticContainer[Signal[_ty.Callable]] = StaticContainer(None)
 
     # data ready
-    def set_signal(self, signal: StaticSignal) -> None:
+    def set_signal(self, signal: Signal[_ty.Callable]) -> None:
         self._data_ready_signal.set_value(signal)
 
-    def get_signal(self) -> StaticSignal:
+    def get_signal(self) -> Signal[_ty.Callable]:
         return self._data_ready_signal.get_value()
 
     # ui-related methods

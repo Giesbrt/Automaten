@@ -66,18 +66,6 @@
    "value": "cachetools"
   },
   {
-   "optionDest": "hiddenimports",
-   "value": "PySide6"
-  },
-  {
-   "optionDest": "collect_all",
-   "value": "PySide6"
-  },
-  {
-   "optionDest": "recursive_copy_metadata",
-   "value": "PySide6"
-  },
-  {
    "optionDest": "collect_all",
    "value": "cachetools"
   },
@@ -128,6 +116,26 @@
   {
    "optionDest": "hiddenimports",
    "value": "win32file"
+  },
+  {
+   "optionDest": "hiddenimports",
+   "value": "PySide6.QtCore"
+  },
+  {
+   "optionDest": "hiddenimports",
+   "value": "PySide6.QtGui"
+  },
+  {
+   "optionDest": "collect_all",
+   "value": "PySide6.QtCore"
+  },
+  {
+   "optionDest": "collect_all",
+   "value": "PySide6.QtGui"
+  },
+  {
+   "optionDest": "recursive_copy_metadata",
+   "value": "PySide6"
   }
  ],
  "nonPyinstallerOptions": {

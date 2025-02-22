@@ -9,3 +9,4 @@
 9. Dokumentation Dokument (me)
 10. Kopieren, löschen und Pasten (JakGame)
 11. Custom Extension GUI Widget
+12. Update Loader: Autor und Name des Moduls soll geladen werden (Fa4953)

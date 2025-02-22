@@ -15,7 +15,7 @@ import types as _ts
 import numpy as np
 
 from core.modules.automaton.UIAutomaton import UiState, UiTransition
-from core.modules.painter import StrToPainter, PainterStr
+from core.modules.painter import StrToPainter, PainterStr, PainterToStr, PainterColor
 
 
 class Label(QGraphicsTextItem):
@@ -73,6 +73,7 @@ class State(QGraphicsEllipseItem):
         self.width: int = width
         self.height: int = height
         self.color: QColor = color
+        self.is_active = False
 
         self.setBrush(QColor(self.color))
         self.setPen(Qt.PenStyle.NoPen)
@@ -80,6 +81,12 @@ class State(QGraphicsEllipseItem):
         self.default_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;")
         self.end_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
         self.start_painter_str: PainterStr = PainterStr("Text: (195.62833599002374, 91.36730222890128), 'MyText', 13#0000ff;Polygon: ((211.25667198004749, 2.7346044578025612), (179.99999999999997, 360.0), (0.0, 179.99999999999997)), 0#000000##00000000;Rect: ((205.005337584038, 38.18768356624204), (179.99999999999997, 324.0)), 0#000000##00000000;Arc: ((360.0, 360.0), 162.0, 162.0), (270, 360), 2#00ff00##00ff00;Arc: ((180.0, 180.0), 162.0, 162.0), (0, 90), 2#00ff00##00ff00;")
+
+        obj = PainterToStr()
+        obj.ellipse((obj.coord().load_from_cartesian(180, 180), 180.0, 180.0), PainterColor(255, 0, 0))
+        is_active_str = obj.clean_out_style_str()
+        self.is_active_str: PainterStr = PainterStr(is_active_str)
+        print(self.is_active_str)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """Paints the state as an ellipse and adds an inner circle if the state type is 'end'.
@@ -103,6 +110,8 @@ class State(QGraphicsEllipseItem):
             str_painter.draw_painter_str(self.end_painter_str)
         elif state_type == "start":
             str_painter.draw_painter_str(self.start_painter_str)
+        if self.is_active:
+            str_painter.draw_painter_str(self.is_active_str)
         painter.restore()
 
 
@@ -168,6 +177,11 @@ class ConnectionPoint(QGraphicsEllipseItem):
         :param option: The style options for the item.
         :param widget: The widget on which the item is painted, defaults to None.
         """
+        for key, values in self.parentItem().create_connection_positions(self.parentItem().state.rect()).items():
+            if f'{self.get_direction()}_{self.get_flow()}' == key:
+                self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))
+                if self.is_hovered and self.get_flow() == 'out':
+                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2, self._hovered_size, self._hovered_size))
         super().paint(painter, option, widget)
 
 
@@ -556,6 +570,8 @@ class TokenSelectionList(QGraphicsProxyWidget):
         """
         self.token_list = token_list
         self.list_widget.clear()
+
+        print(self.token_list)
 
         if self.button_index is None or self.button_index in [0, 1]:
             tokens_to_show = self.token_list[0]

@@ -2,14 +2,13 @@
 import numpy as np
 import math
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu
-from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QCursor
+from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QPen, QCursor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 
 # from core.modules.automaton.base.transition import Transition
 # from core.modules.automaton.base.state import State
 
 from ._grid_items import State, StateGroup, Label, ConnectionPoint, TempTransition, Transition, TransitionFunction
-# from ._item_data import StateData
 from ._panels import UserPanel
 from ..signal_bus import SignalBus, SingletonObserver
 from ..automaton.UIAutomaton import UiState, UiTransition
@@ -318,6 +317,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
         :param token_list: The new token list
         """
+        print(token_list)
         self.token_list = token_list
         self.update_all_transition_functions()
         self.set_is_changeable_token_list.emit([True, False])
@@ -337,6 +337,18 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         """
         self.automaton_type = automaton_type
         self._setup_automaton_view()
+
+    def set_active_state(self, active_state):
+        for item in self.scene().items():
+            if isinstance(item, StateGroup):
+                if item.get_ui_state() == active_state:
+                    item.state.is_active = True
+
+    def set_active_transition(self, active_transition):
+        for item in self.scene().items():
+            if isinstance(item, Transition):
+                if item.get_ui_transition() == active_transition:
+                    item.setPen(QPen(QColor('red'), 4))
 
     def get_token_list(self) -> _ty.Tuple[_ty.List[str], _ty.List[str]]:
         return self.token_list

@@ -85,6 +85,7 @@ class App:
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             self.window.setup_gui()
+            self.grid_view = self.window.user_panel.grid_view
             self.control_menu = self.window.user_panel.control_menu
 
             # Setup logger
@@ -179,22 +180,21 @@ class App:
             raise Exception("Exception occurred during initialization of the App class") from e
 
     def connect_signals(self):
-        grid_view = self.window.user_panel.grid_view
         automaton: UiAutomaton = self.ui_automaton
 
-        self.control_menu.play_button.clicked.connect(self.start_simulation)
+        self.control_menu.play_button.clicked.connect(lambda: self.start_simulation(['a']))
         self.control_menu.stop_button.clicked.connect(self.stop_simulation)
-        self.control_menu.next_button.clicked.connect(self.next_step)
+        self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(['a']))
 
         self.window.save_file_signal.connect(partial(self.save_to_file, automaton=self.ui_automaton))
         self.window.open_file_signal.connect(self.load_file)
 
-        grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
+        self.grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
 
-        grid_view.add_state.connect(automaton.add_state)
-        grid_view.add_transition.connect(automaton.add_transition)
-        grid_view.delete_state.connect(automaton.delete_state)
-        grid_view.delete_transition.connect(automaton.delete_transition)
+        self.grid_view.add_state.connect(automaton.add_state)
+        self.grid_view.add_transition.connect(automaton.add_transition)
+        self.grid_view.delete_state.connect(automaton.delete_state)
+        self.grid_view.delete_transition.connect(automaton.delete_transition)
 
         """grid_view.get_start_state.connect(automaton.get_start_state)
         grid_view.get_state_types_with_design.connect(automaton.get_state_types_with_design)
@@ -220,61 +220,65 @@ class App:
         grid_view.has_bridge_updates.connect(automaton.has_bridge_updates)
         grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)"""
 
-    def start_simulation(self) -> None:
-        overlay = self.window.user_panel.control_menu
+    def update_simulation_controls(self, running: bool) -> None:
+        self.control_menu.play_button.setEnabled(not running)
+        self.control_menu.next_button.setEnabled(not running)
+        self.control_menu.stop_button.setEnabled(running)
 
+    def start_simulation(self, automaton_input: _ty.List[str]) -> None:
         if not self.ui_automaton:
             ErrorCache().warning('No Automaton loaded!', '', True, True)
             return
         else:
-            current_input = ['a']
-
             print(self.ui_automaton)
             try:
-                result = self.ui_automaton.simulate(current_input, self.start_step_simulation)
+                result = self.ui_automaton.simulate(automaton_input, self.handle_simulation)
+                if isinstance(result, _result.Success):
+                    self.update_simulation_controls(running=True)
+                elif isinstance(result, _result.Failure):
+                    ErrorCache().info('Fehler beim Simulieren aufgetreten!', '', True, True)
             except Exception as e:
                 ErrorCache().warning(e, '', True, True)
-            if isinstance(result, _result.Success):
-                overlay.play_button.setEnabled(False)
-                overlay.next_button.setEnabled(False)
-                overlay.stop_button.setEnabled(True)
 
-                """while self.ui_automaton.is_simulation_data_available():
-                    sim_result = self.ui_automaton.handle_simulation_updates()
-                    if sim_result:
-                        if isinstance(sim_result, _result.Failure):
-                            print(f"Simulationsfehler: {sim_result.value_or('Unbekannter Fehler')}")
-                            self.stop_simulation()
-                            break"""
-            else:
-                print(f"Fehler beim Starten der Simulation: {result.value_or('Unbekannter Fehler')}")
-
-    def start_step_simulation(self):
-        while self.ui_automaton.has_simulation_data():
-            simulation_result = self.ui_automaton.handle_simulation_updates()
-            print(f'{simulation_result=}', self.ui_automaton.get_active_state())
-
-    def stop_simulation(self):
+    def stop_simulation(self) -> None:
         if self.ui_automaton:
-            self.control_menu.play_button.setEnabled(True)
-            self.control_menu.next_button.setEnabled(True)
-            self.control_menu.stop_button.setEnabled(False)
-
             self.ui_automaton.stop_simulation()
+            self.update_simulation_controls(running=False)
 
-    def next_step(self):
-        if self.ui_automaton:
-            # Hole die aktuelle Eingabe
-            current_input = []
+    def handle_simulation(self) -> None:
+        while self.ui_automaton.has_simulation_data():
+            simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
+            active_state: 'UiState' = self.ui_automaton.get_active_state()
+            active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
 
-            # Führe einen Simulationsschritt aus
-            result = self.ui_automaton.simulate(current_input)
+            self.grid_view.set_active_state(active_state)
+            # self.grid_view.set_active_transition(active_transition)
+            print(f'{simulation_result}', self.ui_automaton.get_active_state())
+
+        self.stop_simulation()
+
+    def start_simulation_step_for_step(self, automaton_input: _ty.List[str]) -> None:
+        print(f'{self.ui_automaton.has_simulation_data()=}')
+        if self.ui_automaton and not self.ui_automaton.has_simulation_data():
+            result = self.ui_automaton.simulate(automaton_input, self.step_simulation)
             if isinstance(result, _result.Success):
-                # Verarbeite das Update des aktuellen Schritts
-                sim_result = self.ui_automaton.handle_simulation_updates()
-                if sim_result and isinstance(sim_result, _result.Failure):
-                    print(f"Fehler im Simulationsschritt: {sim_result.value_or('Unbekannter Fehler')}")
-                    self.stop_simulation()
+                self.update_simulation_controls(running=True)
+                self.step_simulation()
+        else:
+            self.step_simulation()
+
+    def step_simulation(self) -> None:
+        print('step simulation')
+        if self.ui_automaton.has_simulation_data():
+            simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
+            active_state: 'UiState' = self.ui_automaton.get_active_state()
+            active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
+
+            self.grid_view.set_active_state(active_state)
+            # self.grid_view.set_active_transition(active_transition)
+        else:
+            self.stop_simulation()
+            self.update_simulation_controls(running=False)
 
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions

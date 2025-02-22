@@ -180,9 +180,12 @@ class ControlMenu(QFrame):
         self.stop_button = QPushButton(self)
         self.next_button = QPushButton(self)
 
+        self.stop_button.setEnabled(False)
+
         self.token_list_box = QComboBox(self)
         self.token_list_box.setEditable(True)
         self.token_list_box.addItems(self.token_list[0])
+        self.token_list_box.lineEdit().returnPressed.connect(self.add_token)
 
         self.token_list_box.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.token_list_box.customContextMenuRequested.connect(self.show_context_menu)

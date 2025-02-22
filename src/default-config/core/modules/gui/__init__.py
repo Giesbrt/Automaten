@@ -40,7 +40,7 @@ def assign_object_names_iterative(parent: QWidget, prefix: str = "", exclude_pri
 
             # Assign the object name
             child.setObjectName(object_name)
-            # print(object_name)
+            print(object_name)
 
             # Check if we should process this child further
             if not exclude_primitives or not isinstance(child, primitives):
@@ -263,7 +263,6 @@ class Theme:
         return self._compatible_styling in ("*", "os")
 
     def is_compatible(self, style: Style) -> bool:
-        print(self._load_styles_for)
         load_st_author, load_st_theme = self._load_styles_for.split("::")
         for path in style.get_for_paths():
             author, theme_name, styling, maybe_default, *_ = path.split("::", maxsplit=3) + [""]

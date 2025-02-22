@@ -46,7 +46,7 @@ class StateMenu(QFrame):
         self.close_button.clicked.connect(lambda: self.parentWidget().toggle_condition_edit_menu(False))
 
         self.title_label: QLabel = QLabel("State Management", self)
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
+        # self.title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
 
         header_layout.addWidget(self.close_button, alignment=Qt.AlignmentFlag.AlignLeft)
         header_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -174,17 +174,17 @@ class ControlMenu(QFrame):
         # Play-Button (Symbol: ▶, grün)
         self.play_button = QPushButton("▶", self)
         self.play_button.setFixedSize(40, 40)
-        self.play_button.setStyleSheet("background: transparent; color: green; border: none; font-size: 50px;")
+        # self.play_button.setStyleSheet("background: transparent; color: green; border: none; font-size: 50px;")
 
         # Stop-Button (Symbol: ■, rot)
         self.stop_button = QPushButton("■", self)
         self.stop_button.setFixedSize(40, 40)
-        self.stop_button.setStyleSheet("background: transparent; color: red; border: none; font-size: 30px;")
+        # self.stop_button.setStyleSheet("background: transparent; color: red; border: none; font-size: 30px;")
 
         # Nächster Step-Button (Symbol: ➡, blau)
         self.next_button = QPushButton('⇥', self)
         self.next_button.setFixedSize(40, 40)
-        self.next_button.setStyleSheet("background: transparent; color: blue; border: none; font-size: 50px;")
+        # self.next_button.setStyleSheet("background: transparent; color: blue; border: none; font-size: 50px;")
 
         # Token-Box als editierbare ComboBox
         self.token_list_box = QComboBox(self)
@@ -258,6 +258,7 @@ class UserPanel(Panel):
 
         # Control Menu
         self.control_menu = ControlMenu(self.grid_view, self)
+        self.control_menu.setObjectName("user_panel-control_menu")
         # Animation for Control Menu
         self.control_menu_animation = QPropertyAnimation(self.control_menu, b'geometry')
         self.control_menu_animation.setDuration(500)

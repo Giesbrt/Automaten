@@ -639,12 +639,15 @@ class App:
                                                         SystemTheme.DARK: "dark_theming"}[self.os_theme],
                                                        "string")
         theme_str, style_str = theming_str.split("/", maxsplit=1)
-        theme = Theme.get_loaded_theme(theme_str)
+        theme: Theme | None = Theme.get_loaded_theme(theme_str)
 
         if theme is None:  # TODO: Popup
             self.logger.warning(f"Specified theme '{theme}' is not available")
             return
-        style = theme.get_compatible_style(style_str.replace("_", " ").title())
+        style: Style | None = theme.get_compatible_style(style_str.replace("_", " ").title())
+        if style is None:
+            ErrorCache().warning(f"Couldn't find specified style {style_str} for theme {theme_str}", "", show_dialog=True)
+            return
         theme_str, palette = theme.apply_style(style, self.qapp.palette(),
                                                transparency_mode="none")  # TODO: Get from settings
         self.qapp.setPalette(palette)

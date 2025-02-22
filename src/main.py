@@ -281,7 +281,6 @@ class App:
         AutomatonProvider(None).load_from_dict(extensions)
         UiSettingsProvider().load_from_incoherent_mess(self.extensions)
 
-
     @staticmethod
     def _order_logs(directory: str) -> None:
         logs_dir = PLPath(directory)

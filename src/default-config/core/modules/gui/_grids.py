@@ -77,6 +77,7 @@ class InteractiveGridView(StaticGridView):
                  parent: QWidget | None = None) -> None:
         super().__init__(grid_size, None, parent)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        self.setMouseTracking(True)
         self.setScene(QGraphicsScene(self))
         self.scene().setSceneRect(QRect(*scene_rect))
 
@@ -97,12 +98,14 @@ class InteractiveGridView(StaticGridView):
         self._previous_pan: QPointF = QPointF(0.0, 0.0)
         self._pan_delta: QPointF = QPointF(0.0, 0.0)
         self._pending_zoom: float = 1.0
+        self._last_mouse_position: QPointF = QPointF(0.0, 0.0)
 
         # Timer for limiting updates
         self._update_timer = QTimer(self)
         self._update_timer.setInterval(1000 // self.MAX_TOTAL_UPDATE_FPS)  # Max FPS update rate
         self._update_timer.timeout.connect(self.apply_pending_updates)
         self._update_timer.start()
+        self.next_zoom = False
 
     def setSceneRect(self, rect: tuple[int, int, int, int]):
         self.scene().setSceneRect(QRect(*rect))
@@ -112,7 +115,7 @@ class InteractiveGridView(StaticGridView):
         import math
         current_point: QPointF = QPointF(self.horizontalScrollBar().value() + self.width() // 2, self.verticalScrollBar().value() + self.height() // 2)
         # print(math.sqrt((current_point.x() - wanted_point.x())**2 + (current_point.y() - wanted_point.y())**2))
-        movement_vector: QPointF = QPointF(wanted_point.x() - current_point.x(), wanted_point.y() - current_point.y())
+        movement_vector: QPointF = QPointF(0, 0)# QPointF(wanted_point.x() - current_point.x(), wanted_point.y() - current_point.y())
         # print(movement_vector)
         self.horizontalScrollBar().setValue(
             self.horizontalScrollBar().value() + int(movement_vector.x() * 0.2)
@@ -120,6 +123,7 @@ class InteractiveGridView(StaticGridView):
         self.verticalScrollBar().setValue(
             self.verticalScrollBar().value() + int(movement_vector.y() * 0.2)
         )
+        self.next_zoom = True
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Zoom in and out with the mouse wheel."""
@@ -133,7 +137,7 @@ class InteractiveGridView(StaticGridView):
             self._pending_zoom *= zoom_factor  # Accumulate zoom requests
             self.zoom_level = new_zoom
             if abs(self._pending_zoom - 1.0) > 0.1:
-                self.zoom_to(self._pending_zoom, QPointF(0, 0))
+                self.zoom_to(self._pending_zoom, self._last_mouse_position)
                 self._pending_zoom = 1.0
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -147,6 +151,7 @@ class InteractiveGridView(StaticGridView):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        self._last_mouse_position = self.mapToScene(event.pos())
         if self._is_panning:
             self._pan_delta += (event.position() - self._previous_pan)
             self._previous_pan = event.position()
@@ -161,6 +166,7 @@ class InteractiveGridView(StaticGridView):
                 )
                 self._pan_delta = QPointF(0.0, 0.0)
             # self.resetCachedContent()
+            #self.mapFromGlobal()
             event.accept()
         else:
             super().mouseMoveEvent(event)
@@ -177,7 +183,8 @@ class InteractiveGridView(StaticGridView):
     def apply_pending_updates(self) -> None:
         """Apply batched pan and zoom updates."""
         if self._pending_zoom != 1.0:
-            self.zoom_to(self._pending_zoom, QPointF(0, 0))
+
+            self.zoom_to(self._pending_zoom, self._last_mouse_position)
             self._pending_zoom = 1.0
 
         self.horizontalScrollBar().setValue(

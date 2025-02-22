@@ -107,6 +107,20 @@ class InteractiveGridView(StaticGridView):
     def setSceneRect(self, rect: tuple[int, int, int, int]):
         self.scene().setSceneRect(QRect(*rect))
 
+    def zoom_to(self, pending_zoom: float, wanted_point: QPointF) -> None:
+        self.scale(pending_zoom, pending_zoom)
+        import math
+        current_point: QPointF = QPointF(self.horizontalScrollBar().value() + self.width() // 2, self.verticalScrollBar().value() + self.height() // 2)
+        # print(math.sqrt((current_point.x() - wanted_point.x())**2 + (current_point.y() - wanted_point.y())**2))
+        movement_vector: QPointF = QPointF(wanted_point.x() - current_point.x(), wanted_point.y() - current_point.y())
+        # print(movement_vector)
+        self.horizontalScrollBar().setValue(
+            self.horizontalScrollBar().value() + int(movement_vector.x() * 0.2)
+        )
+        self.verticalScrollBar().setValue(
+            self.verticalScrollBar().value() + int(movement_vector.y() * 0.2)
+        )
+
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Zoom in and out with the mouse wheel."""
         if event.angleDelta().y() > 0:
@@ -119,9 +133,8 @@ class InteractiveGridView(StaticGridView):
             self._pending_zoom *= zoom_factor  # Accumulate zoom requests
             self.zoom_level = new_zoom
             if abs(self._pending_zoom - 1.0) > 0.1:
-                self.scale(self._pending_zoom, self._pending_zoom)
+                self.zoom_to(self._pending_zoom, QPointF(0, 0))
                 self._pending_zoom = 1.0
-        print(f"Zoom Level: {self.zoom_level}, Pending Zoom: {self._pending_zoom}, New Zoom: {new_zoom}, Zoom Factor: {zoom_factor}")
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.RightButton:  # Start panning the view
@@ -164,8 +177,7 @@ class InteractiveGridView(StaticGridView):
     def apply_pending_updates(self) -> None:
         """Apply batched pan and zoom updates."""
         if self._pending_zoom != 1.0:
-            print("Applying pending zoom", self._pending_zoom)
-            self.scale(self._pending_zoom, self._pending_zoom)
+            self.zoom_to(self._pending_zoom, QPointF(0, 0))
             self._pending_zoom = 1.0
 
         self.horizontalScrollBar().setValue(

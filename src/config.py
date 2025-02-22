@@ -76,6 +76,7 @@ def _configure() -> dict[str, str]:
                     stack.append((current_path, subdir))  # Nested structure
                 else:  # Direct leaf under the current directory
                     dirs_to_create.append(_os.path.join(current_path, subdir))
+                    accumulated_logs += f"Cloning {_os.path.join(current_path, subdir)}\n"
     for dir_to_create in dirs_to_create:
         _os.makedirs(dir_to_create, exist_ok=True)
     _sys.path.insert(0, _os.path.join(base_app_dir, "core", "libs"))

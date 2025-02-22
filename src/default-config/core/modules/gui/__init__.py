@@ -40,7 +40,7 @@ def assign_object_names_iterative(parent: QWidget, prefix: str = "", exclude_pri
 
             # Assign the object name
             child.setObjectName(object_name)
-            print(object_name)
+            # print(object_name)
 
             # Check if we should process this child further
             if not exclude_primitives or not isinstance(child, primitives):
@@ -395,7 +395,7 @@ class Theme:
         base_app_style = style_metadata[0] if len(style_metadata[0].strip()) > 0 else None
         compatible_styling = style_metadata[1] if len(style_metadata[1].strip()) > 0 else None
         style_precautions = style_metadata[2] if len(style_metadata[2].strip()) > 0 else None
-        print(f"Mode+Style ({author}::{theme_name}): '{mode} {from_theme}'; '{base_app_style, compatible_styling, style_precautions}'")
+        print(f"Discovered Mode+Style ({author}::{theme_name}): '{mode} {from_theme}'; '{base_app_style, compatible_styling, style_precautions}'")
 
         lines = other_content.split("\n")
 

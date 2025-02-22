@@ -20,7 +20,7 @@ from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
 #from extensions.mealy import MealyState, MealyTransition, MealyAutomaton
 
 
-# Docs generated with Github Copilot
+# Docs generated with GitHub Copilot
 
 
 class AutomatonProvider:

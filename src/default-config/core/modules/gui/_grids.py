@@ -73,7 +73,7 @@ class InteractiveGridView(StaticGridView):
     MAX_TOTAL_UPDATE_FPS: int = 15
 
     def __init__(self, grid_size: int = 100, scene_rect: tuple[int, int, int, int] = (-10_000, -10_000, 20_000, 20_000),
-                 zoom_level: float = 1.0, zoom_step: float = 0.1, min_zoom: float = 0.5, max_zoom: float = 2.0,
+                 zoom_level: float = 1.0, zoom_step: float = 0.05, min_zoom: float = 0.5, max_zoom: float = 2.0,
                  parent: QWidget | None = None) -> None:
         super().__init__(grid_size, None, parent)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
@@ -118,10 +118,10 @@ class InteractiveGridView(StaticGridView):
         if self.min_zoom <= new_zoom <= self.max_zoom:
             self._pending_zoom *= zoom_factor  # Accumulate zoom requests
             self.zoom_level = new_zoom
-        print(self.zoom_level, self._pending_zoom, new_zoom, zoom_factor)
-        # if abs(self.zoom_level - new_zoom) > 0.2:
-        #     self.zoom_level = new_zoom
-        #     self.scale(self._pending_zoom, self._pending_zoom)
+            if abs(self._pending_zoom - 1.0) > 0.1:
+                self.scale(self._pending_zoom, self._pending_zoom)
+                self._pending_zoom = 1.0
+        print(f"Zoom Level: {self.zoom_level}, Pending Zoom: {self._pending_zoom}, New Zoom: {new_zoom}, Zoom Factor: {zoom_factor}")
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.RightButton:  # Start panning the view
@@ -164,6 +164,7 @@ class InteractiveGridView(StaticGridView):
     def apply_pending_updates(self) -> None:
         """Apply batched pan and zoom updates."""
         if self._pending_zoom != 1.0:
+            print("Applying pending zoom", self._pending_zoom)
             self.scale(self._pending_zoom, self._pending_zoom)
             self._pending_zoom = 1.0
 

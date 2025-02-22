@@ -102,6 +102,10 @@ class MainWindow(QMainWindow, IMainWindow):
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_file)
         file_menu.addAction(save_action)
+        save_action = QAction("Save as", self)
+        # save_action.setShortcut("Ctrl+G")
+        save_action.triggered.connect(self.save_file_as)
+        file_menu.addAction(save_action)
         exit_action = QAction("Close", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
@@ -154,6 +158,13 @@ class MainWindow(QMainWindow, IMainWindow):
             QMessageBox.information(self, "File Opened", f"You opened: {file_path}")
 
     def save_file(self):
+        file_dialog = QFileDialog(self)
+        file_path, _ = file_dialog.getSaveFileName(
+            self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
+        if file_path:
+            ...
+
+    def save_file_as(self):
         file_dialog = QFileDialog(self)
         file_path, _ = file_dialog.getSaveFileName(
             self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")

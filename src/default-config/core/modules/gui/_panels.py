@@ -30,6 +30,7 @@ class StateMenu(QFrame):
         self.setAutoFillBackground(True)
 
         self.singleton_observer = SingletonObserver()
+        # self.singleton_observer.subscribe('token_lists', print('hallo'))
 
         self.visible: bool = False
         self.state: StateGroup | None = None
@@ -118,7 +119,7 @@ class StateMenu(QFrame):
             target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             target_item.setData(Qt.ItemDataRole.UserRole, transition)
 
-            token_list = self.singleton_observer.get('token_list')
+            token_list = self.singleton_observer.get('token_lists')
             condition_edit: QComboBox = QComboBox()
             condition_edit.addItems(token_list[0] if token_list else [])
             condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
@@ -156,7 +157,7 @@ class ControlMenu(QFrame):
     def __init__(self, grid_view: 'AutomatonInteractiveGridView', parent=None):
         super().__init__(parent)
         self.singleton_observer = SingletonObserver()
-        self.singleton_observer.subscribe('token_list', self.update_token_list)
+        self.singleton_observer.subscribe('token_lists', self.update_token_list)
 
         self.grid_view = grid_view
         self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = self.grid_view.get_token_list()
@@ -164,44 +165,39 @@ class ControlMenu(QFrame):
         self.init_ui()
 
         self.adjustSize()
-        self.setGeometry(QRect(self.parent().width() - self.width() - 10, 10, self.width(), self.height()))
 
     def init_ui(self):
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(5)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(5)
 
-        # Play-Button (Symbol: ▶, grün)
-        self.play_button = QPushButton("▶", self)
-        self.play_button.setFixedSize(40, 40)
-        # self.play_button.setStyleSheet("background: transparent; color: green; border: none; font-size: 50px;")
+        main_layout.addSpacerItem(QSpacerItem(10, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
-        # Stop-Button (Symbol: ■, rot)
-        self.stop_button = QPushButton("■", self)
-        self.stop_button.setFixedSize(40, 40)
-        # self.stop_button.setStyleSheet("background: transparent; color: red; border: none; font-size: 30px;")
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(5)
 
-        # Nächster Step-Button (Symbol: ➡, blau)
-        self.next_button = QPushButton('⇥', self)
-        self.next_button.setFixedSize(40, 40)
-        # self.next_button.setStyleSheet("background: transparent; color: blue; border: none; font-size: 50px;")
+        self.play_button = QPushButton(self)
+        self.stop_button = QPushButton(self)
+        self.next_button = QPushButton(self)
 
-        # Token-Box als editierbare ComboBox
         self.token_list_box = QComboBox(self)
         self.token_list_box.setEditable(True)
-        self.token_list_box.addItems(self.token_list)
-        self.token_list_box.lineEdit().returnPressed.connect(self.add_token)
+        self.token_list_box.addItems(self.token_list[0])
 
         self.token_list_box.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.token_list_box.customContextMenuRequested.connect(self.show_context_menu)
 
-        layout.addWidget(self.play_button)
-        layout.addWidget(self.stop_button)
-        layout.addWidget(self.next_button)
-        layout.addWidget(self.token_list_box)
-        self.setLayout(layout)
+        button_layout.addWidget(self.play_button)
+        button_layout.addWidget(self.stop_button)
+        button_layout.addWidget(self.next_button)
+        button_layout.addWidget(self.token_list_box)
 
-        self.singleton_observer.set('token_list', self.token_list)
+        main_layout.addLayout(button_layout)
+        main_layout.addSpacerItem(QSpacerItem(10, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
+        self.setLayout(main_layout)
+
+        self.singleton_observer.set('token_lists', self.token_list)
 
     def show_context_menu(self, pos):
         """Zeigt das Kontextmenü bei Rechtsklick"""
@@ -219,13 +215,13 @@ class ControlMenu(QFrame):
         QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
         self.token_list[0].append(token)
 
-        self.singleton_observer.set('token_list', self.token_list)
+        self.singleton_observer.set('token_lists', self.token_list)
 
     def remove_token(self, token, token_index: int=None):
         self.token_list_box.removeItem(token_index)
         self.token_list[0].remove(token)
 
-        self.singleton_observer.set('token_list', self.token_list)
+        self.singleton_observer.set('token_lists', self.token_list)
 
     def update_token_list(self, token_list: _ty.List[str]):
         self.token_list_box.clear()
@@ -330,13 +326,13 @@ class UserPanel(Panel):
         if to_state:
             state_start = QRect(self.width(), 0, width, height)
             state_end = QRect(self.width() - width, 0, width, height)
-            control_start = QRect(self.width() - c_menu_width - 10, 0, c_menu_width, c_menu_height)
-            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 0, c_menu_width, c_menu_height)
+            control_start = QRect(self.width() - c_menu_width - 20, 20, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 20, 20, c_menu_width, c_menu_height)
         else:
             state_start = QRect(self.width() - width, 0, width, height)
             state_end = QRect(self.width(), 0, width, height)
-            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 0, c_menu_width, c_menu_height)
-            control_end = QRect(self.width() - c_menu_width - 10, 0, c_menu_width, c_menu_height)
+            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 20, 20, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - c_menu_width - 20, 20, c_menu_width, c_menu_height)
 
         self.state_menu_animation.setStartValue(state_start)
         self.state_menu_animation.setEndValue(state_end)
@@ -362,6 +358,10 @@ class UserPanel(Panel):
             self.state_menu.setGeometry(self.width() - width, 0, width, height)
         else:
             self.state_menu.setGeometry(self.width(), 0, width, height)
+        if self.state_menu.visible:
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - self.state_menu.width() - 20, 20, self.control_menu.width(), self.control_menu.height())
+        else:
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 20, 20, self.control_menu.width(), self.control_menu.height())
         self.update_menu_button_position()
         self.settings_button.move(self.width() - 60, 100)
 

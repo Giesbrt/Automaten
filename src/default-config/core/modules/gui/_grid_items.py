@@ -154,6 +154,13 @@ class ConnectionPoint(QGraphicsEllipseItem):
         """
         return self.flow
 
+    def update_position(self):
+        for key, values in self.parentItem().create_connection_positions(self.parentItem().state.rect()).items():
+            if f'{self.get_direction()}_{self.get_flow()}' == key:
+                self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))
+                if self.is_hovered and self.get_flow() == 'out':
+                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2, self._hovered_size, self._hovered_size))
+
     def paint(self, painter, option, widget=None):
         """Paints the connection point and adjusts its size when hovered.
 
@@ -161,13 +168,6 @@ class ConnectionPoint(QGraphicsEllipseItem):
         :param option: The style options for the item.
         :param widget: The widget on which the item is painted, defaults to None.
         """
-        # return
-        for key, values in self.parentItem().create_connection_positions(self.parentItem().state.rect()).items():
-            if f'{self.get_direction()}_{self.get_flow()}' == key:
-                self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))
-                if self.is_hovered and self.get_flow() == 'out':
-                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2, self._hovered_size, self._hovered_size))
-
         super().paint(painter, option, widget)
 
 
@@ -712,6 +712,13 @@ class StateGroup(QGraphicsItemGroup):
         self.update_shadow_effect()
         self.update_label_position()
 
+    """def get_data(self, value: str) -> any:
+        method = getattr(self.state_data, f'get_{value}')
+        return method()
+
+    def get_state_data(self) -> StateData:
+        return self.state_data"""
+
     def set_name(self, name: str) -> None:
         """Sets the display name of the state.
 
@@ -889,6 +896,8 @@ class StateGroup(QGraphicsItemGroup):
             self.update_label_position()
             for transition in self.connected_transitions:
                 transition.update_position()
+            for connection_point in self.connection_points:
+                connection_point.update_position()
         return super().itemChange(change, value)
 
     def paint(self, painter, option, widget = ...):

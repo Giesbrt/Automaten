@@ -8,9 +8,10 @@ from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 # from core.modules.automaton.base.state import State
 
 from ._grid_items import State, StateGroup, Label, ConnectionPoint, TempTransition, Transition, TransitionFunction
+from ._item_data import StateData
 from ._panels import UserPanel
-from ..signal_bus import SignalBus, AutomatonEvent, SingletonObserver
-from ..automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
+from ..signal_bus import SignalBus, SingletonObserver
+from ..automaton.UIAutomaton import UiState, UiTransition
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -241,7 +242,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         super().__init__()
         self.automaton_type: str | None = None
         self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = [[], ['L', 'R', 'H']]
-        self.loaded_automaton: bool | None = None
+        self.automaton_is_loaded: bool | None = None
         self._counter: int = 0
         self._last_active: State | None = None
         self._last_hovered: StateGroup | None = None
@@ -253,44 +254,38 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
         self.signal_bus = SignalBus()
         self.signal_bus.send_response.connect(self.handle_response)
-        self.signal_bus.automaton_changed.connect(self.set_loaded_automaton)
+        # self.signal_bus.automaton_changed.connect(self.set_automaton_is_loaded)
 
         self.singleton_observer = SingletonObserver()
-        self.singleton_observer.subscribe('token_list', self.set_token_list)
+        self.singleton_observer.subscribe('is_loaded', self.load_automaton_from_file)
+        self.singleton_observer.subscribe('token_lists', self.set_token_list)
         self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
 
-    def request_method(self, method_name, *args, **kwargs):
-        # print(f'GridView: Anfrage an {method_name}')
+    def load_automaton_from_file(self, is_loaded):
+        """Loads the UiAutomaton"""
+        if is_loaded:
+            for request in ('get_states', 'get_transitions', 'get_token_lists'):
+                self.request_method(request)
+
+    def request_method(self, method_name, *args, **kwargs) -> None: # print(f'GridView: Anfrage an {method_name}')
+        """Sends the Signal to the SignalBus"""
         self.signal_bus.request_method.emit(method_name, args, kwargs)
 
-    def handle_response(self, method_name, response):
+    def handle_response(self, method_name, response) -> None: # print(f"GridView: Antwort von {method_name} -> {response}")
         """Empfängt das Ergebnis und gibt es aus."""
-        # print(f"GridView: Antwort von {method_name} -> {response}")
-
-        if method_name == 'get_states':
-            self.render_states(response)
-        elif method_name == 'get_transitions':
-            self.render_transitions(response)
+        if method_name == 'get_states' or method_name == 'get_transitions':
+            self.render_automaton(response)
         elif method_name == 'get_token_lists':
             self.set_token_list(response)
-        """elif method_name == 'get_automaton_type':
-            print(response)"""
 
-    def render_ui_automaton(self):
-        """Renders the UiAutomaton"""
-        self.request_method('get_states')
-        self.request_method('get_transitions')
-        self.request_method('get_token_lists')
-
-    def render_states(self, states):
-        """Renders the StateGroups"""
-        for state in states:
-            self.create_state_from_automaton(state)
-
-    def render_transitions(self, transitions):
-        """Renders the Transitions"""
-        for transition in transitions:
-            self.create_transition_from_automaton(transition)
+    def render_automaton(self, ui_objects: _ty.List[_ty.Union[UiState, UiTransition]]) -> None:
+        """Renders the States and the Transitions"""
+        if isinstance(list(ui_objects)[0], UiState):
+            for state in ui_objects:
+                self.create_state_from_automaton(state)
+        elif isinstance(list(ui_objects)[0], UiTransition):
+            for transition in ui_objects:
+                self.create_transition_from_automaton(transition)
 
     def _setup_automaton_view(self) -> None:
         """
@@ -300,7 +295,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if self.automaton_type == 'DFA':
             self._automaton_settings: dict = {
                 'transition_sections': 1,
-                'transition_pattern': []
             }
         elif self.automaton_type == 'Mealy':
             self._automaton_settings: dict = {
@@ -310,9 +304,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self._automaton_settings: dict = {
                 'transition_sections': 3
             }
-
-    def set_loaded_automaton(self, value: AutomatonEvent):
-        self.loaded_automaton = value.is_loaded
 
     def set_token_list(self, token_list: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
         """Set the token list in GridView & UiAutomaton,
@@ -339,9 +330,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         """
         self.automaton_type = automaton_type
         self._setup_automaton_view()
-
-        if self.loaded_automaton:
-            self.render_ui_automaton()
 
     def get_token_list(self) -> _ty.Tuple[_ty.List[str], _ty.List[str]]:
         return self.token_list
@@ -595,12 +583,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 parent.state_menu.disconnect_methods()
                 last_parent_item.deactivate()
 
-        if isinstance(item, State | Label) and not parent.state_menu.isVisible():
+        if isinstance(item, State | Label) and parent.state_menu.x() >= parent.width():
             parent.toggle_condition_edit_menu(True)
             parent.state_menu.set_state(current_parent_item)
             parent.state_menu.connect_methods()
             current_parent_item.activate()
-        elif isinstance(item, State | Label) and parent.state_menu.isVisible():
+        elif isinstance(item, State | Label) and parent.state_menu.x() < parent.width():
             parent.state_menu.set_state(current_parent_item)
             parent.state_menu.connect_methods()
             current_parent_item.activate()

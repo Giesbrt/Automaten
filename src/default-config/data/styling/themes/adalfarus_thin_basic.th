@@ -175,3 +175,6 @@ background_tertiary~=QPalette.toolTipBase;
 background_scrollbar~=transparent; // Stays
 dropdown_image~=url();
 checkbox_image~=url();
+play_button~=url("data/assets/icons/play_button.png");
+stop_button~=url("data/assets/icons/stop_button.png");
+next_button~=url("data/assets/icons/next_button.png");

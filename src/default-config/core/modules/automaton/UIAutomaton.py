@@ -262,7 +262,7 @@ class UiAutomaton(IUiAutomaton):
         self.signal_bus.request_method.connect(self.call_method)
 
         self.singleton_observer = SingletonObserver()
-        self.singleton_observer.subscribe('token_list', self.set_token_lists)
+        self.singleton_observer.subscribe('token_lists', self.set_token_lists)
         self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
         self.singleton_observer.subscribe('start_state', self.set_start_state)
 

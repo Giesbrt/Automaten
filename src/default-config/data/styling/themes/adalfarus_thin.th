@@ -40,7 +40,7 @@ QPushButton#user_panel-state_menu-close_button:hover {
     color: #FF8533;
 }
 QFrame#user_panel-control_menu {
-    background: #99c0ff;
+    background: $color_primary;
     border: 1px solid $border_primary;
     border-radius: 15px;
     padding: 5px;
@@ -51,6 +51,20 @@ QComboBox#user_panel-control_menu-token_box {
     border-radius: 6px;
     padding: 2px;
     color: $color_primary;
+}
+QPushButton#user_panel-control_menu-play_button, QPushButton#user_panel-control_menu-stop_button, QPushButton#user_panel-control_menu-next_button {
+    background: transparent;
+    border: none;
+    icon-size: 30px 30px;
+}
+QPushButton#user_panel-control_menu-play_button {
+    icon: $play_button;
+}
+QPushButton#user_panel-control_menu-stop_button {
+    icon: $stop_button;
+}
+QPushButton#user_panel-control_menu-next_button {
+    icon: $next_button;
 }
 /* End of QSS */
 

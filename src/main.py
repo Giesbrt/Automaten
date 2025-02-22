@@ -719,8 +719,9 @@ if __name__ == "__main__":
         if logging_level is None:
             logging.error(f"Invalid logging mode: {logging_mode}")
 
+    input_path: str = ""
     if args.input != "":
-        input_path: str = os.path.abspath(args.input)
+        input_path = os.path.abspath(args.input)
 
         if not os.path.exists(input_path):
             logging.error(f"The input file ({input_path}) needs to exist")

@@ -69,6 +69,7 @@ def _configure() -> dict[str, str]:
 
         if not subdirs:  # No subdirectories; it's a leaf
             dirs_to_create.append(current_path)
+            accumulated_logs += f"Cloning {current_path}\n"
         else:
             for subdir in subdirs:  # Add each subdirectory to the stack for further processing
                 if isinstance(subdir, tuple):
@@ -86,11 +87,11 @@ def _configure() -> dict[str, str]:
             stripped_filename = _os.path.relpath(file_path, install_dir)
             alternate_file_location = _os.path.join(base_app_dir, stripped_filename)
             if not _os.path.exists(alternate_file_location) or INDEV:  # Replace all for indev
-                accumulated_logs += f"{file_path} -> {alternate_file_location}\n"  # To flush config prints in main
+                # accumulated_logs += f"{file_path} -> {alternate_file_location}\n"  # To flush config prints in main
                 _os.makedirs(_os.path.dirname(alternate_file_location), exist_ok=True)
                 _shutil.copyfile(file_path, alternate_file_location)
-            else:
-                accumulated_logs += f"{alternate_file_location} Already exists\n"  # To flush config prints in main
+            # else:
+            #     accumulated_logs += f"{alternate_file_location} Already exists\n"  # To flush config prints in main
 
     _os.chdir(base_app_dir)
     return {

@@ -719,12 +719,14 @@ if __name__ == "__main__":
         if logging_level is None:
             logging.error(f"Invalid logging mode: {logging_mode}")
 
-    input_path: str = os.path.abspath(args.input) if args.input != "" else ""
+    if args.input != "":
+        input_path: str = os.path.abspath(args.input)
 
-    if not os.path.exists(input_path) and input_path != "":
-        logging.error(f"The input file ({input_path}) needs to exist")
-        input_path = ""
-    config.exported_logs += f"Reading {input_path}\n"
+        if not os.path.exists(input_path):
+            logging.error(f"The input file ({input_path}) needs to exist")
+            input_path = ""
+        else:
+            config.exported_logs += f"Reading {input_path}\n"
 
     try:
         qapp = QApplication(sys.argv)

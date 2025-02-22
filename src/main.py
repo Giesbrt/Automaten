@@ -780,5 +780,6 @@ if __name__ == "__main__":
             qgui.close()
         if qapp is not None:
             qapp.instance().quit()
-        diagnose_shutdown_blockers()
+        results: str = diagnose_shutdown_blockers(return_result=True)
+        # print(results)
         CODES.get(current_exit_code, lambda: sys.exit(current_exit_code))()

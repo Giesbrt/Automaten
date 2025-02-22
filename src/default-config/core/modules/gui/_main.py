@@ -149,6 +149,9 @@ class MainWindow(QMainWindow, IMainWindow):
         return self.automaton_type
 
     def open_file(self):
+
+
+
         file_dialog = QFileDialog(self)
         file_path, _ = file_dialog.getOpenFileName(
             self, "Open File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au);;All Files (*)"

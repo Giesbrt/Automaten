@@ -185,10 +185,10 @@ class App:
 
         self.control_menu.play_button.clicked.connect(lambda: self.start_simulation(['a']))
         self.control_menu.stop_button.clicked.connect(self.stop_simulation)
-        self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(['a']))
+        self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(['a', 'b']))
 
         self.window.save_file_signal.connect(partial(self.save_to_file, automaton=self.ui_automaton))
-        self.window.open_file_signal.connect(self.load_file)
+        self.window.open_file_signal.connect(self.open_file)
 
         self.grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
 
@@ -264,13 +264,16 @@ class App:
             result = self.ui_automaton.simulate(automaton_input, self.step_simulation)
             if isinstance(result, _result.Success):
                 self.update_simulation_controls(running=True)
-                self.step_simulation()
+                # self.step_simulation()
         else:
             self.step_simulation()
 
     def step_simulation(self) -> None:
-        print('step simulation')
+        print('step simulation', 'has simulation data: ', self.ui_automaton.has_simulation_data())
         if self.ui_automaton.has_simulation_data():
+            self.control_menu.play_button.setEnabled(True)
+            self.control_menu.next_button.setEnabled(True)
+            self.control_menu.stop_button.setEnabled(True)
             simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
             active_state: 'UiState' = self.ui_automaton.get_active_state()
             active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
@@ -279,12 +282,21 @@ class App:
             # self.grid_view.set_active_transition(active_transition)
         else:
             self.stop_simulation()
+            print('stop_simulation')
             self.update_simulation_controls(running=False)
+            self.control_menu.next_button.setEnabled(False)
 
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
         AutomatonProvider(None).load_from_dict(extensions)
         UiSettingsProvider().load_from_incoherent_mess(self.extensions)
+
+    def open_file(self, filepath: str):
+        self.ui_automaton = self.load_file(filepath)
+        if self.ui_automaton:
+            self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
+            # self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
+            self.singleton_observer.set('is_loaded', True)
 
     @staticmethod
     def _order_logs(directory: str) -> None:

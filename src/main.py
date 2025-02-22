@@ -114,6 +114,10 @@ class App:
             self.signal_bus = SignalBus()
             self.singleton_observer = SingletonObserver()
 
+            # Setup errorCache
+            self.error_cache: ErrorCache = ErrorCache()
+            self.error_cache.init(self.window.button_popup, config.INDEV)
+
             # Automaton backend init
             self.ui_automaton: UiAutomaton
             if input_path != "":
@@ -140,10 +144,6 @@ class App:
             self.load_themes(os.path.join(self.styling_folder, "themes"))
             self.load_styles(os.path.join(self.styling_folder, "styles"))
             self.window.app = self.qapp
-
-            # Setup errorCache
-            self.error_cache: ErrorCache = ErrorCache()
-            self.error_cache.init(self.window.button_popup, config.INDEV)
 
             # Setup window
             self.system: BaseSystemType = get_system()

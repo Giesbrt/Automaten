@@ -5,7 +5,7 @@ from aplustools.io import ActLogger
 from queue import Queue
 from utils.staticContainer import StaticContainer
 from logging import ERROR, WARNING, INFO, DEBUG
-import src.config as config
+# import src.config as config
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -262,8 +262,10 @@ class ErrorCache:
         :param custom_buttons: Defines additional buttons for the popup window
         :return: None
         """
+        if not self._is_indev.has_value():
+            return
 
-        INDEV: bool = config.INDEV
+        INDEV: bool = self._is_indev.get_value()  # config.INDEV
         if not INDEV:
             return
 

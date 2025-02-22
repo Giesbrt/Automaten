@@ -54,7 +54,7 @@ class UiSettingsProvider:
         return self._loaded_settings[automaton_type]
 
     def add_settings(self, settings: BaseSettings, override: bool = False) -> None:
-        if not all(settings):
+        if not all(iter(settings)):
             ErrorCache().error("Could not load settings due to fields being unfilled!",
                                f"Affected Settings: {settings}", True)
             return
@@ -63,6 +63,26 @@ class UiSettingsProvider:
             return
 
         self._loaded_settings[name] = settings
+        ActLogger().debug(f"Loaded settings of {name}-automaton")
+
+    def load_from_incoherent_mess(self, mess: dict[str, list[_ty.Type[_ty.Any]]] | None) -> None:
+        def filter_settings(settings) -> bool:
+            return issubclass(settings, BaseSettings)
+
+        for k in mess:
+            data: list[_ty.Type[_ty.Any]] = mess[k]
+            filtered_list: list[_ty.Type] = list(filter(filter_settings, data))
+
+            if not filtered_list:
+                return
+
+            raw_settings: _ty.Type = filtered_list[0]
+            if not isinstance(raw_settings, BaseSettings):
+                return
+
+            settings: BaseSettings = raw_settings()
+
+            self.add_settings(settings)
 
     def remove_settings(self, settings: BaseSettings) -> None:
         name: str = settings.module_name.lower()

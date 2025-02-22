@@ -45,10 +45,11 @@ class AutomatonProvider:
         :param override: Should the previous registration be overruled
         :return: None
         """
+        # TODO rework?
         # 0: base; 1: State; 2: Transition
         for key in list(loaded_automatons.keys()):
             data = loaded_automatons[key]
-            print(data)
+            # print(data)
 
             automaton: BaseAutomaton | None = None
             state: BaseState | None = None

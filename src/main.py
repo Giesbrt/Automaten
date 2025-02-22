@@ -45,6 +45,7 @@ from core.modules.automaton_loader import start
 from utils.errorCache import ErrorCache, ErrorSeverity
 from utils.staticSignal import SignalCache
 from core.modules.automaton.UiSettingsProvider import UiSettingsProvider
+from core.modules.customPythonHandler import CustomPythonHandler
 from core.extensions_loader import Extensions_Loader
 
 # Standard typing imports for aps
@@ -353,8 +354,7 @@ class App:
         update_result = self.get_update_result()
         self.for_loop_list.append((self.show_update_result, (update_result,)))
 
-    @staticmethod
-    def load_file(filepath: str) -> UiAutomaton | None:
+    def load_file(self, filepath: str) -> UiAutomaton | None:
         """Loads a UIAutomaton from a serialized file.
         Returns an UIAutomaton upon successful load or None if an error occurred."""
         end = filepath.rsplit(".", maxsplit=1)[1]
@@ -376,6 +376,12 @@ class App:
             automaton: UiAutomaton
             custom_python: str
             automaton, custom_python = deserialize(content, filetype)
+
+            # Custom python
+            extension_folder: str = self.extensions_folder
+            path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"
+            CustomPythonHandler().load(custom_python, automaton.get_automaton_type(), path)
+
             print("CP", custom_python)
         except Exception as e:
             ErrorCache().warning(
@@ -384,8 +390,7 @@ class App:
             return None
         return automaton
 
-    @staticmethod
-    def save_to_file(filepath: str, automaton: UiAutomaton) -> str | None:
+    def save_to_file(self, filepath: str, automaton: UiAutomaton) -> str | None:
         """Saves a UIAutomaton to a file.
         Returns the filepath upon successful save or None if an error occurred."""
         end = filepath.rsplit(".", maxsplit=1)[1]
@@ -397,6 +402,12 @@ class App:
             return None
         try:
             print(automaton, filetype)
+
+            # Custom python:
+            extension_folder: str = self.extensions_folder
+            path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"
+            CustomPythonHandler().to_custom_python(path)
+
             content: bytes = serialize(automaton, "", filetype)
             with os_open(filepath, "wb") as f:
                 f.write(content)

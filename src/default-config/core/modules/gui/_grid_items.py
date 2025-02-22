@@ -83,7 +83,7 @@ class State(QGraphicsEllipseItem):
         self.start_painter_str: PainterStr = PainterStr("Text: (195.62833599002374, 91.36730222890128), 'MyText', 13#0000ff;Polygon: ((211.25667198004749, 2.7346044578025612), (179.99999999999997, 360.0), (0.0, 179.99999999999997)), 0#000000##00000000;Rect: ((205.005337584038, 38.18768356624204), (179.99999999999997, 324.0)), 0#000000##00000000;Arc: ((360.0, 360.0), 162.0, 162.0), (270, 360), 2#00ff00##00ff00;Arc: ((180.0, 180.0), 162.0, 162.0), (0, 90), 2#00ff00##00ff00;")
 
         obj = PainterToStr()
-        obj.ellipse((obj.coord().load_from_cartesian(180, 180), 180.0, 180.0), PainterColor(255, 0, 0))
+        obj.ellipse((obj.coord().load_from_cartesian(0, 0), 180.0, 180.0), border_color=PainterColor(255, 0, 0), border_thickness=6, fill_color=PainterColor(a=0))
         is_active_str = obj.clean_out_style_str()
         self.is_active_str: PainterStr = PainterStr(is_active_str)
         print(self.is_active_str)

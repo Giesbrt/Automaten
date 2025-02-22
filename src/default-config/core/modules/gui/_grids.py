@@ -279,6 +279,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
     def handle_response(self, method_name, response) -> None: # print(f"GridView: Antwort von {method_name} -> {response}")
         """Empfängt das Ergebnis und gibt es aus."""
+        print(method_name, list(response))
         if method_name == 'get_states' or method_name == 'get_transitions':
             self.render_automaton(response)
         elif method_name == 'get_token_lists':

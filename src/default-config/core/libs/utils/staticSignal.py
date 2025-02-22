@@ -57,9 +57,11 @@ class SignalCache:
             case "all":
                 for i in self._callback_queue:
                     i()
+                    self._callback_queue.remove(i)
 
             case "first":
                 self._callback_queue[0]()
+                self._callback_queue.pop(0)
 
             case _:
                 return

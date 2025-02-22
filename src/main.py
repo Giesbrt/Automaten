@@ -43,6 +43,7 @@ from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, S
 from core.modules.abstract import IMainWindow, IBackend
 from core.modules.automaton_loader import start
 from utils.errorCache import ErrorCache, ErrorSeverity
+from utils.staticSignal import SignalCache
 from core.extensions_loader import Extensions_Loader
 
 # Standard typing imports for aps
@@ -669,6 +670,7 @@ class App:
 
             # display cached Errors
             self.error_cache.invoke_popup()
+            SignalCache().invoke()
 
             num_handled: int = 0
             while len(self.for_loop_list) > 0 and num_handled < 5:

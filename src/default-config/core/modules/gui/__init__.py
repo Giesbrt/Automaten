@@ -3,9 +3,8 @@ from string import Template, ascii_letters, digits
 import os
 import re
 
-from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPalette, QColor
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject
 
 from aplustools.io.fileio import os_open
 
@@ -17,12 +16,12 @@ import typing as _ty
 import types as _ts
 
 
-def assign_object_names_iterative(parent: QWidget, prefix: str = "", exclude_primitives: bool = True) -> None:
+def assign_object_names_iterative(parent: QObject, prefix: str = "", exclude_primitives: bool = True) -> None:
     """Assign object names iteratively to children using a hierarchy."""
-    stack = [(parent, prefix)]  # Stack to manage widgets and their prefixes
+    stack: list[tuple[QObject, str]] = [(parent, prefix)]  # Stack to manage widgets and their prefixes
 
     # List of primitive classes to exclude if `exclude_primitives` is True
-    primitives: tuple = ()
+    primitives: tuple[QObject, ...] = ()
 
     while stack:
         current_parent, current_prefix = stack.pop()
@@ -39,8 +38,9 @@ def assign_object_names_iterative(parent: QWidget, prefix: str = "", exclude_pri
             object_name = f"{current_prefix}-{var_name}" if current_prefix else var_name
 
             # Assign the object name
-            child.setObjectName(object_name)
-            print(object_name)
+            if hasattr(child, "setObjectName"):
+                child.setObjectName(object_name)
+                print(object_name, child)
 
             # Check if we should process this child further
             if not exclude_primitives or not isinstance(child, primitives):

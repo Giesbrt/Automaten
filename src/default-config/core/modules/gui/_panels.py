@@ -258,7 +258,6 @@ class UserPanel(Panel):
 
         # Control Menu
         self.control_menu = ControlMenu(self.grid_view, self)
-        self.control_menu.setObjectName("user_panel-control_menu")
         # Animation for Control Menu
         self.control_menu_animation = QPropertyAnimation(self.control_menu, b'geometry')
         self.control_menu_animation.setDuration(500)

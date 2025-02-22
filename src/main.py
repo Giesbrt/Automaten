@@ -144,6 +144,7 @@ class App:
             # Setup window
             self.system: BaseSystemType = get_system()
             self.os_theme: SystemTheme = self.get_os_theme()
+            assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
             self.apply_theme()
 
             self.update_icon()
@@ -157,7 +158,6 @@ class App:
                 self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
             else:  # I guess windows does some weird shit with the title bar
                 self.window.set_window_dimensions(height, width)
-            assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
 
             # Setup values, signals, ...
             # TODO: self.window.set_scroll_speed(self.user_settings.retrieve("configs", "scrolling_sensitivity", "float"))

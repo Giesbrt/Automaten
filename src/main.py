@@ -380,7 +380,8 @@ class App:
             # Custom python
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"
-            CustomPythonHandler().load(custom_python, automaton.get_automaton_type(), path)
+            result: _result.Result = CustomPythonHandler().load(custom_python, automaton.get_automaton_type(), path)
+            self.error_cache.debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "falure"}: {result._inner_value}")
 
             print("CP", custom_python)
         except Exception as e:
@@ -406,9 +407,9 @@ class App:
             # Custom python:
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"
-            CustomPythonHandler().to_custom_python(path)
+            custom_python = CustomPythonHandler().to_custom_python(path)
 
-            content: bytes = serialize(automaton, "", filetype)
+            content: bytes = serialize(automaton, custom_python, filetype)
             with os_open(filepath, "wb") as f:
                 f.write(content)
         except OSError as e:  # File locking problems

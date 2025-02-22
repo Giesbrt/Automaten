@@ -381,7 +381,7 @@ def _deserialize_from_binary(bytes_like: bytes) -> DCGDictT:
 
 
 def deserialize(bytes_like: bytes,
-                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> IUiAutomaton:
+                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> tuple[IUiAutomaton, str]:
     """TBA"""
     dcg_dict: DCGDictT = {"json": _deserialize_from_json,
                           "yaml": _deserialize_from_yaml,
@@ -439,7 +439,7 @@ def deserialize(bytes_like: bytes,
              for i, j in zip(abs_transition_idxs, transition_pattern)]
         )
         automaton.add_transition(transition_obj)
-    return automaton
+    return automaton, custom_python
 
 
 if __name__ == "__main__":

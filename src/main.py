@@ -361,7 +361,10 @@ class App:
                 True, True)
             return None
         try:
-            automaton: UiAutomaton = deserialize(content, filetype)
+            automaton: UiAutomaton
+            custom_python: str
+            automaton, custom_python = deserialize(content, filetype)
+            print("CP", custom_python)
         except Exception as e:
             ErrorCache().warning(
                 f"The loading of the file '{os.path.basename(filepath)}' has failed.\nThe file may be corrupted.",

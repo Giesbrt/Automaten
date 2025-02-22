@@ -118,8 +118,10 @@ class InteractiveGridView(StaticGridView):
         if self.min_zoom <= new_zoom <= self.max_zoom:
             self._pending_zoom *= zoom_factor  # Accumulate zoom requests
             self.zoom_level = new_zoom
-        if zoom_factor > 2.0:
-            self.scale(self._pending_zoom, self._pending_zoom)
+        print(self.zoom_level, self._pending_zoom, new_zoom, zoom_factor)
+        # if abs(self.zoom_level - new_zoom) > 0.2:
+        #     self.zoom_level = new_zoom
+        #     self.scale(self._pending_zoom, self._pending_zoom)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.RightButton:  # Start panning the view

@@ -44,6 +44,7 @@ from core.modules.abstract import IMainWindow, IBackend
 from core.modules.automaton_loader import start
 from utils.errorCache import ErrorCache, ErrorSeverity
 from utils.staticSignal import SignalCache
+from core.modules.automaton.UiSettingsProvider import UiSettingsProvider
 from core.extensions_loader import Extensions_Loader
 
 # Standard typing imports for aps
@@ -278,6 +279,8 @@ class App:
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
         AutomatonProvider(None).load_from_dict(extensions)
+        UiSettingsProvider().load_from_incoherent_mess(self.extensions)
+
 
     @staticmethod
     def _order_logs(directory: str) -> None:

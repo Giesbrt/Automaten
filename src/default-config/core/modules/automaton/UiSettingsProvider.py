@@ -109,8 +109,8 @@ class UiSettingsProvider:
 
 
 if __name__ == '__main__':
-    from extensions.DFA import DFASettings
-    from extensions.TM import TmSettings
+    from extensions.dfa import DFASettings
+    from extensions.tm import TmSettings
     from extensions.mealy import MealySettings
     from core.modules.automaton.UIAutomaton import UiAutomaton
 

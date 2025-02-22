@@ -13,7 +13,7 @@ from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
 from core.modules.automaton.base.settings import Settings as BaseSettings
 
-from extensions.DFA import DFAState, DFATransition, DFAAutomaton, DFASettings
+from extensions.dfa import DFAState, DFATransition, DFAAutomaton, DFASettings
 
 
 #from extensions.TM import TMAutomaton, TMState, TMTransition, TmSettings  TODO: Use loader, TM currently has an import error

@@ -158,11 +158,11 @@ class MainWindow(QMainWindow, IMainWindow):
             QMessageBox.information(self, "File Opened", f"You opened: {file_path}")
 
     def save_file(self):
-        file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getSaveFileName(
-            self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
-        if file_path:
-            ...
+        filepath: str = ""
+        if filepath != "":
+            ...  # Save
+        else:
+            self.save_file_as()
 
     def save_file_as(self):
         file_dialog = QFileDialog(self)

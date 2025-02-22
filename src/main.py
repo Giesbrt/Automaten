@@ -721,7 +721,7 @@ if __name__ == "__main__":
 
     input_path: str = os.path.abspath(args.input) if args.input != "" else ""
 
-    if not os.path.exists(input_path):
+    if not os.path.exists(input_path) and input_path != "":
         logging.error(f"The input file ({input_path}) needs to exist")
         input_path = ""
     config.exported_logs += f"Reading {input_path}\n"

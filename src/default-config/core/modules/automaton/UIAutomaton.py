@@ -256,7 +256,8 @@ class UiAutomaton(IUiAutomaton):
                  token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
                  transition_pattern: _ty.List[int] = []):
         # state_types_with_design = {"end": {"design": "Line x",  future}, "default": {"design": "Line y", future}}
-        super().__init__(automaton_type, author, state_types_with_design, token_lists, changeable_token_lists, transition_pattern)
+        super().__init__(automaton_type, author, state_types_with_design, token_lists, changeable_token_lists,
+                         transition_pattern)
 
         self.signal_bus = SignalBus()
         self.signal_bus.request_method.connect(self.call_method)
@@ -278,6 +279,9 @@ class UiAutomaton(IUiAutomaton):
         self._bridge: UiBridge = UiBridge()
 
     def call_method(self, method_name, args, kwargs):
+        if self.signal_bus is None:
+            return
+
         if hasattr(self, method_name):
             method = getattr(self, method_name)
             if callable(method):
@@ -288,6 +292,10 @@ class UiAutomaton(IUiAutomaton):
                 ErrorCache().warning(f'UiAutomaton: {method_name} is not a callable method!', '', True, True)
         else:
             ErrorCache().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)
+
+    def __del__(self):
+        print("delete")
+        self.signal_bus = None
 
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)
@@ -514,7 +522,8 @@ class UiAutomaton(IUiAutomaton):
 
         if simulation_task["type"].upper() != "SIMULATION_UPDATE":
             if simulation_task["type"].upper() != "SIMULATION_RESULT":
-                ErrorCache().warn(f"Could not recognise simulation packet with header: {simulation_task["type"].upper()}", "")
+                ErrorCache().warn(
+                    f"Could not recognise simulation packet with header: {simulation_task["type"].upper()}", "")
                 return
 
             self._bridge.clear_simulation_queue()

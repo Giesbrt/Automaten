@@ -292,6 +292,7 @@ class App:
         UiSettingsProvider().load_from_incoherent_mess(self.extensions)
 
     def open_file(self, filepath: str):
+        self.ui_automaton.__del__()
         self.ui_automaton = self.load_file(filepath)
         if self.ui_automaton:
             self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
@@ -393,7 +394,7 @@ class App:
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"
             result: _result.Result = CustomPythonHandler().load(custom_python, automaton.get_automaton_type(), path)
-            ErrorCache().debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "")
+            ErrorCache().debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "", True, True)
 
             print("CP", custom_python)
         except Exception as e:

@@ -1,14 +1,15 @@
 """Everything regarding the infinite grid"""
 import numpy as np
+import math
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu
-from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor
+from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QCursor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 
 # from core.modules.automaton.base.transition import Transition
 # from core.modules.automaton.base.state import State
 
 from ._grid_items import State, StateGroup, Label, ConnectionPoint, TempTransition, Transition, TransitionFunction
-from ._item_data import StateData
+# from ._item_data import StateData
 from ._panels import UserPanel
 from ..signal_bus import SignalBus, SingletonObserver
 from ..automaton.UIAutomaton import UiState, UiTransition
@@ -74,11 +75,10 @@ class InteractiveGridView(StaticGridView):
     MAX_TOTAL_UPDATE_FPS: int = 15
 
     def __init__(self, grid_size: int = 100, scene_rect: tuple[int, int, int, int] = (-10_000, -10_000, 20_000, 20_000),
-                 zoom_level: float = 1.0, zoom_step: float = 0.05, min_zoom: float = 0.5, max_zoom: float = 2.0,
+                 zoom_level: float = 1.0, zoom_step: float = 0.05, min_zoom: float = 0.1, max_zoom: float = 2.0,
                  parent: QWidget | None = None) -> None:
         super().__init__(grid_size, None, parent)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
-        self.setMouseTracking(True)
         self.setScene(QGraphicsScene(self))
         self.scene().setSceneRect(QRect(*scene_rect))
 
@@ -99,32 +99,39 @@ class InteractiveGridView(StaticGridView):
         self._previous_pan: QPointF = QPointF(0.0, 0.0)
         self._pan_delta: QPointF = QPointF(0.0, 0.0)
         self._pending_zoom: float = 1.0
-        self._last_mouse_position: QPointF = QPointF(0.0, 0.0)
+        # self._last_mouse_position: QPointF = QPointF(0.0, 0.0)
+        self.extra_movement: QPointF = QPointF(0.0, 0.0)
 
         # Timer for limiting updates
         self._update_timer = QTimer(self)
         self._update_timer.setInterval(1000 // self.MAX_TOTAL_UPDATE_FPS)  # Max FPS update rate
         self._update_timer.timeout.connect(self.apply_pending_updates)
         self._update_timer.start()
-        self.next_zoom = False
 
     def setSceneRect(self, rect: tuple[int, int, int, int]):
         self.scene().setSceneRect(QRect(*rect))
 
-    def zoom_to(self, pending_zoom: float, wanted_point: QPointF) -> None:
+    def zoom_to(self, pending_zoom: float) -> None:
+        last_point = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
         self.scale(pending_zoom, pending_zoom)
-        import math
+        point = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
+        # print(last_point, point)
+        # print(math.modf(1.2))
         current_point: QPointF = QPointF(self.horizontalScrollBar().value() + self.width() // 2, self.verticalScrollBar().value() + self.height() // 2)
         # print(math.sqrt((current_point.x() - wanted_point.x())**2 + (current_point.y() - wanted_point.y())**2))
-        movement_vector: QPointF = QPointF(0, 0)# QPointF(wanted_point.x() - current_point.x(), wanted_point.y() - current_point.y())
+        movement_vector: QPointF = last_point - point  # QPointF(wanted_point.x() - current_point.x(), wanted_point.y() - current_point.y())
         # print(movement_vector)
+        mov_x_frac, mov_x_whole = math.modf(movement_vector.x())
+        mov_y_frac, mov_y_whole = math.modf(movement_vector.y())
+        old_x_frac, old_x_whole = math.modf(self.extra_movement.x())
+        old_y_frac, old_y_whole = math.modf(self.extra_movement.y())
         self.horizontalScrollBar().setValue(
-            self.horizontalScrollBar().value() + int(movement_vector.x() * 0.2)
+            self.horizontalScrollBar().value() + int(mov_x_whole + old_x_whole)
         )
         self.verticalScrollBar().setValue(
-            self.verticalScrollBar().value() + int(movement_vector.y() * 0.2)
+            self.verticalScrollBar().value() + int(mov_y_whole + old_y_whole)
         )
-        self.next_zoom = True
+        self.extra_movement = QPointF(mov_x_frac + old_x_frac, mov_y_frac + old_y_frac)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Zoom in and out with the mouse wheel."""
@@ -138,7 +145,7 @@ class InteractiveGridView(StaticGridView):
             self._pending_zoom *= zoom_factor  # Accumulate zoom requests
             self.zoom_level = new_zoom
             if abs(self._pending_zoom - 1.0) > 0.1:
-                self.zoom_to(self._pending_zoom, self._last_mouse_position)
+                self.zoom_to(self._pending_zoom)
                 self._pending_zoom = 1.0
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -152,13 +159,13 @@ class InteractiveGridView(StaticGridView):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        self._last_mouse_position = self.mapToScene(event.pos())
+        # self._last_mouse_position = self.mapToScene(event.pos())
         if self._is_panning:
             self._pan_delta += (event.position() - self._previous_pan)
             self._previous_pan = event.position()
 
             # Only process significant deltas
-            if abs(self._pan_delta.x()) > 16 or abs(self._pan_delta.y()) > 16:
+            if abs(self._pan_delta.x()) > 8 or abs(self._pan_delta.y()) > 8:
                 self.horizontalScrollBar().setValue(
                     self.horizontalScrollBar().value() - int(self._pan_delta.x())
                 )
@@ -185,7 +192,7 @@ class InteractiveGridView(StaticGridView):
         """Apply batched pan and zoom updates."""
         if self._pending_zoom != 1.0:
 
-            self.zoom_to(self._pending_zoom, self._last_mouse_position)
+            self.zoom_to(self._pending_zoom)
             self._pending_zoom = 1.0
 
         self.horizontalScrollBar().setValue(

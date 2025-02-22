@@ -2,14 +2,12 @@
 	"name": "DFA",
 	"author": "Giesbrt",
 	"token_lsts": [
-		["a", "b", "c", "d"],
-		["L", "R", "H"]
+		["a", "b", "c", "d"]
 	],
 	"is_custom_token_lst": [
-		true,
-		false
+		true
 	],
-	"abs_transition_idxs": [0, 1, 1],
+	"abs_transition_idxs": [0],
 	"types": {
 		"default": "...",
 		"end": "...",
@@ -32,9 +30,9 @@
 	],
 
     "content_transitions": [
-		[[0, 1], ["s", "w"], [0, 0, 0]],
-		[[1, 1], ["n", "e"], [1, 2, 2]],
-		[[1, 0], ["s", "e"], [2, 1, 1]]
+		[[0, 1], ["s", "w"], [0]],
+		[[1, 1], ["n", "e"], [1]],
+		[[1, 0], ["s", "e"], [2]]
 	],
 	"custom_python": "..."
 }

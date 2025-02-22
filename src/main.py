@@ -112,11 +112,13 @@ class App:
             self.singleton_observer = SingletonObserver()
 
             # Automaton backend init
+            self.ui_automaton: UiAutomaton
             if input_path != "":
-                self.ui_automaton: UiAutomaton | None = self.load_file(input_path)
-                if self.ui_automaton is None:
+                loaded_automaton = self.load_file(input_path)
+                if loaded_automaton is None:
                     input_path = ""
                 else:
+                    self.ui_automaton = loaded_automaton
                     self.singleton_observer.set('is_loaded', True)
                     self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
                     self.signal_bus.emit_automaton_changed(
@@ -131,7 +133,7 @@ class App:
                 }
                 self.singleton_observer.set('is_loaded', False)
                 self.signal_bus.emit_automaton_changed(is_loaded=False)
-                self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
+                self.ui_automaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
 
             self.load_themes(os.path.join(self.styling_folder, "themes"))
             self.load_styles(os.path.join(self.styling_folder, "styles"))

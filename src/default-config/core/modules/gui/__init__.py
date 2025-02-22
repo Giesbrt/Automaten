@@ -40,7 +40,7 @@ def assign_object_names_iterative(parent: QObject, prefix: str = "", exclude_pri
             # Assign the object name
             if hasattr(child, "setObjectName"):
                 child.setObjectName(object_name)
-                print(object_name, child)
+                # print(object_name, child)
 
             # Check if we should process this child further
             if not exclude_primitives or not isinstance(child, primitives):

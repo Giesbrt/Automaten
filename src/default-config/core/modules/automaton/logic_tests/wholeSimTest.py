@@ -29,11 +29,16 @@ def do_simulation():
             if not i.is_active():
                 continue
             print("(state) Actually active:", i.get_display_text())
+        print(uiAutomaton.get_active_state().get_display_text())
 
         for i in uiAutomaton.get_transitions():
             if not i.is_active():
                 continue
             print("(transition) Actually active:", uiAutomaton.get_transition_index(i))
+
+        transition = uiAutomaton.get_active_transition()
+        if transition:
+            print(uiAutomaton.get_transition_index(transition))
         print("--")
         j += 1
 
@@ -74,14 +79,14 @@ if __name__ == '__main__':
     uiAutomaton.add_transition(transitionBA)
     uiAutomaton.add_transition(transitionBB)
 
-    signal: Signal = Signal()
-    signal.connect(do_simulation)
+    # signal: Signal = Signal()
+    # signal.connect(do_simulation)
 
     bridge = UiBridge()
-    bridge.set_signal(signal)
+    # bridge.set_signal(signal)
 
     # Simulation
-    print(uiAutomaton.simulate(list("a" * 100)))  #  ["a", "b", "b", "a"]
+    print(uiAutomaton.simulate(list("a" * 100), do_simulation))  #  ["a", "b", "b", "a"]
     print("-- SIMULATION SEND --")
 
     # sleep(2)

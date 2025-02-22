@@ -19,13 +19,13 @@
 	"content": [
 		{
 			"name": "q0",
-			"type": "end",
+			"type": "start",
 			"position": [250.0, 52.0],
 			"background_color": "#ffffff"
 		},
 		{
 			"name": "q1",
-			"type": "default",
+			"type": "end",
 			"position": [-751.0, 52.0],
 			"background_color": "#ffffff"
 		}

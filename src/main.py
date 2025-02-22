@@ -119,8 +119,8 @@ class App:
                     input_path = ""
                 else:
                     self.ui_automaton = loaded_automaton
-                    self.singleton_observer.set('is_loaded', True)
                     self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
+                    self.singleton_observer.set('is_loaded', True)
                     self.signal_bus.emit_automaton_changed(
                         is_loaded=True,
                         token_list=self.ui_automaton.get_token_lists()
@@ -132,8 +132,7 @@ class App:
                     'fehler': ''
                 }
                 self.singleton_observer.set('is_loaded', False)
-                self.signal_bus.emit_automaton_changed(is_loaded=False)
-                self.ui_automaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
+                self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', states_with_design)
 
             self.load_themes(os.path.join(self.styling_folder, "themes"))
             self.load_styles(os.path.join(self.styling_folder, "styles"))
@@ -224,36 +223,43 @@ class App:
         overlay = self.window.user_panel.control_menu
 
         if not self.ui_automaton:
-            ErrorCache().waring('No Automaton loaded!', '', True, True)
+            ErrorCache().warning('No Automaton loaded!', '', True, True)
             return
         else:
             current_input = ['a']
 
             print(self.ui_automaton)
             try:
-                result = self.ui_automaton.simulate(current_input)
+                result = self.ui_automaton.simulate(current_input, self.start_step_simulation)
             except Exception as e:
-                ErrorCache().waring(e, '', True, True)
+                ErrorCache().warning(e, '', True, True)
             if isinstance(result, _result.Success):
                 overlay.play_button.setEnabled(False)
                 overlay.next_button.setEnabled(False)
                 overlay.stop_button.setEnabled(True)
 
-                while self.ui_automaton.is_simulation_data_available():
+                """while self.ui_automaton.is_simulation_data_available():
                     sim_result = self.ui_automaton.handle_simulation_updates()
                     if sim_result:
                         if isinstance(sim_result, _result.Failure):
                             print(f"Simulationsfehler: {sim_result.value_or('Unbekannter Fehler')}")
                             self.stop_simulation()
-                            break
+                            break"""
             else:
                 print(f"Fehler beim Starten der Simulation: {result.value_or('Unbekannter Fehler')}")
+
+    def start_step_simulation(self):
+        while self.ui_automaton.has_simulation_data():
+            simulation_result = self.ui_automaton.handle_simulation_updates()
+            print(f'{simulation_result=}', self.ui_automaton.get_active_state())
 
     def stop_simulation(self):
         if self.ui_automaton:
             self.control_menu.play_button.setEnabled(True)
             self.control_menu.next_button.setEnabled(True)
             self.control_menu.stop_button.setEnabled(False)
+
+            self.ui_automaton.stop_simulation()
 
     def next_step(self):
         if self.ui_automaton:

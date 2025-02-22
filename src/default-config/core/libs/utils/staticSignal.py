@@ -1,3 +1,5 @@
+from aplustools.io import ActLogger
+
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
@@ -30,6 +32,7 @@ class Signal(_ty.Generic[T]):
         self._callback = None
 
     def emit(self, *args, **kwargs) -> None:
+        ActLogger().debug("Emitted signal")
         if self._callback is None:
             raise ValueError("Can not emit a callback which is none")
 
@@ -52,6 +55,8 @@ class SignalCache:
     def invoke(self, amount: _ty.Literal["all", "first"] = "first") -> None:
         if not self.has_elements():
             return
+
+        ActLogger().debug("Invoking methods")
 
         match amount:
             case "all":

@@ -58,3 +58,13 @@ class Settings(_abc.ABC):
     @property
     def state_types_with_design(self) -> _ty.Dict[str, str]:
         return self._state_types_with_design
+
+    def __iter__(self):
+        content: _ty.List[_ty.Any] = [self._module_name,
+                                      self._full_automaton_name,
+                                      self._author,
+                                      self._token_lists,
+                                      self._customisable_token_list,
+                                      self._transition_description_layout,
+                                      self._state_types_with_design]
+        return iter(content)

@@ -13,8 +13,9 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 
-
 T = _ty.TypeVar("T")
+
+
 class ISignal(_ty.Generic[T], _abc.ABC):
     """A generic interface for signals."""
 
@@ -124,6 +125,7 @@ class IMainWindow:
 
 class IBackend(_abc.ABC):
     """The backend entry point"""
+
     def run_infinite(self, backend_stop_event: threading.Event) -> None:
         """
         Used to actually start the backend. The gui will launch this in a separate thread.
@@ -196,7 +198,8 @@ class IUiState(_abc.ABC):
 
 class IUiTransition(_abc.ABC):
     def __init__(self, from_state: IUiState, from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'],
-                 to_state: IUiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'], condition: _ty.List[str]):
+                 to_state: IUiState, to_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'],
+                 condition: _ty.List[str]):
         self._from_state: IUiState = from_state
         self._from_state_connecting_point: _ty.Literal['n', 's', 'e', 'w'] = from_state_connecting_point
         self._to_state: IUiState = to_state
@@ -290,14 +293,17 @@ class IUiAutomaton(_abc.ABC):
 
         self._state_types_with_design: _ty.Dict[str, _ty.Any] = state_types_with_design
 
+        self._active_state: IUiState | None = None
+        self._active_transition: IUiTransition | None = None
+
     @_abc.abstractmethod
     def get_start_state(self) -> IUiState | None:
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
     @_abc.abstractmethod
     def get_state_types_with_design(self) -> _ty.Dict[str, _ty.Any]:
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
     @_abc.abstractmethod
     def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, _ty.Any]) -> None:
         raise NotImplementedError("This method must be implemented by subclasses.")
@@ -306,17 +312,17 @@ class IUiAutomaton(_abc.ABC):
     def get_author(self) -> str:
         """Returns the author of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
     @_abc.abstractmethod
     def get_token_lists(self) -> _ty.List[_ty.List[str]]:
         """Returns the token lists of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
     @_abc.abstractmethod
     def get_is_changeable_token_list(self) -> _ty.List[bool]:
         """Returns the changeable token lists of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
     @_abc.abstractmethod
     def get_transition_pattern(self) -> _ty.List[int]:
         """Returns the transition pattern of the automaton."""
@@ -326,7 +332,7 @@ class IUiAutomaton(_abc.ABC):
     def set_automaton_type(self, automaton_type: str) -> None:
         """Sets the type of the Automaton"""
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
     @_abc.abstractmethod
     def set_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
         """Sets the token lists of the automaton."""
@@ -336,7 +342,7 @@ class IUiAutomaton(_abc.ABC):
     def set_is_changeable_token_list(self, changeable_token_lists: _ty.List[bool]) -> None:
         """Sets the changeable token lists of the automaton."""
         raise NotImplementedError("This method must be implemented by subclasses.")
-    
+
     @_abc.abstractmethod
     def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
         """Sets the transition pattern of the automaton."""
@@ -406,7 +412,7 @@ class IUiAutomaton(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod
-    def simulate(self, input: _ty.List[_ty.Any]) -> None:
+    def simulate(self, input: _ty.List[_ty.Any], notification_callback: _ty.Callable or None) -> None:
         """Simulates the automaton with a given input."""
         raise NotImplementedError("This method must be implemented by subclasses.")
 
@@ -444,4 +450,24 @@ class IUiAutomaton(_abc.ABC):
     @_abc.abstractmethod
     def stop_simulation(self) -> None:
         """Stops the current simulation and resets all data"""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def get_active_state(self) -> IUiState | None:
+        """Returns the current active state"""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_active_state(self, state: IUiState) -> None:
+        """sets the current active state"""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def get_active_transition(self) -> IUiTransition | None:
+        """Returns the current active transition"""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_active_transition(self, transition: IUiTransition) -> None:
+        """sets the current active transition"""
         raise NotImplementedError("This method must be implemented by subclasses.")

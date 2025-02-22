@@ -16,6 +16,7 @@ from aplustools.io.env import auto_repr_with_privates
 from aplustools.io import ActLogger
 from utils.OrderedSet import OrderedSet
 from utils.errorCache import ErrorCache, ErrorSeverity
+from utils.staticSignal import Signal
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -463,11 +464,12 @@ class UiAutomaton(IUiAutomaton):
 
         return serialised_structure
 
-    def simulate(self, input: _ty.List[_ty.Any]) -> _result.Result:
+    def simulate(self, input: _ty.List[_ty.Any], notification_callback: _ty.Callable or None) -> _result.Result:
         """Simulates the automaton with a given input.
 
         :param input: The input to the automaton.
-        :return _result.Result: Returns success if the simulation request was successfully send to the backend"""
+        :param notification_callback: The Function which should be executed if the simulation has ended
+        :return _result.Result: Returns success, if the simulation request was successfully send to the backend"""
         structure: _ty.Dict[str, _ty.Any] = {}
         structure["action"] = "SIMULATION"
         structure["id"] = f"{self.get_author().lower()}:{self.get_automaton_type().lower()}"
@@ -483,6 +485,11 @@ class UiAutomaton(IUiAutomaton):
         # send to bridge
 
         self._bridge.set_simulation_data_status(False)
+        if notification_callback is not None:
+            signal: Signal[_ty.Callable] = Signal(notification_callback)
+            self._bridge.set_signal(signal)
+
+        self._bridge.clear_simulation_queue()
         self._bridge.add_backend_item(structure)
         return _result.Success("The simulation request was successfully send!")
 
@@ -531,6 +538,7 @@ class UiAutomaton(IUiAutomaton):
                                    True, False)
                 return _result.Failure(f"State with index {state_index} not found.")
             state._activate()
+            self.set_active_state(state)
 
         # Transition data
         if "transition" in simulation_task:
@@ -544,6 +552,7 @@ class UiAutomaton(IUiAutomaton):
                                    True, False)
                 return _result.Failure(f"Transition with index {transition_index} not found.")
             transition._activate()
+            self.set_active_transition(transition)
 
         # Automaton data
         self._input = automaton_data["input"]
@@ -657,9 +666,25 @@ class UiAutomaton(IUiAutomaton):
 
         self._input = None
         self._pointer_index = None
+        self.set_active_state(None)
+        self.set_active_transition(None)
 
         self._bridge.set_simulation_data_status(False)
         self._bridge.clear_simulation_queue()
+
+        self._bridge.set_signal(None)
+
+    def get_active_state(self) -> IUiState | None:
+        return self._active_state
+
+    def set_active_state(self, state: IUiState) -> None:
+        self._active_state = state
+
+    def get_active_transition(self) -> IUiTransition | None:
+        return self._active_transition
+
+    def set_active_transition(self, transition: IUiTransition) -> None:
+        self._active_transition = transition
 
     def __eq__(self, other: _ty.Self):
         print(self._type)

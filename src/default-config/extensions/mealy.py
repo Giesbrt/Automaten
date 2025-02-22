@@ -1,4 +1,3 @@
-
 from returns import result as _result
 import sys
 import os
@@ -12,15 +11,18 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 from core.modules.automaton.base.settings import Settings as BaseSettings
+
+
 # Comments generated with Chat-GPT
 
 class MealySettings(BaseSettings):
 
     def __init__(self):
         super().__init__("mealy", "mealy automaton", "Fa4953",
-                         [[], ], [True, ], [0, ],
-                         {"end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
-                          "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
+                         [[], []], [True, True], [0, 1],
+                         {
+                             "end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
+                             "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
 
 
 class MealyState(BaseState):
@@ -105,7 +107,7 @@ class MealyTransition(BaseTransition):
             The output associated with the transition when it is taken.
     """
 
-    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: any, output: any) -> None:
+    def __init__(self, start_state: BaseState, transition_target_state: BaseState, condition: any) -> None:
         """
         Initializes a transition with the start state, target state, and condition details.
 
@@ -116,8 +118,8 @@ class MealyTransition(BaseTransition):
             output (any): The output produced when the transition is taken.
         """
         super().__init__(start_state, transition_target_state, condition)
-        self.condition_input: any = condition
-        self.output: any = output
+        self.condition_input: any = condition[0]
+        self.output: any = condition[1]
 
     def get_condition(self):
         """
@@ -147,9 +149,8 @@ class MealyTransition(BaseTransition):
         if self.condition_input == current_input or self.condition_input == "_":
             output = self.output  # Output
             return _result.Success(output)  # Transition can occur
-        
-        return _result.Failure(f"Cannot transition with input {str(current_input)}!")  # Invalid transition
 
+        return _result.Failure(f"Cannot transition with input {str(current_input)}!")  # Invalid transition
 
 
 #from aplustools.io import ActLogger
@@ -224,7 +225,7 @@ class MealyAutomaton(BaseAutomaton):
         - The input index set to the beginning of the sequence.
         - The output initialized to None.
         """
-        super().__init__("Fa4953")
+        super().__init__()
         self.input_alphabet: list = []
         self.output_alphabet: list = []
         self.input: list = []
@@ -254,7 +255,7 @@ class MealyAutomaton(BaseAutomaton):
             any: The input sequence currently set for the automaton.
         """
         return self.input
-    
+
     def get_output(self) -> _ty.Any:
         return self.output
 
@@ -409,13 +410,13 @@ class MealyAutomaton(BaseAutomaton):
         output = self.next_state()
         if isinstance(output, _result.Failure):
             return output
-        
+
         self.output = output
         self.next_input()
         self.current_state.activate()
 
     def add_state(self, state: MealyState, state_type: str) -> None:
-        self.states.add_state(state)
+        self.states.add(state)
         match state_type:
             case "end":
                 self.end_states.add(state)

@@ -40,7 +40,7 @@ if __name__ == '__main__':
            enumerate(iter(uiAutomaton.get_transitions()))])
 
     # Simulation
-    print(uiAutomaton.simulate(["a", "b", "b", "a"]))
+    print(uiAutomaton.simulate(["a", "b", "b", "a"], None))
     print("-- SIMULATION SEND --")
     bridge = UiBridge()
 

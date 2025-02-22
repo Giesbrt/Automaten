@@ -393,7 +393,7 @@ class App:
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"
             result: _result.Result = CustomPythonHandler().load(custom_python, automaton.get_automaton_type(), path)
-            self.error_cache.debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "")
+            ErrorCache().debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "")
 
             print("CP", custom_python)
         except Exception as e:

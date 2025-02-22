@@ -1,7 +1,7 @@
 """Everything regarding the infinite grid"""
 import numpy as np
 import math
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsEllipseItem, QMenu
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsRectItem, QMenu
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QPen, QCursor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 
@@ -55,17 +55,38 @@ class StaticGridView(QGraphicsView):
         for line in lines:
             painter.drawLine(*line)
 
-    def setViewPosition(self, position: tuple[float, float]) -> None:
+    def getViewPosition(self) -> QPointF:
+        return self.mapToScene(self.viewport().rect().center() + QPoint(1, 1))
+
+    def setViewPosition(self, position: QPointF) -> None:
         """
         Sets the viewport's position within the scene.
 
         param position: Position to set to
         returns: If the scene was large enough
         """
-        self.centerOn(QPointF(*position))
+        self.centerOn(position)
 
     def setScale(self, scale: float = 1.0) -> None:
         raise NotImplementedError
+
+
+class XGraphicsItem(QGraphicsRectItem):
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height)
+        self.setPen(QPen(Qt.black, 2))
+
+    def paint(self, painter: QPainter, option, widget=None):
+        painter.setRenderHint(QPainter.Antialiasing)
+        pen = self.pen()
+        painter.setPen(pen)
+
+        if self.brush().style() != Qt.NoBrush:
+            painter.fillRect(self.rect(), self.brush())
+
+        # Draw the X
+        painter.drawLine(self.rect().topLeft(), self.rect().bottomRight())
+        painter.drawLine(self.rect().topRight(), self.rect().bottomLeft())
 
 
 class InteractiveGridView(StaticGridView):
@@ -74,32 +95,33 @@ class InteractiveGridView(StaticGridView):
     MAX_TOTAL_UPDATE_FPS: int = 15
 
     def __init__(self, grid_size: int = 100, scene_rect: tuple[int, int, int, int] = (-10_000, -10_000, 20_000, 20_000),
-                 zoom_level: float = 1.0, zoom_step: float = 0.05, min_zoom: float = 0.1, max_zoom: float = 2.0,
+                 starting_zoom_level: float = 1.0, zoom_step: float = 0.05, min_zoom: float = 0.1, max_zoom: float = 2.0,
                  parent: QWidget | None = None) -> None:
         super().__init__(grid_size, None, parent)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
+        self.setMouseTracking(True)
         self.setScene(QGraphicsScene(self))
         self.scene().setSceneRect(QRect(*scene_rect))
 
         # Center object (input)
-        center_rect = QGraphicsEllipseItem(0, 0, self.grid_size, self.grid_size)
-        center_rect.setBrush(QColor('red'))
-        center_rect.setPen(Qt.PenStyle.NoPen)
+        center_rect: XGraphicsItem = XGraphicsItem(0, 0, self.grid_size, self.grid_size)
+        center_rect.setBrush(QColor('black'))
+        center_rect.setPen(QPen(Qt.GlobalColor.red, 2))
         self.scene().addItem(center_rect)
 
         # Zoom parameters
-        self.zoom_level: float = zoom_level
         self.zoom_step: float = zoom_step
         self.min_zoom: float = min_zoom
         self.max_zoom: float = max_zoom
+        self._zoom_level: float = starting_zoom_level
+        self._fraction_vector: QPointF = QPointF(0.0, 0.0)
 
         # Panning attributes
         self._is_panning: bool = False
         self._previous_pan: QPointF = QPointF(0.0, 0.0)
         self._pan_delta: QPointF = QPointF(0.0, 0.0)
         self._pending_zoom: float = 1.0
-        # self._last_mouse_position: QPointF = QPointF(0.0, 0.0)
-        self.extra_movement: QPointF = QPointF(0.0, 0.0)
 
         # Timer for limiting updates
         self._update_timer = QTimer(self)
@@ -107,30 +129,39 @@ class InteractiveGridView(StaticGridView):
         self._update_timer.timeout.connect(self.apply_pending_updates)
         self._update_timer.start()
 
+    def get_zoom_level(self) -> float:
+        """
+        Gets the current zoom level, 1.0 means no zoom
+        """
+        return self._zoom_level
+
+    def set_zoom_level(self, new_zoom_level: float) -> None:
+        """
+        Sets the current zoom level to a new value, 1.0 means no zoom
+        """
+        self._zoom_to(1 / self._zoom_level * new_zoom_level)
+
     def setSceneRect(self, rect: tuple[int, int, int, int]):
         self.scene().setSceneRect(QRect(*rect))
 
-    def zoom_to(self, pending_zoom: float) -> None:
-        last_point = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
+    def _zoom_to(self, pending_zoom: float) -> None:
+        last_point: QPointF = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
         self.scale(pending_zoom, pending_zoom)
-        point = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
-        # print(last_point, point)
-        # print(math.modf(1.2))
-        current_point: QPointF = QPointF(self.horizontalScrollBar().value() + self.width() // 2, self.verticalScrollBar().value() + self.height() // 2)
-        # print(math.sqrt((current_point.x() - wanted_point.x())**2 + (current_point.y() - wanted_point.y())**2))
-        movement_vector: QPointF = last_point - point  # QPointF(wanted_point.x() - current_point.x(), wanted_point.y() - current_point.y())
-        # print(movement_vector)
-        mov_x_frac, mov_x_whole = math.modf(movement_vector.x())
-        mov_y_frac, mov_y_whole = math.modf(movement_vector.y())
-        old_x_frac, old_x_whole = math.modf(self.extra_movement.x())
-        old_y_frac, old_y_whole = math.modf(self.extra_movement.y())
-        self.horizontalScrollBar().setValue(
-            self.horizontalScrollBar().value() + int(mov_x_whole + old_x_whole)
-        )
-        self.verticalScrollBar().setValue(
-            self.verticalScrollBar().value() + int(mov_y_whole + old_y_whole)
-        )
-        self.extra_movement = QPointF(mov_x_frac + old_x_frac, mov_y_frac + old_y_frac)
+        point: QPointF = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
+        
+        movement_vector: QPointF = last_point - point
+        # mov_x_frac, mov_x_whole = math.modf(movement_vector.x())
+        # mov_y_frac, mov_y_whole = math.modf(movement_vector.y())
+        # old_x_frac, old_x_whole = math.modf(self._fraction_vector.x())
+        # old_y_frac, old_y_whole = math.modf(self._fraction_vector.y())
+
+        self.translateViewPosition(-movement_vector)
+        # self.translate(-movement_vector.x(), -movement_vector.y())
+        # self.centerOn(self.getViewPosition() + movement_vector)
+        # self.translate(mov_x_whole + old_x_whole, mov_y_whole + old_y_whole)
+        # self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + int(mov_x_whole + old_x_whole))
+        # self.verticalScrollBar().setValue(self.verticalScrollBar().value() + int(mov_y_whole + old_y_whole))
+        # self._fraction_vector = QPointF(mov_x_frac + old_x_frac, mov_y_frac + old_y_frac)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Zoom in and out with the mouse wheel."""
@@ -139,25 +170,33 @@ class InteractiveGridView(StaticGridView):
         else:
             zoom_factor = 1 - self.zoom_step
 
-        new_zoom: float = self.zoom_level * zoom_factor
+        new_zoom: float = self._zoom_level * zoom_factor
         if self.min_zoom <= new_zoom <= self.max_zoom:
             self._pending_zoom *= zoom_factor  # Accumulate zoom requests
-            self.zoom_level = new_zoom
+            self._zoom_level = new_zoom
             if abs(self._pending_zoom - 1.0) > 0.1:
-                self.zoom_to(self._pending_zoom)
+                self._zoom_to(self._pending_zoom)
                 self._pending_zoom = 1.0
 
+    def translateViewPosition(self, position: QPointF) -> None:
+        self.translate(position.x(), position.y())
+
+    def translateViewPositionWithScaling(self, position: QPointF) -> None:
+        self.translate(position.x() / self._zoom_level, position.y() / self._zoom_level)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.RightButton:  # Start panning the view
+        # print("MPE", event, self._is_panning)
+        if event.button() == Qt.MouseButton.RightButton and not self._is_panning:  # Start panning the view
             self._is_panning = True
             self._previous_pan = event.position()
+            # print("Setting cursor to Fist")
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             event.accept()
         else:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        # self.centerOn(self.mapToScene(self.viewport().rect().center()) + QPointF(1, 1))
         # self._last_mouse_position = self.mapToScene(event.pos())
         if self._is_panning:
             self._pan_delta += (event.position() - self._previous_pan)
@@ -165,12 +204,13 @@ class InteractiveGridView(StaticGridView):
 
             # Only process significant deltas
             if abs(self._pan_delta.x()) > 8 or abs(self._pan_delta.y()) > 8:
-                self.horizontalScrollBar().setValue(
-                    self.horizontalScrollBar().value() - int(self._pan_delta.x())
-                )
-                self.verticalScrollBar().setValue(
-                    self.verticalScrollBar().value() - int(self._pan_delta.y())
-                )
+                self.translateViewPositionWithScaling(self._pan_delta)
+                # self.horizontalScrollBar().setValue(
+                #     self.horizontalScrollBar().value() - int(self._pan_delta.x())
+                # )
+                # self.verticalScrollBar().setValue(
+                #     self.verticalScrollBar().value() - int(self._pan_delta.y())
+                # )
                 self._pan_delta = QPointF(0.0, 0.0)
             # self.resetCachedContent()
             #self.mapFromGlobal()
@@ -180,8 +220,10 @@ class InteractiveGridView(StaticGridView):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Stop panning on mouse button release."""
-        if event.button() == Qt.MouseButton.RightButton:
+        # print("MRE", event, self._is_panning)
+        if event.button() == Qt.MouseButton.RightButton and self._is_panning:
             self._is_panning = False
+            # print("Setting cursor to Arrow")
             self.setCursor(Qt.CursorShape.ArrowCursor)
             event.accept()
         else:
@@ -191,16 +233,21 @@ class InteractiveGridView(StaticGridView):
         """Apply batched pan and zoom updates."""
         if self._pending_zoom != 1.0:
 
-            self.zoom_to(self._pending_zoom)
+            self._zoom_to(self._pending_zoom)
             self._pending_zoom = 1.0
 
-        self.horizontalScrollBar().setValue(
-            self.horizontalScrollBar().value() - int(self._pan_delta.x())
-        )
-        self.verticalScrollBar().setValue(
-            self.verticalScrollBar().value() - int(self._pan_delta.y())
-        )
-        self._pan_delta = QPointF(0.0, 0.0)
+        if self._pan_delta != QPointF(0, 0):
+            print(self._pan_delta, self.get_zoom_level())
+            # self.setViewPosition(self.getViewPosition() - (self._pan_delta / self._zoom_level))
+            self.translateViewPositionWithScaling(self._pan_delta)
+            # self.translate(self._pan_delta.x(), self._pan_delta.y())
+            # self.horizontalScrollBar().setValue(
+            #     self.horizontalScrollBar().value() - int(self._pan_delta.x())
+            # )
+            # self.verticalScrollBar().setValue(
+            #     self.verticalScrollBar().value() - int(self._pan_delta.y())
+            # )
+            self._pan_delta = QPointF(0.0, 0.0)
 
 
 class AutomatonInteractiveGridView(InteractiveGridView):

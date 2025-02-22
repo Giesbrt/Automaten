@@ -2,7 +2,7 @@
 2. Open, Save, Save as, Close (JakGame)
 3. Settings Backend (Fa4953)
 4. Präsentation (Ma94)
-5. Custom Python (Giesbrt)
+--5. Custom Python (Giesbrt)--
 6. Settings GUI (Ma95)
 7. Extra Styles (Ma95)
 8. Diagramme [UML] (Giesbrt, me)

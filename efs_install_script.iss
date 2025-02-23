@@ -83,7 +83,8 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
-[Code] ; https://stackoverflow.com/questions/2000296/how-to-automatically-uninstall-previous-installed-version-in-inno-setup
+; https://stackoverflow.com/questions/2000296/how-to-automatically-uninstall-previous-installed-version-in-inno-setup
+[Code]
 
 /////////////////////////////////////////////////////////////////////
 function GetUninstallString(): String;

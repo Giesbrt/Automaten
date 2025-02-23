@@ -100,7 +100,6 @@ class InteractiveGridView(StaticGridView):
         super().__init__(grid_size, None, parent)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
-        self.setMouseTracking(True)
         self.setScene(QGraphicsScene(self))
         self.scene().setSceneRect(QRect(*scene_rect))
 
@@ -115,7 +114,6 @@ class InteractiveGridView(StaticGridView):
         self.min_zoom: float = min_zoom
         self.max_zoom: float = max_zoom
         self._zoom_level: float = starting_zoom_level
-        self._fraction_vector: QPointF = QPointF(0.0, 0.0)
 
         # Panning attributes
         self._is_panning: bool = False
@@ -148,20 +146,10 @@ class InteractiveGridView(StaticGridView):
         last_point: QPointF = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
         self.scale(pending_zoom, pending_zoom)
         point: QPointF = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
-        
+
         movement_vector: QPointF = last_point - point
-        # mov_x_frac, mov_x_whole = math.modf(movement_vector.x())
-        # mov_y_frac, mov_y_whole = math.modf(movement_vector.y())
-        # old_x_frac, old_x_whole = math.modf(self._fraction_vector.x())
-        # old_y_frac, old_y_whole = math.modf(self._fraction_vector.y())
 
         self.translateViewPosition(-movement_vector)
-        # self.translate(-movement_vector.x(), -movement_vector.y())
-        # self.centerOn(self.getViewPosition() + movement_vector)
-        # self.translate(mov_x_whole + old_x_whole, mov_y_whole + old_y_whole)
-        # self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + int(mov_x_whole + old_x_whole))
-        # self.verticalScrollBar().setValue(self.verticalScrollBar().value() + int(mov_y_whole + old_y_whole))
-        # self._fraction_vector = QPointF(mov_x_frac + old_x_frac, mov_y_frac + old_y_frac)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Zoom in and out with the mouse wheel."""
@@ -196,8 +184,6 @@ class InteractiveGridView(StaticGridView):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        # self.centerOn(self.mapToScene(self.viewport().rect().center()) + QPointF(1, 1))
-        # self._last_mouse_position = self.mapToScene(event.pos())
         if self._is_panning:
             self._pan_delta += (event.position() - self._previous_pan)
             self._previous_pan = event.position()
@@ -238,15 +224,7 @@ class InteractiveGridView(StaticGridView):
 
         if self._pan_delta != QPointF(0, 0):
             print(self._pan_delta, self.get_zoom_level())
-            # self.setViewPosition(self.getViewPosition() - (self._pan_delta / self._zoom_level))
             self.translateViewPositionWithScaling(self._pan_delta)
-            # self.translate(self._pan_delta.x(), self._pan_delta.y())
-            # self.horizontalScrollBar().setValue(
-            #     self.horizontalScrollBar().value() - int(self._pan_delta.x())
-            # )
-            # self.verticalScrollBar().setValue(
-            #     self.verticalScrollBar().value() - int(self._pan_delta.y())
-            # )
             self._pan_delta = QPointF(0.0, 0.0)
 
 

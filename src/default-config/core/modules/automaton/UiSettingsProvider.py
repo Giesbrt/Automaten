@@ -100,7 +100,7 @@ class UiSettingsProvider:
             assert automaton_name is not None and ui_automaton is not None
             settings = self.get_settings(automaton_name)
 
-        ui_automaton.set_automaton_type(settings.module_name)
+        # ui_automaton.set_automaton_type(settings.module_name)
         ui_automaton.set_token_lists(settings.token_lists)
         ui_automaton.set_transition_pattern(settings.transition_description_layout)
         ui_automaton.set_is_changeable_token_list(settings.customisable_token_list)

@@ -74,6 +74,13 @@ class AutomatonProvider:
             self.register_automaton(key, automaton, state, transition, override)
 
     def _check_for_classes(self, check_object: _ty.Any, class_variable: _ty.Any | None, class_type: type) -> _ty.Any:
+        """  Helper method to check for class subclasses
+
+        :param check_object: The Object to perform the subclass check on
+        :param class_variable: the variable, the check_object should be stored in
+        :param class_type: the class type check_object should be
+        :return: check_object if successful, else class_variable
+        """
         if class_variable is None and issubclass(check_object, class_type):
             return check_object
 

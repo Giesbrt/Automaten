@@ -19,9 +19,19 @@ class Signal(_ty.Generic[T]):
             self._cache: SignalCache = SignalCache()
 
     def connect(self, callback: _ts.FunctionType | None) -> None:
+        """ Connects the signal to a callback
+
+        :param callback: the callback to be stored in the signal
+        :return: None
+        """
         self._callback = callback
 
     def _to_cache(self, data: _ty.Callable) -> None:
+        """ Adds the signal callable to the queue or
+
+        :param data: the signal callback
+        :return: None
+        """
         if self._add_to_cache and self._cache is not None:
             self._cache.add_emitted_callback(data)
             return
@@ -29,9 +39,19 @@ class Signal(_ty.Generic[T]):
         data()
 
     def disconnect(self) -> None:
+        """ Disconnects the callback and the signal
+
+        :return: None
+        """
         self._callback = None
 
     def emit(self, *args, **kwargs) -> None:
+        """ Emits the stored callback
+
+        :param args: arguments
+        :param kwargs: key word arguments
+        :return: None
+        """
         ActLogger().debug("Emitted signal")
         if self._callback is None:
             raise ValueError("Can not emit a callback which is none")
@@ -47,12 +67,26 @@ class SignalCache:
         pass
 
     def add_emitted_callback(self, callback: _ty.Callable) -> None:
+        """ Adds a signal to the queue
+
+        :param callback: the signal
+        :return: None
+        """
         self._callback_queue.append(callback)
 
     def has_elements(self) -> bool:
+        """ Returns if the cache has signals stored
+
+        :return: True, if signals stored
+        """
         return len(self._callback_queue) > 0
 
     def invoke(self, amount: _ty.Literal["all", "first"] = "first") -> None:
+        """ Invokes stored signals
+
+        :param amount: ["all", "first"] -> how many methods should be invoked
+        :return: None
+        """
         if not self.has_elements():
             return
 

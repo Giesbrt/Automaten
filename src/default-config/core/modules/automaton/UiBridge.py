@@ -34,9 +34,18 @@ class UiBridge:
 
     # data ready
     def set_signal(self, signal: Signal[_ty.Callable]) -> None:
+        """  Sets a new signal
+
+        :param signal: the new signal to store
+        :return: None
+        """
         self._data_ready_signal.set_value(signal)
 
     def get_signal(self) -> Signal[_ty.Callable]:
+        """  Retrieves the current stored signal
+
+        :return: The stored signal
+        """
         return self._data_ready_signal.get_value()
 
     # ui-related methods

@@ -17,8 +17,14 @@ class CustomPythonHandler:
         super().__init__()
         # use os open (aplustools)
 
-    def load(self, custom_python: str, automaton_type: str, extensions_path: str) -> _result.Result:
-        if not custom_python or not automaton_type:
+    def load(self, custom_python: str, extensions_path: str) -> _result.Result:
+        """ Loads an extension
+
+        :param custom_python: The file content as a string
+        :param extensions_path: The path, where the extension should be saved to
+        :return: _result.Result
+        """
+        if not custom_python or extensions_path:
             return _result.Failure("Attributes can not be None or empty!")
 
         if path.exists(extensions_path):
@@ -35,6 +41,11 @@ class CustomPythonHandler:
         return _result.Success("File successfully created!")
 
     def to_custom_python(self, module_path: str) -> str:
+        """ Transforms a module (in module_path) into a string
+
+        :param module_path: the path, the module lies in
+        :return: the file content as a string
+        """
         if not module_path:
             return ""
 

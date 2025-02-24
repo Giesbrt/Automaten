@@ -492,6 +492,7 @@ class UiAutomaton(IUiAutomaton):
 
         # send to bridge
 
+        self.stop_simulation()
         self._bridge.set_simulation_data_status(False)
         if notification_callback is not None:
             signal: Signal[_ty.Callable] = Signal(notification_callback)

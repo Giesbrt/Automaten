@@ -22,7 +22,7 @@ class MealySettings(BaseSettings):
                          [[], []], [True, True], [0, 1],
                          {
                              "end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
-                             "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
+                             "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"}, None)
 
 
 class MealyState(BaseState):

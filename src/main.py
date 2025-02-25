@@ -288,6 +288,9 @@ class App:
 
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
+        if not self.extensions:
+            ErrorCache().error('No extensions loaded!', '', True, True, error_severity=ErrorSeverity.FATAL)
+
         AutomatonProvider(None).load_from_dict(extensions)
         UiSettingsProvider().load_from_incoherent_mess(self.extensions)
 

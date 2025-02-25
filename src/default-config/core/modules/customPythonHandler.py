@@ -24,7 +24,7 @@ class CustomPythonHandler:
         :param extensions_path: The path, where the extension should be saved to
         :return: _result.Result
         """
-        if not custom_python or extensions_path:
+        if not custom_python or not extensions_path:
             return _result.Failure("Attributes can not be None or empty!")
 
         if path.exists(extensions_path):

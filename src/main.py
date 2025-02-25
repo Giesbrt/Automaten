@@ -291,6 +291,16 @@ class App:
         AutomatonProvider(None).load_from_dict(extensions)
         UiSettingsProvider().load_from_incoherent_mess(self.extensions)
 
+        # apply settings
+        settings_loader: UiSettingsProvider = UiSettingsProvider()
+        automaton_type: str = self.ui_automaton.get_automaton_type()
+        automaton_settings = settings_loader.get_settings(automaton_type)
+        if automaton_settings is not None:
+            settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
+            ErrorCache().debug(f"Applied settings to {automaton_type}-automaton", "")
+        else:
+            ErrorCache().error(f"Could not load and apply settings of {automaton_type}", "", True)
+
     def open_file(self, filepath: str):
         self.ui_automaton.__del__()
         self.ui_automaton = self.load_file(filepath)
@@ -389,6 +399,17 @@ class App:
             automaton: UiAutomaton
             custom_python: str
             automaton, custom_python = deserialize(content, filetype)
+
+            # apply settings
+            if self.extensions:
+                settings_loader: UiSettingsProvider = UiSettingsProvider()
+                automaton_type: str = automaton.get_automaton_type()
+                automaton_settings = settings_loader.get_settings(automaton_type)
+                if automaton_settings is not None:
+                    settings_loader.apply_to_automaton(automaton, None, automaton_settings)
+                    ErrorCache().debug(f"Applied settings to {automaton_type}-automaton", "")
+                else:
+                    ErrorCache().error(f"Could not load and apply settings of {automaton_type}", "", True)
 
             # Custom python
             extension_folder: str = self.extensions_folder

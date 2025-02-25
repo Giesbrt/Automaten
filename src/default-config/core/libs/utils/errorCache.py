@@ -181,7 +181,7 @@ class ErrorCache:
             title += f": {popup_title}"
 
         if print_log:
-            self._logger.info(f"{log_message} ({description})")
+            self._logger.info(f"{log_message} {f'({description})' if description else ''}")
 
         if ActLogger().logging_level >= INFO:
             return
@@ -209,7 +209,7 @@ class ErrorCache:
             title += f": {popup_title}"
 
         if print_log:
-            self._logger.warning(f"{log_message} ({description})")
+            self._logger.warning(f"{log_message} {f'({description})' if description else ''}")
 
         if ActLogger().logging_level >= WARNING:
             return
@@ -239,7 +239,7 @@ class ErrorCache:
             title += f": {popup_title}"
 
         if print_log:
-            self._logger.error(f"{str(error_severity)}: {log_message} ({description})")
+            self._logger.error(f"{str(error_severity)}: {log_message} {f'({description})' if description else ''}")
 
         if ActLogger().logging_level >= ERROR:
             return
@@ -274,7 +274,7 @@ class ErrorCache:
             title += f": {popup_title}"
 
         if print_log:
-            self._logger.debug(f"{log_message} ({description})")
+            self._logger.debug(f"{log_message} {f'({description})' if description else ''}")
 
         if ActLogger().logging_level >= DEBUG:
             return

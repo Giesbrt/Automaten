@@ -13,7 +13,7 @@ import types as _ts
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
-from core.modules.automaton.base.settings import settings as BaseSettings
+from core.modules.automaton.base.settings import Settings as BaseSettings
 # Comments generated with Chat-GPT
 
 class TmSettings(BaseSettings):
@@ -22,7 +22,7 @@ class TmSettings(BaseSettings):
         super().__init__("tm", "touring machine", "Fa4953",
                          [[], ], [True, ], [0, ],
                          {"end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
-                          "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
+                          "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"}, None)
 
 
 class TMState(BaseState):

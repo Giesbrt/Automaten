@@ -356,7 +356,7 @@ class TMAutomaton(BaseAutomaton):
         """
         if self.current_char != "B":
             self.memoryTape[self.head] = self.current_char
-        else: 
+        else:
             del self.memoryTape[self.head]
 
     def set_end_states(self, new_end_states: _ty.Set[TMState]) -> None:

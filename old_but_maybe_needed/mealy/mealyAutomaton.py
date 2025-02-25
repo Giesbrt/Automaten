@@ -4,13 +4,11 @@ from returns import result as _result
 
 
 # Standard typing imports for aps
-import collections.abc as _a
 import typing as _ty
-import types as _ts
 
 from core.modules.automaton.base.state import State
 # Abstract Machine related imports
-from core.modules.automaton.mealy.mealyState import MealyState
+from old_but_maybe_needed.mealy.mealyState import MealyState
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 
 # Comments generated with Chat-GPT

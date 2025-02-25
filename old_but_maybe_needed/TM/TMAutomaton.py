@@ -1,19 +1,15 @@
 from returns import result as _result
 #from aplustools.io import ActLogger
-import sys
-import os
 
 
 # Standard typing imports for aps
-import collections.abc as _a
 import typing as _ty
-import types as _ts
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
-from core.modules.automaton.TM.TMState import TMState
+from old_but_maybe_needed.TM.TMState import TMState
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 from core.modules.automaton.base.state import State
-from core.modules.automaton.base.transition import Transition as BaseTransition
+
 
 # Comments generated with Chat-GPT
 

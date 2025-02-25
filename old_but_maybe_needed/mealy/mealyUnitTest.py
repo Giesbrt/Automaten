@@ -1,9 +1,6 @@
-import sys
-import os
-
-from core.modules.automaton.mealy.mealyAutomaton import MealyAutomaton
-from core.modules.automaton.mealy.mealyState import MealyState
-from core.modules.automaton.mealy.mealyTransition import MealyTransition
+from old_but_maybe_needed.mealy.mealyAutomaton import MealyAutomaton
+from old_but_maybe_needed.mealy.mealyState import MealyState
+from old_but_maybe_needed.mealy.mealyTransition import MealyTransition
 from returns import result as _result
 
 import unittest

@@ -1,5 +1,5 @@
 from returns import result as _result
-from aplustools.io import ActLogger
+#from aplustools.io import ActLogger
 import sys
 import os
 
@@ -13,7 +13,7 @@ import types as _ts
 from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
 from core.modules.automaton.base.state import State as BaseState
 from core.modules.automaton.base.transition import Transition as BaseTransition
-from core.modules.automaton.base.settings import Settings as BaseSettings
+from core.modules.automaton.base.settings import settings as BaseSettings
 # Comments generated with Chat-GPT
 
 class TmSettings(BaseSettings):
@@ -22,7 +22,7 @@ class TmSettings(BaseSettings):
         super().__init__("tm", "touring machine", "Fa4953",
                          [[], ], [True, ], [0, ],
                          {"end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
-                          "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"}, None)
+                          "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
 
 
 class TMState(BaseState):
@@ -497,6 +497,10 @@ class TMAutomaton(BaseAutomaton):
             If no start state is set or the start state is not part of the automaton's states,
             an error is logged and the simulation returns a failure.
         """
+        for state in self.states:
+            state.deactivate()
+        for transition in self.transitions:
+            transition.deactivate()
         if not self.start_state:
             #ActLogger().error("Tried to start simulation of DFA-Automaton without start state!")
             return _result.Failure("No start state found")
@@ -504,13 +508,7 @@ class TMAutomaton(BaseAutomaton):
         if self.start_state not in self.states:
             #ActLogger().error("Tried to start simulation of DFA-Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
-        
-        for state in self.states:
-            state.deactivate()
-            
-        for transition in self.transitions:
-            transition.deactivate()
-            
+
         if self.current_state is None:
             self.current_state = self.start_state
             self.current_state.activate()

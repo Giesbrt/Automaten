@@ -77,7 +77,7 @@ class UiSettingsProvider:
                 return
 
             raw_settings: _ty.Type = filtered_list[0]
-            if not isinstance(raw_settings, BaseSettings):
+            if not issubclass(raw_settings, BaseSettings):
                 return
 
             settings: BaseSettings = raw_settings()

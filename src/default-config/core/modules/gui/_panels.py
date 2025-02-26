@@ -260,8 +260,8 @@ class UserPanel(Panel):
         self.menu_button.setFixedSize(40, 40)
 
         # Settings button
-        self.settings_button = QPushButton(self)
-        self.settings_button.setFixedSize(40, 40)
+        # self.settings_button = QPushButton(self)
+        # self.settings_button.setFixedSize(40, 40)
 
         # Control Menu
         self.control_menu = ControlMenu(self.grid_view, self)
@@ -366,7 +366,7 @@ class UserPanel(Panel):
         else:
             self.control_menu.setGeometry(self.width() - self.control_menu.width() - 20, 20, self.control_menu.width(), self.control_menu.height())
         self.update_menu_button_position()
-        self.settings_button.move(self.width() - 60, 100)
+        # self.settings_button.move(self.width() - 60, 100)
 
         super().resizeEvent(event)
 

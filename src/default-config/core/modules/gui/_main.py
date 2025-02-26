@@ -1,6 +1,6 @@
 """TBA"""
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget, QDialog, \
-    QVBoxLayout, QLabel
+    QVBoxLayout, QLabel, QToolButton
 from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont, QColor, QPalette
 from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl, Qt, Signal
 
@@ -61,6 +61,8 @@ class MainWindow(QMainWindow, IMainWindow):
     settings_changed = Signal(dict[str, dict[str, str]])
 
     def __init__(self) -> None:
+        self.settings_button: QPushButton | None = None
+        self.menu_bar: None = None
         self.user_panel: UserPanel | None = None
         self.settings_panel: SettingsPanel | None = None
         self.user_panel_animation: QPropertyAnimation | None = None
@@ -70,6 +72,8 @@ class MainWindow(QMainWindow, IMainWindow):
         super().__init__(parent=None)
 
     def setup_gui(self) -> None:
+        self.settings_button = QPushButton(parent=self)
+        self.menu_bar = self.menuBar()
         self.user_panel = UserPanel(self.automaton_type, parent=self)
         self.settings_panel = SettingsPanel(parent=self)
         # import time
@@ -139,11 +143,14 @@ class MainWindow(QMainWindow, IMainWindow):
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
 
-        settings_menu = self.menuBar().addMenu("Settings")
-        settings_action = QAction("Open Settings", self) 
-        settings_action.triggered.connect(self.switch_panel)  
-        settings_menu.addAction(settings_action)  
-
+        # settings_menu = self.menuBar().addMenu("Settings")
+        # settings_action = QAction("Open Settings", self)
+        # settings_action.triggered.connect(self.switch_panel)
+        # settings_menu.addAction(settings_action)
+        self.settings_button.setObjectName("settings_button")
+        self.settings_button.setFixedSize(22, 22)
+        self.settings_button.clicked.connect(self.switch_panel)
+        self.menuBar().setCornerWidget(self.settings_button, Qt.Corner.TopRightCorner)
 
         self.menuBar().setFixedHeight(30)
 
@@ -294,6 +301,10 @@ class MainWindow(QMainWindow, IMainWindow):
             child.setFont(font)
         self.update()
         self.repaint()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Space:
+            self.switch_panel()
 
     def internal_obj(self) -> QMainWindow:
         return self

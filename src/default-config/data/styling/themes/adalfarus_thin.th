@@ -66,8 +66,9 @@ QPushButton#user_panel-control_menu-stop_button {
 QPushButton#user_panel-control_menu-next_button {
     icon: $next_button;
 }
-QPushButton#user_panel-settings_button {
+QPushButton#menu_bar-QPushButton {
     icon: $menu_icon;
+    icon-size: 10px 10px;
 }
 QPushButton#user_panel-menu_button {
     icon: $info_icon;

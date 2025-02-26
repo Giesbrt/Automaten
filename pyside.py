@@ -409,7 +409,7 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         self.input_edit.setText(input_text)
         self._check_for_errors()
 
-    def _input_token_changed(self) -> None:  # TODO
+    def _input_token_changed(self) -> None:
         self._check_for_errors()
 
         for token in self._input_tokens:

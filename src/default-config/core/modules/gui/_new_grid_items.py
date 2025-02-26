@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsItemGroup, QGraph
     QGraphicsLineItem, QStyleOptionGraphicsItem
 
 from ._graphic_items import StateGraphicsItem, LabelGraphicsItem, TransitionGraphicsItem, ConditionGraphicsItem, StateConnectionGraphicsItem, TokenButton, TokenListFrame
-from .state_view_model import StateViewModel
+# from .state_view_model import StateViewModel
 
 # Standard typing imports for aps
 import collections.abc as _a

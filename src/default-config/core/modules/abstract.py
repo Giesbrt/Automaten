@@ -121,7 +121,8 @@ class IMainWindow:
 
     def close(self) -> None:
         raise NotImplementedError
-        def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):
+    
+    def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):
         raise NotImplementedError
 
     def set_enable_animations(self, flag: bool):

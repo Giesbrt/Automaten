@@ -275,6 +275,7 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         self.error_frame.show()
 
     def _hide_text_error(self) -> None:
+        self._error = ""
         self.error_frame.hide()
 
     def reset(self) -> None:
@@ -453,6 +454,9 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         if not self.getContent():
             self.input_edit.setText(token)
         else:
+            if self.input_edit.text().endswith(self.get_separator()):
+                self.input_edit.setText(self.input_edit.text() + token)
+                return
             self.input_edit.setText(self.input_edit.text() + self.get_separator() + token)
 
     def _check_for_errors(self) -> None:
@@ -483,7 +487,7 @@ if __name__ == "__main__":
     widget = QAutomatonTokenIO()
     widget.show()
     widget.set_input_tokens("Hallo Welt".split())
-    widget.set_separators([" ", ",", ";", "|"])
+    # widget.set_separators([" ", ",", ";", "|"])
 
-    widget.simulationStep("Hallo Welt Test Hallo".split(), 2)
+    # widget.simulationStep("Hallo Welt Test Hallo".split(), 2)
     exit(app.exec())

@@ -380,7 +380,7 @@ def _deserialize_from_binary(bytes_like: bytes) -> DCGDictT:
     }
 
 
-def deserialize(bytes_like: bytes,
+def deserialize(automaton: IUiAutomaton, bytes_like: bytes,
                 format_: _ty.Literal["json", "yaml", "binary"] = "json") -> tuple[IUiAutomaton, str]:
     """TBA"""
     dcg_dict: DCGDictT = {"json": _deserialize_from_json,
@@ -404,7 +404,9 @@ def deserialize(bytes_like: bytes,
         for i in dcg_dict["abs_transition_idxs"]  # type: ignore
     ]
 
-    automaton: IUiAutomaton = UiAutomaton(name, author, types)
+    automaton.set_name(name)
+    automaton.set_author(author)
+    automaton.set_state_types_with_design(types)
     automaton.set_token_lists(token_lsts)
     automaton.set_is_changeable_token_list(is_custom_token_lst)
     automaton.set_transition_pattern(abs_transition_idxs)

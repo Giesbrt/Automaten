@@ -318,7 +318,8 @@ class IUiTransition(_abc.ABC):
 
 
 class IUiAutomaton(_abc.ABC):
-    def __init__(self, automaton_type: str | None, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
+    def __init__(self, automaton_type: str | None = None, author: str | None = None,
+                 state_types_with_design: _ty.Dict[str, _ty.Any] | None = None,
                  token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
                  transition_pattern: _ty.List[int] = []):
         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
@@ -331,12 +332,12 @@ class IUiAutomaton(_abc.ABC):
         self._input: _ty.List[_ty.Any] = []
         self._pointer_index: int = 0
 
-        self._author: str = author
+        self._author: str | None = author
         self._token_lists: _ty.List[_ty.List[str]] = token_lists
         self._changeable_token_lists: _ty.List[bool] = changeable_token_lists
         self._transition_pattern: _ty.List[int] = transition_pattern
 
-        self._state_types_with_design: _ty.Dict[str, _ty.Any] = state_types_with_design
+        self._state_types_with_design: _ty.Dict[str, _ty.Any] | None = state_types_with_design
 
         self._active_state: IUiState | None = None
         self._active_transition: IUiTransition | None = None
@@ -356,6 +357,19 @@ class IUiAutomaton(_abc.ABC):
     @_abc.abstractmethod
     def get_author(self) -> str:
         """Returns the author of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_author(self, author: str) -> None:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def get_name(self) -> str:
+        """Returns the name of the automaton."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_name(self, name: str) -> None:
         raise NotImplementedError("This method must be implemented by subclasses.")
 
     @_abc.abstractmethod

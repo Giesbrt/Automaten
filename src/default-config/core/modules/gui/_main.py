@@ -56,14 +56,9 @@ class AutomatonSelectionDialog(QDialog):
 
 
 class MainWindow(QMainWindow, IMainWindow):
-    linked: bool = False
-
     save_file_signal: Signal(str) = Signal(str)
     open_file_signal: Signal(str) = Signal(str)
     settings_changed = Signal(dict[str, dict[str, str]])
-
-    # def __new__(cls, *args, **kwargs):
-    #     return QMainWindow.__new__(cls,)
 
     def __init__(self) -> None:
         self.user_panel: UserPanel | None = None

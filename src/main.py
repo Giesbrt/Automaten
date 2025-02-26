@@ -640,7 +640,7 @@ class App:
         })
         self.user_settings.set_default_settings("design", {
             "light_theming": "adalfarus::thin/thin_light",  # thin_light_dark, colored_summer_sky
-            "dark_theming": "adalfarus::thin/colored_evening_sky",
+            "dark_theming": "adalfarus::thin/thin_light_blue",  # colored_evening_sky
             # "dark_theming": "adalfarus::thick/thick_light",
             # "dark_theming": "adalfarus::chisled/base",
             # "dark_theming": "adalfarus::modern/base",
@@ -728,7 +728,7 @@ class App:
         theme: Theme | None = Theme.get_loaded_theme(theme_str)
 
         if theme is None:  # TODO: Popup
-            self.logger.warning(f"Specified theme '{theme}' is not available")
+            ErrorCache().warning(f"Specified theme '{theme}' is not available", "", show_dialog=True)
             return
         style: Style | None = theme.get_compatible_style(style_str.replace("_", " ").title())
         if style is None:

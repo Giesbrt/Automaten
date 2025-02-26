@@ -577,6 +577,15 @@ class UiAutomaton(IUiAutomaton):
         """
         return self._author
 
+    def set_author(self, author: str) -> None:
+        raise NotImplementedError
+
+    def get_name(self) -> str:
+        raise NotImplementedError
+
+    def set_name(self, name: str) -> None:
+        raise NotImplementedError
+
     def get_token_lists(self) -> _ty.List[_ty.List[str]]:
         """Gets the token lists of the automaton.
 

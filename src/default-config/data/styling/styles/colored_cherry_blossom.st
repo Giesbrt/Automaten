@@ -10,3 +10,6 @@ background_secondary: #FFD4DA;
 selection_background: #FFC2CB;  // Lighter pink
 background_tertiary: #FFCCD3;
 background_scrollbar: transparent; // Stays
+dropdown_image: url(data/assets/icons/arrow-down-dark.png);
+checkbox_image: url("data/assets/icons/check-mark-dark.png");
+menu_icon: url("data/assets/icons/menu-dark.png");

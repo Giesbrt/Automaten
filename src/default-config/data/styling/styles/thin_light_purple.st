@@ -12,6 +12,7 @@ background_tertiary: #CEA3E8; // Slightly varied purple background
 background_scrollbar: transparent; // Stays  
 dropdown_image: url(data/assets/icons/arrow-down-light.png);  
 checkbox_image: url("data/assets/icons/check-mark-light.png");
+menu_icon: url("data/assets/icons/menu-light.png");
 
 
 

@@ -10,3 +10,6 @@ background_secondary: #550000;
 selection_background: #771111;  // A lighter red
 background_tertiary: #660000;
 background_scrollbar: transparent; // Stays
+dropdown_image: url(data/assets/icons/arrow-down-light.png);
+checkbox_image: url("data/assets/icons/check-mark-light.png");
+menu_icon: url("data/assets/icons/menu-light.png");

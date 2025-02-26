@@ -10,5 +10,6 @@ background_secondary: #b0e0d0;
 selection_background: #90d0c0;  
 background_tertiary: #a6e0d6;  
 background_scrollbar: transparent; // Stays  
-dropdown_image: url(data/assets/icons/arrow-down-dark.png);  
-checkbox_image: url("data/assets/icons/check-mark-dark.png");  
+dropdown_image: url(data/assets/icons/arrow-down-dark.png);
+checkbox_image: url("data/assets/icons/check-mark-dark.png");
+menu_icon: url("data/assets/icons/menu-dark.png");

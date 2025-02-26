@@ -12,3 +12,4 @@ background_tertiary: #FFF5D1;  // Light sunny cream
 background_scrollbar: transparent; // Stays
 dropdown_image: url(data/assets/icons/arrow-down-dark.png);
 checkbox_image: url("data/assets/icons/check-mark-dark.png");
+menu_icon: url("data/assets/icons/menu-dark.png");

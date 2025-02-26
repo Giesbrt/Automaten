@@ -104,8 +104,11 @@ class Extensions_Loader:
                     if "__init__" in implemented_methods:
                         source = inspect.getsource(element.__init__)
                         if "super().__init__" in source:
-                            return True
-                    required_checks["Settings"] = True
+                            required_checks["Settings"] = True
+                        else:
+                            return False
+                    else:
+                        return False
                 else:
                     return False
         if any(requirement is False for requirement in required_checks.values()):

@@ -196,6 +196,7 @@ class App:
         self.grid_view.add_transition.connect(automaton.add_transition)
         self.grid_view.delete_state.connect(automaton.delete_state)
         self.grid_view.delete_transition.connect(automaton.delete_transition)
+        self.window.settings_changed.connect(self.set_settings)
 
         """grid_view.get_start_state.connect(automaton.get_start_state)
         grid_view.get_state_types_with_design.connect(automaton.get_state_types_with_design)
@@ -220,7 +221,25 @@ class App:
         grid_view.has_simulation_data.connect(automaton.has_simulation_data)
         grid_view.has_bridge_updates.connect(automaton.has_bridge_updates)
         grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)"""
+        
+    def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):
+        self.window.set_font(self.user_settings.retrieve("design", "font", "string"))
+        self.window.set_enable_animations(self.user_settings.retrieve("design", "enable_animations", "bool"))
+        self.window.set_auto_open_tutorial_tab(self.user_settings.retrieve("design", "auto_open_tutorial_tab", "string"))
+        self.window.set_transition_func_separator(self.user_settings.retrieve("design", "transition_func_separator", "string"))
+        self.window.set_default_state_background_color(self.user_settings.retrieve("design", "default_state_background_color", "str"))
 
+        self.window.set_file_open_shortcut(self.user_settigs.retrieve("shortcuts", "file_open", "string"))
+        self.window.set_file_save_shortcut(self.user_settigs.retrieve("shortcuts", "file_save", "string"))
+        self.window.set_file_close_shortcut(self.user_settigs.retrieve("shortcuts", "file_close", "string"))
+        self.window.set_simulation_start_shortcut(self.user_settigs.retrieve("shortcuts", "simulation_start", "string"))
+        self.window.set_simulation_step_shortcut(self.user_settigs.retrieve("shortcuts", "simulation_step", "string"))
+        self.window.set_simulation_halt_shortcut(self.user_settigs.retrieve("shortcuts", "simulation_halt", "string"))
+        self.window.set_simulation_end_shortcut(self.user_settigs.retrieve("shortcuts", "simulation_end", "string"))
+        self.window.set_states_cut_shortcut(self.user_settigs.retrieve("shortcuts", "states_cut", "string"))
+        self.window.set_states_copy_shortcut(self.user_settigs.retrieve("shortcuts", "states_copy", "string"))
+        self.window.set_states_paste_shortcut(self.user_settigs.retrieve("shortcuts", "states_paste", "string"))
+        
     def update_simulation_controls(self, running: bool) -> None:
         self.control_menu.play_button.setEnabled(not running)
         self.control_menu.next_button.setEnabled(not running)

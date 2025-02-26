@@ -121,7 +121,51 @@ class IMainWindow:
 
     def close(self) -> None:
         raise NotImplementedError
+        def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):
+        raise NotImplementedError
 
+    def set_enable_animations(self, flag: bool):
+        raise NotImplementedError
+
+    def set_auto_open_tutorial_tab(self, tutorial_tab: bool):
+        raise NotImplementedError
+
+    def set_default_state_background_color(self, background_color: str):
+        raise NotImplementedError
+
+    def set_transition_func_separator(self, func_separator: str):
+        raise NotImplementedError
+    
+    def set_file_open_shortcut(self, open_shortcut: str):
+        raise NotImplementedError
+    
+    def set_file_save_shortcut(self, save_shortcut: str):
+        raise NotImplementedError
+    
+    def set_file_close_shortcut(self, close_shortcut: str):
+        raise NotImplementedError
+    
+    def set_simulation_start_shortcut(self, start_shortcut: str):
+        raise NotImplementedError
+    
+    def set_simulation_step_shortcut(self, step_shortcut: str):
+        raise NotImplementedError
+    
+    def set_simulation_halt_shortcut(self, halt_shortcut: str):
+        raise NotImplementedError
+    
+    def set_simulation_end_shortcut(self, end_shortcut: str):
+        raise NotImplementedError
+    
+    def set_states_cut_shortcut(self, cut_shortcut: str):
+        raise NotImplementedError
+    
+    def set_states_copy_shortcut(self, copy_shortcut: str):
+        raise NotImplementedError
+    
+    def set_states_paste_shortcut(self, paste_shortcut: str):
+        raise NotImplementedError
+   
 
 class IBackend(_abc.ABC):
     """The backend entry point"""

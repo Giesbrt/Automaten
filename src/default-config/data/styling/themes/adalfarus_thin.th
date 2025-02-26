@@ -69,6 +69,10 @@ QPushButton#user_panel-control_menu-next_button {
 QPushButton#user_panel-settings_button {
     icon: $menu_icon;
 }
+QPushButton#user_panel-menu_button {
+    icon: $info_icon;
+    icon-size: 20px 20px;
+}
 /* End of QSS */
 
 ph:

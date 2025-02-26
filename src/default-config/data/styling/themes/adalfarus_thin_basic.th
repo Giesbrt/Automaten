@@ -179,3 +179,4 @@ play_button~=url("data/assets/icons/play_button.png");
 stop_button~=url("data/assets/icons/stop_button.png");
 next_button~=url("data/assets/icons/next_button.png");
 menu_icon~=url();
+info_icon~=url();

@@ -14,3 +14,4 @@ background_scrollbar: transparent; // Unchanged
 dropdown_image: url(data/assets/icons/arrow-down-light.png); // Unchanged
 checkbox_image: url("data/assets/icons/check-mark-light.png"); // Retained for consistency
 menu_icon: url("data/assets/icons/menu-light.png");
+info_icon: url("data/assets/icons/info-light.png");

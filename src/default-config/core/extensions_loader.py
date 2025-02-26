@@ -34,87 +34,81 @@ class Extensions_Loader:
     def clear_cache(self): 
         with open(os.path.join(self.cache_path, "cache.json"), 'w') as file:
                 json.dump({"modules": []}, file, indent=4)
-        
-    def sort_list(self, classes, element, position = None):
-        if position == None:
-            if issubclass(element, BaseAutomaton):
-                position = 0
-            elif issubclass(element, BaseState):
-                position = 1
-            elif issubclass(element, BaseTransition):
-                position = 2
-            elif issubclass(element, BaseSettings):
-                position = 3
-            else: 
-                position = len(classes)
-        while len(classes) <= position:
-            classes.append(None)  
 
-        classes[position] = element
-        return classes
-    
     def check_module(self, module):
-
+        if self.static_analysis(module) and self.dynamic_analysis(module):
+            return True
+        else:
+            return False
+    
+    def static_analysis(self, module):
         classes_in_module = []
         classes = [(name, obj) for name, obj in inspect.getmembers(module, inspect.isclass)]
         for name, element in classes:
             if element.__module__ == module.__name__ : 
                 classes_in_module.append((name, element))
-        required_checks = {
-                            "State": False,
-                            "Automaton": False,
-                            "Transition": False,
-                            "Settings": False
-                          }
+        check = ["st","a","t", "se"]
 
         for name, element in classes_in_module:
             if issubclass(element, BaseState):
-                if required_checks["State"] == False:
+                if "st" in  check:
                     implemented_methods = {name for name, _ in inspect.getmembers(BaseState, inspect.isroutine)}
                     abstract_methods = BaseState.__abstractmethods__
                     for method in abstract_methods:
                         if method not in implemented_methods:
                             return False
-                    required_checks["State"] = True
+                        else:
+                            break
+                    check.remove("st")
                 else:
+                    print(check)
                     return False
             elif issubclass(element, BaseAutomaton):
-                if required_checks["Automaton"] == False:
+                if "a" in  check:
                     implemented_methods = {name for name, _ in inspect.getmembers(BaseAutomaton, inspect.isroutine)}
                     abstract_methods = BaseAutomaton.__abstractmethods__
                     for method in abstract_methods:
                         if method not in implemented_methods:
                             return False
-                    required_checks["Automaton"] = True
+                        else:
+                            break
+                    check.remove("a")
                 else:
                     return False
             elif issubclass(element, BaseTransition):
-                if required_checks["Transition"] == False:
+                if "t" in  check:
                     implemented_methods = {name for name, _ in inspect.getmembers(BaseTransition, inspect.isfunction)}
                     abstract_methods = BaseTransition.__abstractmethods__
                     for method in abstract_methods:
                         if method not in implemented_methods:
                             return False
-                    required_checks["Transition"] = True
+                        else:
+                            break
+                    check.remove("t")
                 else:
                     return False
             elif issubclass(element, BaseSettings):
-                if required_checks["Settings"] == False:
+                if "se" in  check:
                     implemented_methods = {name for name, _ in inspect.getmembers(BaseSettings, inspect.isfunction)}
-                    if "__init__" in implemented_methods:
-                        source = inspect.getsource(element.__init__)
-                        if "super().__init__" in source:
-                            required_checks["Settings"] = True
-                        else:
+                    abstract_methods = BaseSettings.__abstractmethods__
+                    for method in abstract_methods:
+                        if method not in implemented_methods:
                             return False
-                    else:
-                        return False
+                        else:
+                            break
+                    check.remove("se")
                 else:
                     return False
-        if any(requirement is False for requirement in required_checks.values()):
-            return False
-        else:
+        if check == []:
             return True
+        else:
+            return False
+
+    def dynamic_analysis(self, module):
+        return True
+    
+    def prioritize(self, path):
+        return #self.load_content(onestep = True)
 
     def is_valid_python_file(self, path):
         try:
@@ -124,7 +118,7 @@ class Extensions_Loader:
         except SyntaxError:
             return False
         
-    def load_content(self):
+    def load_content(self, onestep = False):
         modules = {}
         extensions_path = os.path.join(self.base_dir, "extensions", '*.py')
         dir_list = glob.glob(extensions_path)
@@ -146,7 +140,7 @@ class Extensions_Loader:
                         classes = []
                         for name, element in all_classes:
                             if element.__module__ == modules[os.path.splitext(os.path.basename(path))[0]].__name__ : 
-                                classes = self.sort_list(classes, element)
+                                classes.append(element)
                         self.content[os.path.splitext(os.path.basename(path))[0]] = classes
                         break
                     else:
@@ -157,11 +151,8 @@ class Extensions_Loader:
                     continue 
             else:
                 if self.is_valid_python_file(path):
-                    try:
-                        modules[os.path.splitext(os.path.basename(path))[0]] = importlib.import_module(module_path)
-                        functioning = self.check_module(modules[os.path.splitext(os.path.basename(path))[0]])
-                    except:
-                        functioning = False
+                    modules[os.path.splitext(os.path.basename(path))[0]] = importlib.import_module(module_path)
+                    functioning = self.check_module(modules[os.path.splitext(os.path.basename(path))[0]])
                 else:
                     functioning = False
                 cache_module = {
@@ -175,7 +166,7 @@ class Extensions_Loader:
                     classes = []
                     for name, element in all_classes:
                         if element.__module__ == modules[os.path.splitext(os.path.basename(path))[0]].__name__ : 
-                            classes = self.sort_list(classes, element)
+                            classes.append(element)
                     self.content[os.path.splitext(os.path.basename(path))[0]] = classes
                 else:
                     del self.content[os.path.splitext(os.path.basename(path))[0]]
@@ -186,5 +177,5 @@ class Extensions_Loader:
         return self.content
 
 if __name__ == "__main__":
-    loader = Extensions_Loader(os.path.dirname(__file__))
+    loader = Extensions_Loader("../")
     print(loader.load_content())

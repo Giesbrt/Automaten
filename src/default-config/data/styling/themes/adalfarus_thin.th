@@ -45,12 +45,17 @@ QFrame#user_panel-control_menu {
     border-radius: 15px;
     padding: 5px;
 }
-QComboBox#user_panel-control_menu-token_box {
-    background-color: $color_primary;
+QComboBox#user_panel-control_menu-token_list_box {
+    width: 75px;
+    background-color: $background_secondary;
+    color: $color_primary;
+    font-size: 14px;
     border: 1px solid $border_primary;
     border-radius: 6px;
-    padding: 2px;
-    color: $color_primary;
+    padding: 8px;
+}
+QComboBox#user_panel-control_menu-token_list_box:drop-down {
+    background-color: gray;
 }
 QPushButton#user_panel-control_menu-play_button, QPushButton#user_panel-control_menu-stop_button, QPushButton#user_panel-control_menu-next_button {
     background: transparent;

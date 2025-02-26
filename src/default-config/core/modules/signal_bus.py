@@ -8,11 +8,6 @@ from PySide6.QtCore import Signal, QObject
 
 import typing as _ty
 
-@dataclass
-class AutomatonEvent:
-    is_loaded: bool
-    token_list: _ty.List[str] = None
-
 class SignalBus(QObject):
     """
     A singleton class for signal-based communication between GridView and UiAutomaton.
@@ -26,8 +21,6 @@ class SignalBus(QObject):
 
     request_method = Signal(str, tuple, dict)
     send_response = Signal(str, object)
-
-    automaton_changed = Signal(AutomatonEvent)
 
     _instance = None
 
@@ -43,10 +36,6 @@ class SignalBus(QObject):
 
         self._initialized = True
 
-    def emit_automaton_changed(self, is_loaded: bool, token_list: _ty.List[str]=None):
-        event = AutomatonEvent(is_loaded=is_loaded, token_list=token_list)
-        self.automaton_changed.emit(event)
-
 
 class SingletonObserver:
     _instance = None
@@ -59,6 +48,15 @@ class SingletonObserver:
             if not cls._instance:
                 cls._instance = super().__new__(cls)
             return cls._instance
+
+    def __del__(self):
+        with self._lock:
+            self.__class__._instance = None
+
+    @classmethod
+    def reset_instance(cls):
+        with cls._lock:
+            cls._instance = None
 
     @classmethod
     def set(cls, key: str, value: any) -> None:

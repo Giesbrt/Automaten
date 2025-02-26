@@ -8,7 +8,8 @@ from PySide6.QtGui import QColor, QIcon, QPen, QAction
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
-from ._grid_items import StateGroup
+from utils.errorCache import ErrorCache
+from ._grid_items import StateItem
 from ..signal_bus import SingletonObserver
 
 # Standard typing imports for aps
@@ -30,10 +31,9 @@ class StateMenu(QFrame):
         self.setAutoFillBackground(True)
 
         self.singleton_observer = SingletonObserver()
-        # self.singleton_observer.subscribe('token_lists', print('hallo'))
 
         self.visible: bool = False
-        self.state: StateGroup | None = None
+        self.state: StateItem | None = None
         self.token_list: _ty.List[str] | None = None
         self.selected_color: QColor = QColor(52, 152, 219)
 
@@ -101,8 +101,8 @@ class StateMenu(QFrame):
             if self.state is not None:
                 self.state.set_color(color)
 
-    def set_state(self, state: StateGroup) -> None:
-        self.state: StateGroup = state
+    def set_state(self, state: StateItem) -> None:
+        self.state: StateItem = state
         self.set_parameters()
 
     def set_parameters(self):
@@ -145,7 +145,7 @@ class StateMenu(QFrame):
         current.data(Qt.ItemDataRole.UserRole).setPen(QPen(QColor('red'), 4))
 
     def connect_methods(self) -> None:
-        self.name_input.textEdited.connect(self.state.set_name)
+        self.name_input.textEdited.connect(self.state.set_display_text)
         self.size_input.valueChanged.connect(self.state.set_size)
 
     def disconnect_methods(self) -> None:
@@ -157,13 +157,12 @@ class ControlMenu(QFrame):
     def __init__(self, grid_view: 'AutomatonInteractiveGridView', parent=None):
         super().__init__(parent)
         self.singleton_observer = SingletonObserver()
-        self.singleton_observer.subscribe('token_lists', self.update_token_list)
+        self.singleton_observer.subscribe('token_lists', self.update_token_lists)
 
         self.grid_view = grid_view
-        self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = self.grid_view.get_token_list()
+        self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = [[], []]
 
         self.init_ui()
-
         self.adjustSize()
 
     def init_ui(self):
@@ -178,15 +177,12 @@ class ControlMenu(QFrame):
 
         self.play_button = QPushButton(self)
         self.stop_button = QPushButton(self)
-        self.next_button = QPushButton(self)
-
         self.stop_button.setEnabled(False)
+        self.next_button = QPushButton(self)
 
         self.token_list_box = QComboBox(self)
         self.token_list_box.setEditable(True)
-        self.token_list_box.addItems(self.token_list[0])
         self.token_list_box.lineEdit().returnPressed.connect(self.add_token)
-
         self.token_list_box.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.token_list_box.customContextMenuRequested.connect(self.show_context_menu)
 
@@ -200,7 +196,7 @@ class ControlMenu(QFrame):
 
         self.setLayout(main_layout)
 
-        self.singleton_observer.set('token_lists', self.token_list)
+        # self.singleton_observer.set('token_lists', self.token_lists)
 
     def show_context_menu(self, pos):
         """Zeigt das Kontextmenü bei Rechtsklick"""
@@ -213,34 +209,33 @@ class ControlMenu(QFrame):
 
     def add_token(self):
         token = self.token_list_box.currentText().strip()
-        if not token in self.token_list[0]:
-            self.token_list_box.addItem(token)
-        QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
-        self.token_list[0].append(token)
-
-        self.singleton_observer.set('token_lists', self.token_list)
+        if token.isalnum():
+            if not token in self.token_lists[0]:
+                self.token_list_box.addItem(token)
+            QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
+            self.token_lists[0].append(token)
+            self.singleton_observer.set('token_lists', self.token_lists)
+        else:
+            ErrorCache().warning('No whitespace or special characters allowed!', '', True, False)
 
     def remove_token(self, token, token_index: int=None):
         self.token_list_box.removeItem(token_index)
-        self.token_list[0].remove(token)
+        self.token_lists[0].remove(token)
 
-        self.singleton_observer.set('token_lists', self.token_list)
+        self.singleton_observer.set('token_lists', self.token_lists)
 
-    def update_token_list(self, token_list: _ty.List[str]):
+    def update_token_lists(self, token_lists: _ty.List[_ty.List[str]]):
+        self.token_lists = token_lists
         self.token_list_box.clear()
+        self.token_list_box.addItems(token_lists[0])
 
-        if isinstance(self.token_list, list) and self.token_list and all(isinstance(item, list) for item in self.token_list):
-            self.token_list_box.addItems(token_list[0])
-        else:
-            self.token_list_box.addItems(token_list)
-
-    def handle_automaton_changed(self, event: 'AutomatonEvent'):
+    """def handle_automaton_changed(self, event: 'AutomatonEvent'):
         if event.is_loaded:
-            self.token_list = event.token_list_box
-            self.update_token_list(self.token_list)
+            self.token_lists = event.token_list_box
+            self.update_token_list(self.token_lists)
         else:
-            self.token_list = []
-            self.update_token_list([])
+            self.token_lists = [[], []]
+            self.update_token_list(self.token_lists)"""
 
 
 class UserPanel(Panel):
@@ -329,13 +324,13 @@ class UserPanel(Panel):
         if to_state:
             state_start = QRect(self.width(), 0, width, height)
             state_end = QRect(self.width() - width, 0, width, height)
-            control_start = QRect(self.width() - c_menu_width - 20, 20, c_menu_width, c_menu_height)
-            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 20, 20, c_menu_width, c_menu_height)
+            control_start = QRect(self.width() - c_menu_width - 10, 10, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width, c_menu_height)
         else:
             state_start = QRect(self.width() - width, 0, width, height)
             state_end = QRect(self.width(), 0, width, height)
-            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 20, 20, c_menu_width, c_menu_height)
-            control_end = QRect(self.width() - c_menu_width - 20, 20, c_menu_width, c_menu_height)
+            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - c_menu_width - 10, 10, c_menu_width, c_menu_height)
 
         self.state_menu_animation.setStartValue(state_start)
         self.state_menu_animation.setEndValue(state_end)
@@ -364,7 +359,7 @@ class UserPanel(Panel):
         if self.state_menu.visible:
             self.control_menu.setGeometry(self.width() - self.control_menu.width() - self.state_menu.width() - 20, 20, self.control_menu.width(), self.control_menu.height())
         else:
-            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 20, 20, self.control_menu.width(), self.control_menu.height())
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 10, 10, self.control_menu.width(), self.control_menu.height())
         self.update_menu_button_position()
         # self.settings_button.move(self.width() - 60, 100)
 
@@ -448,7 +443,7 @@ class SettingsPanel(Panel):
         # import time
         # time.sleep(10)
         # self.stacked_layout.addWidget(self.general_panel)
-        # self.stacked_layout.addWidget(self.design_panel)
+        self.stacked_layout.addWidget(self.design_panel)
         # self.stacked_layout.addWidget(self.security_panel)
         # self.stacked_layout.addWidget(self.privacy_panel)
         # import time

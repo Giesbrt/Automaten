@@ -1,55 +1,23 @@
-"""Everything regarding the infinite grids items"""
-from PySide6.QtWidgets import (QStyleOptionGraphicsItem, QGraphicsItem, QGraphicsEllipseItem, QGraphicsWidget,
-                               QGraphicsTextItem, QGraphicsItemGroup, QGraphicsLineItem, QStyle, QLineEdit, QHBoxLayout,
-                               QWidget, QGraphicsProxyWidget, QGraphicsDropShadowEffect, QVBoxLayout,
-                               QListWidget, QPushButton)
-from PySide6.QtGui import QPainter, QFont, QPen, QColor, QPolygonF, QPainterPath
-from PySide6.QtCore import QRectF, Qt, QPointF, QLineF, Signal, QTimer
+import numpy as np
+from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QFont, QPolygonF
+from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem, QGraphicsWidget, \
+    QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, \
+    QGraphicsProxyWidget
 
-from functools import partial
+from ._graphic_support_items import FrameWidgetItem
+# from ._new_grid_items import StateItem, TransitionItem
+from ..painter import PainterStr, PainterColor, PainterToStr, StrToPainter
 
 # Standard typing imports for aps
+from functools import partial
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-import numpy as np
-
-from core.modules.automaton.UIAutomaton import UiState, UiTransition
-from core.modules.painter import StrToPainter, PainterStr, PainterToStr, PainterColor
-
-
-class LabelGraphicsItem(QGraphicsTextItem):
-    """
-    A text label for displaying the name of a state in a state diagram.
-
-    This class represents a label that is automatically updated to reflect
-    the display text of its parent state.
-    """
-    def __init__(self, text: str, parent: QGraphicsItem | None = None) -> None:
-        """Initializes the label with default styling.
-
-        :param text: The initial text to display.
-        :param parent: The parent graphics item, defaults to None.
-        """
-        super().__init__(parent)
-        self.setPlainText(text)
-        self.setDefaultTextColor(QColor('black'))
-        self.setFont(QFont('Arial', 24, QFont.Weight.Bold))  # Needs to be changeable, idk yet how
-
-    def paint(self, painter, option, widget=None):
-        """Paints the label and updates its text from the parent's UI state.
-
-        :param painter: The QPainter object used for drawing.
-        :param option: The style options for the item.
-        :param widget: The widget on which the item is painted, defaults to None.
-        """
-        super().paint(painter, option, widget)
-        # self.setPlainText(self.parentItem().ui_state.get_display_text())
 
 
 class StateGraphicsItem(QGraphicsEllipseItem):
-    """
-    Represents a state in a state diagram as a circular graphical element.
+    """Represents a state in a state diagram as a circular graphical element.
 
     This class provides visual and interactive behavior for a state,
     including movement and selection.
@@ -78,15 +46,18 @@ class StateGraphicsItem(QGraphicsEllipseItem):
         self.setBrush(QColor(self.color))
         self.setPen(Qt.PenStyle.NoPen)
 
-        self.default_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;")
-        self.end_painter_str: PainterStr = PainterStr("Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
-        self.start_painter_str: PainterStr = PainterStr("Text: (195.62833599002374, 91.36730222890128), 'MyText', 13#0000ff;Polygon: ((211.25667198004749, 2.7346044578025612), (179.99999999999997, 360.0), (0.0, 179.99999999999997)), 0#000000##00000000;Rect: ((205.005337584038, 38.18768356624204), (179.99999999999997, 324.0)), 0#000000##00000000;Arc: ((360.0, 360.0), 162.0, 162.0), (270, 360), 2#00ff00##00ff00;Arc: ((180.0, 180.0), 162.0, 162.0), (0, 90), 2#00ff00##00ff00;")
+        self.default_painter_str: PainterStr = PainterStr(
+            "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;")
+        self.end_painter_str: PainterStr = PainterStr(
+            "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
+        self.start_painter_str: PainterStr = PainterStr(
+            "Text: (195.62833599002374, 91.36730222890128), 'MyText', 13#0000ff;Polygon: ((211.25667198004749, 2.7346044578025612), (179.99999999999997, 360.0), (0.0, 179.99999999999997)), 0#000000##00000000;Rect: ((205.005337584038, 38.18768356624204), (179.99999999999997, 324.0)), 0#000000##00000000;Arc: ((360.0, 360.0), 162.0, 162.0), (270, 360), 2#00ff00##00ff00;Arc: ((180.0, 180.0), 162.0, 162.0), (0, 90), 2#00ff00##00ff00;")
 
         obj = PainterToStr()
-        obj.ellipse((obj.coord().load_from_cartesian(0, 0), 180.0, 180.0), border_color=PainterColor(255, 0, 0), border_thickness=6, fill_color=PainterColor(a=0))
+        obj.ellipse((obj.coord().load_from_cartesian(0, 0), 180.0, 180.0), border_color=PainterColor(255, 0, 0),
+                    border_thickness=6, fill_color=PainterColor(a=0))
         is_active_str = obj.clean_out_style_str()
         self.is_active_str: PainterStr = PainterStr(is_active_str)
-        # print(self.is_active_str)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """Paints the state as an ellipse and adds an inner circle if the state type is 'end'.
@@ -110,8 +81,8 @@ class StateGraphicsItem(QGraphicsEllipseItem):
             str_painter.draw_painter_str(self.end_painter_str)
         elif state_type == "start":
             str_painter.draw_painter_str(self.start_painter_str)
-        if self.is_active:
-            str_painter.draw_painter_str(self.is_active_str)
+        """if self.is_active:
+            str_painter.draw_painter_str(self.is_active_str)"""
         painter.restore()
 
 
@@ -168,7 +139,8 @@ class StateConnectionGraphicsItem(QGraphicsEllipseItem):
             if f'{self.get_direction()}_{self.get_flow()}' == key:
                 self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))
                 if self.is_hovered and self.get_flow() == 'out':
-                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2, self._hovered_size, self._hovered_size))
+                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2,
+                                        self._hovered_size, self._hovered_size))
 
     def paint(self, painter, option, widget=None):
         """Paints the connection point and adjusts its size when hovered.
@@ -181,13 +153,44 @@ class StateConnectionGraphicsItem(QGraphicsEllipseItem):
             if f'{self.get_direction()}_{self.get_flow()}' == key:
                 self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))
                 if self.is_hovered and self.get_flow() == 'out':
-                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2, self._hovered_size, self._hovered_size))
+                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2,
+                                        self._hovered_size, self._hovered_size))
         super().paint(painter, option, widget)
 
 
-class Transition(QGraphicsLineItem):
+class LabelGraphicsItem(QGraphicsTextItem):
+    """
+        A text label for displaying the name of a state in a state diagram.
+
+        This class represents a label that is automatically updated to reflect
+        the display text of its parent state.
+        """
+
+    def __init__(self, text: str, parent: QGraphicsItem | None = None) -> None:
+        """Initializes the label with default styling.
+
+        :param text: The initial text to display.
+        :param parent: The parent graphics item, defaults to None.
+        """
+        super().__init__(parent)
+        self.setPlainText(text)
+        self.setDefaultTextColor(QColor('black'))
+        self.setFont(QFont('Arial', 24, QFont.Weight.Bold))  # Needs to be changeable, idk yet how
+
+    def paint(self, painter, option, widget=None):
+        """Paints the label and updates its text from the parent's UI state.
+
+        :param painter: The QPainter object used for drawing.
+        :param option: The style options for the item.
+        :param widget: The widget on which the item is painted, defaults to None.
+        """
+        super().paint(painter, option, widget)
+        # self.setPlainText(self.parentItem().ui_state.get_display_text())
+
+class TransitionGraphicsItem(QGraphicsLineItem):
     """TBA"""
-    def __init__(self, start_point: StateConnectionGraphicsItem, end_point: StateConnectionGraphicsItem, parent: QGraphicsItem | None = None) -> None:
+    def __init__(self, start_point: 'StateConnectionGraphicsItem', end_point: 'StateConnectionGraphicsItem',
+                 parent: QGraphicsItem | None = None) -> None:
         """Initializes a Transition between two connection points.
 
         :param start_point: The starting connection point.
@@ -197,24 +200,24 @@ class Transition(QGraphicsLineItem):
         super().__init__(parent)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent)
 
-        self.start_point: StateConnectionGraphicsItem = start_point
-        self.end_point: StateConnectionGraphicsItem = end_point
+        self.start_point: 'StateConnectionGraphicsItem' = start_point
+        self.end_point: 'StateConnectionGraphicsItem' = end_point
 
-        self.start_state: StateItem = self.start_point.parentItem()
-        self.end_state: StateItem = self.end_point.parentItem()
+        self.start_state: 'StateItem' = self.start_point.parentItem()
+        self.end_state: 'StateItem' = self.end_point.parentItem()
 
-        self.ui_transition = UiTransition(
-            from_state = self.start_state.get_ui_state(),
-            from_state_connecting_point = start_point.get_direction(),
-            to_state = self.end_state.get_ui_state(),
-            to_state_connecting_point = end_point.get_direction(),
-            condition = []
-        )
+        """self.ui_transition = UiTransition(
+            from_state=self.start_state.get_ui_state(),
+            from_state_connecting_point=start_point.get_direction(),
+            to_state=self.end_state.get_ui_state(),
+            to_state_connecting_point=end_point.get_direction(),
+            condition=[]
+        )"""
 
         self.start_state.add_transition(self)
         self.end_state.add_transition(self)
 
-        self.transition_function: TransitionFunction | None = None
+        self.transition_function: 'TransitionFunction' | None = None
         self.arrow_size: int = 10
         self.arrow_head: QPolygonF | None = None
 
@@ -245,7 +248,7 @@ class Transition(QGraphicsLineItem):
         """
         return self.transition_function
 
-    def get_ui_transition(self) -> UiTransition:
+    def get_ui_transition(self) -> 'UiTransition':
         """Retrieves the UI transition object associated with this transition.
 
         :return: The UI transition object.
@@ -333,49 +336,12 @@ class Transition(QGraphicsLineItem):
             painter.drawPolygon(self.arrow_head)
 
 
-class RoundedFrameWidget(QWidget):
-    """
-    Dieses Widget zeichnet einen Rahmen mit abgerundeten Ecken und
-    füllt nur den inneren, abgegrenzten Bereich mit der Hintergrundfarbe.
-    """
-    def __init__(self, parent=None, bg_color=QColor("white"), border_color=QColor("white"), border_radius=2, border_width=1):
-        """Initializes the rounded frame widget.
-
-        :param parent: The parent widget, defaults to None.
-        :param bg_color: The background color, defaults to white.
-        :param border_color: The border color, defaults to white.
-        :param border_radius: The radius of the rounded corners.
-        :param border_width: The width of the border.
-        """
-        super().__init__(parent)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        self._bg_color = bg_color
-        self._border_color = border_color
-        self._border_radius = border_radius
-        self._border_width = border_width
-
-    def paintEvent(self, event):
-        """Handles the paint event to draw the rounded frame.
-
-        :param event: The paint event.
-        """
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect()
-        half_border_width = self._border_width // 2
-        adjusted_rect = rect.adjusted(half_border_width, half_border_width,
-                                      -half_border_width, -half_border_width)
-        path = QPainterPath()
-        path.addRoundedRect(adjusted_rect, self._border_radius, self._border_radius)
-        painter.fillPath(path, self._bg_color)
-        pen = QPen(self._border_color, self._border_width)
-        painter.setPen(pen)
-        painter.drawPath(path)
+class ConditionGraphicsItem(QGraphicsProxyWidget):
+    pass
 
 
 class TokenButton(QPushButton):
-    def __init__(self, text: str, toggle_token_selection_list, button_index: int, parent: QWidget=None) -> None:
+    def __init__(self, text: str, toggle_token_selection_list, button_index: int, parent: QWidget = None) -> None:
         """Initializes the token button.
 
         :param text: The initial text of the button.
@@ -397,7 +363,6 @@ class TokenButton(QPushButton):
                 background-color: yellow;
             }
         ''')
-
 
 class TokenButtonFrame(QGraphicsProxyWidget):
     """Initializes the token selection button container.
@@ -434,7 +399,7 @@ class TokenButtonFrame(QGraphicsProxyWidget):
 
         :return: A new container widget.
         """
-        return RoundedFrameWidget(
+        return FrameWidgetItem(
             bg_color=QColor("white"),
             border_color=QColor("lightgray"),
             border_radius=2,
@@ -486,12 +451,11 @@ class TokenButtonFrame(QGraphicsProxyWidget):
             tokens = [button.text() for button in self.token_buttons]
             self.all_token_set.emit(tokens)
 
-
 class TokenListFrame(QGraphicsProxyWidget):
 
     token_selected: Signal(tuple) = Signal(tuple)
 
-    def __init__(self, token_list: _ty.Tuple[_ty.List[str], _ty.List[str]], parent: QWidget=None) -> None:
+    def __init__(self, token_list: _ty.Tuple[_ty.List[str], _ty.List[str]], parent: QWidget = None) -> None:
         """Initializes the token selection list widget.
 
         :param token_list: A list of tokens to display.
@@ -501,7 +465,7 @@ class TokenListFrame(QGraphicsProxyWidget):
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = token_list
         self.button_index: _ty.Union[int, None] = None
 
-        container = RoundedFrameWidget(bg_color=QColor("white"),
+        container = FrameWidgetItem(bg_color=QColor("white"),
                                        border_color=QColor("white"),
                                        border_radius=10,
                                        border_width=0)
@@ -555,7 +519,7 @@ class TokenListFrame(QGraphicsProxyWidget):
 
         self.set_visible(False)
 
-    def set_visible(self, visible: bool, button_index: int=None) -> None:
+    def set_visible(self, visible: bool, button_index: int = None) -> None:
         """Sets the visibility of the token selection list.
 
         :param visible: True to show the list, False to hide.
@@ -599,7 +563,6 @@ class TokenListFrame(QGraphicsProxyWidget):
         """
         token = item.text()
         self.token_selected.emit((self.button_index, token))
-
 
 class TransitionFunction(QGraphicsProxyWidget):
     def __init__(self, tokens, sections, transition, parent=None) -> None:
@@ -650,280 +613,3 @@ class TransitionFunction(QGraphicsProxyWidget):
         new_condition = self._validate_condition([btn.text() for btn in current_condition])
 
         self.set_condition(new_condition)
-
-
-class TempTransitionItem(QGraphicsLineItem):
-    def __init__(self, start_item: StateConnectionGraphicsItem, end_point: QPointF, parent: QGraphicsItem | None = None) -> None:
-        """Initializes a temporary transition line.
-
-        :param start_item: The starting connection point.
-        :param end_point: The initial end position as a QPointF.
-        :param parent: The parent graphics item, defaults to None.
-        """
-        super().__init__(parent)
-        self.start_item: StateConnectionGraphicsItem = start_item
-        self.setPen(QPen(QColor('white'), 3))
-        self.update_transition(end_point)
-
-    def update_transition(self, end_point: QPointF) -> None:
-        """Updates the temporary transition line to a new end point.
-
-        :param end_point: The new end position as a QPointF.
-        """
-        start_scene_pos = self.start_item.mapToScene(self.start_item.boundingRect().center())
-        start_local = self.mapFromScene(start_scene_pos)
-        end_local = self.mapFromScene(end_point)
-        self.setLine(QLineF(start_local, end_local))
-
-
-class StateItem(QGraphicsItemGroup):
-    def __init__(self, x: float, y: float, width: int, height: int, number: int | str, default_color: QColor,
-                 default_selection_color: QColor, parent: QGraphicsItem | None = None) -> None:
-        """Initializes a state group with a graphical representation and interaction elements.
-
-        :param x: The x-coordinate of the state.
-        :param y: The y-coordinate of the state.
-        :param width: The width of the state.
-        :param height: The height of the state.
-        :param number: The state's identifier.
-        :param default_color: The default color of the state.
-        :param default_selection_color: The color used when the state is selected.
-        :param parent: The parent graphics item, defaults to None.
-        """
-        super().__init__(parent)
-
-        self.setCacheMode(QGraphicsItem.CacheMode.ItemCoordinateCache)
-
-        self.setSelected(False)
-        self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable, True)
-        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemSendsScenePositionChanges, True)
-
-        self.size: int = width
-        self.selection_color = default_selection_color
-        self.state_type: _ty.Literal['default', 'start', 'end'] = 'default'
-        self.connected_transitions: list['Transition'] = []
-        self.connection_points: list['StateConnectionGraphicsItem'] = []
-
-        self.shadow = QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(20)
-        self.shadow.setOffset(0)
-
-        self.ui_state = UiState(
-            colour = default_color,
-            position = (x, y),
-            display_text = f'q{number}' if isinstance(number, int) else number,
-            node_type = self.get_type()
-        )
-
-        self.state: 'StateGraphicsItem' = StateGraphicsItem(x, y, width, height, default_color, self)
-        self.addToGroup(self.state)
-        self.label: 'LabelGraphicsItem' = LabelGraphicsItem(f'q{number}' if isinstance(number, int) else number, self)
-        self.label.setParentItem(self)
-
-        self.connection_positions: dict[str, tuple[float, float, QColor]] = self.create_connection_positions(self.state.rect())
-        self.create_connection_points()
-
-        self.update_shadow_effect()
-        self.update_label_position()
-
-    """def get_data(self, value: str) -> any:
-        method = getattr(self.state_data, f'get_{value}')
-        return method()
-
-    def get_state_data(self) -> StateData:
-        return self.state_data"""
-
-    def set_name(self, name: str) -> None:
-        """Sets the display name of the state.
-
-        :param name: The new name for the state.
-        """
-        self.ui_state.set_display_text(name)
-
-    def set_size(self, size: float) -> None:
-        """Sets the size of the state while keeping it centered.
-
-        :param size: The new size of the state.
-        """
-        old_rect: QRectF = self.state.rect()
-
-        center_x: float = old_rect.x() + old_rect.width() / 2
-        center_y: float = old_rect.y() + old_rect.height() / 2
-
-        new_x: float = center_x - size / 2
-        new_y: float = center_y - size / 2
-        new_rect: QRectF = QRectF(new_x, new_y, size, size)
-        self.state.setRect(new_rect)
-        self.size = size
-
-        for transition in self.connected_transitions:
-            transition.update_position()
-
-    def set_color(self, color: QColor) -> None:
-        """Sets the color of the state.
-
-        :param color: The new color of the state.
-        """
-        self.state.setBrush(color)
-        self.get_ui_state().set_colour(color)
-
-    def set_arrow_head_size(self, size: int) -> None:
-        """Sets the arrow head size for all connected transitions.
-
-        :param size: The new arrow head size.
-        """
-        for line in self.connected_transitions:
-            line.arrow_size = size
-
-    def set_state_type(self, state_type: _ty.Literal['default', 'start', 'end']):
-        """Updates the type of the state
-
-        :param state_type: The new state type
-        """
-        self.get_ui_state().set_type(state_type)
-        self.state_type = state_type
-        self.state.update(self.state.rect())
-
-    def get_size(self) -> int:
-        """Gets the current size of the state.
-
-        :return: The size of the state.
-        """
-        return self.size
-
-    def get_color(self) -> QColor:
-        """Gets the color of the state.
-
-        :return: The state's color.
-        """
-        return self.get_ui_state().get_colour()
-
-    def get_type(self) -> _ty.Literal['default', 'start', 'end']:
-        """Gets the type of the state.
-
-        :return: The state's type as a literal.
-        """
-        return self.state_type
-
-    def get_ui_state(self) -> UiState:
-        """Retrieves the UI state representation of this state.
-
-        :return: The UI state.
-        """
-        return self.ui_state
-
-    def get_connected_transitions(self) -> _ty.List['Transition']:
-        """Gets the list of transitions connected to this state.
-
-        :return: A list of Transition objects.
-        """
-        return self.connected_transitions
-
-    def update_ui_state(self, color: QColor, position: tuple[float, float], display_text: str, node_type: _ty.Literal['default', 'start', 'end']) -> None:
-        """Updates the UI state with new parameters.
-
-        :param color: The new color.
-        :param position: The new position as a tuple (x, y).
-        :param display_text: The new display text.
-        :param node_type: The state type ('default', 'start', or 'end').
-        """
-        ui_state = self.get_ui_state()
-
-        ui_state.set_colour(color)
-        ui_state.set_position(position)
-        ui_state.set_display_text(display_text)
-        ui_state.set_type(node_type)
-
-    @staticmethod
-    def create_connection_positions(rect: QRectF) -> dict[str, tuple[float, float, QColor]]:
-        """Creates connection positions for the state.
-
-        :param rect: The bounding rectangle of the state.
-        :return: A dictionary mapping connection identifiers to a tuple (x, y, color).
-        """
-        connection_positions: dict[str, tuple[float, float, QColor]] = {
-            'n_in': (rect.left() + rect.width() * 0.4, rect.top(), QColor('darkRed')),
-            'n_out': (rect.left() + rect.width() * 0.6, rect.top(), QColor('darkGreen')),
-            'e_in': (rect.right(), rect.top() + rect.height() * 0.4, QColor('darkRed')),
-            'e_out': (rect.right(), rect.top() + rect.height() * 0.6, QColor('darkGreen')),
-            's_out': (rect.left() + rect.width() * 0.4, rect.bottom(), QColor('darkGreen')),
-            's_in': (rect.left() + rect.width() * 0.6, rect.bottom(), QColor('darkRed')),
-            'w_out': (rect.left(), rect.top() + rect.height() * 0.4, QColor('darkGreen')),
-            'w_in': (rect.left(), rect.top() + rect.height() * 0.6, QColor('darkRed'))
-        }
-        return connection_positions
-
-    def add_transition(self, transition: Transition) -> None:
-        """Adds a transition to the state's list of connected transitions.
-
-        :param transition: The Transition object to add.
-        """
-        self.connected_transitions.append(transition)
-
-    def create_connection_points(self) -> None:
-        """Creates and adds connection points to the state."""
-        for direction, value in self.connection_positions.items():
-            connection_point = StateConnectionGraphicsItem(value[0], value[1], value[2], direction[0], direction[2:], self)
-            self.connection_points.append(connection_point)
-            self.addToGroup(connection_point)
-
-    def activate(self) -> None:
-        """Activates the state, marking it as selected and updating its UI state."""
-        self.setSelected(True)
-        self.ui_state.set_active(True)
-
-    def deactivate(self) -> None:
-        """Deactivates the state, removing its selection and updating its UI state."""
-        self.setSelected(False)
-        self.ui_state.set_active(False)
-
-    def update_shadow_effect(self) -> None:
-        """Updates the shadow effect based on the selection state of the state."""
-        if self.isSelected():
-            self.shadow.setColor(self.selection_color)
-        else:
-            self.shadow.setColor(QColor('black'))
-
-        for item in self.childItems():
-            if isinstance(item, StateGraphicsItem):
-                item.setGraphicsEffect(self.shadow)
-
-    def update_label_position(self) -> None:
-        """Updates the position of the state's label to keep it centered."""
-        rect_center: QPointF = self.state.rect().center()
-        label_width: float = self.label.boundingRect().width()
-        label_height: float = self.label.boundingRect().height()
-        label_x: float = rect_center.x() - label_width / 2
-        label_y: float = rect_center.y() - label_height / 2
-        self.label.setPos(label_x, label_y)
-
-    def itemChange(self, change, value):
-        """Handles changes to the state item, such as selection or position changes.
-
-        :param change: The type of change.
-        :param value: The new value associated with the change.
-        :return: The processed value after the change.
-        """
-        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
-            result = super().itemChange(change, value)
-            QTimer.singleShot(0, self.update_shadow_effect)
-            return result
-        if change == QGraphicsItem.GraphicsItemChange.ItemScenePositionHasChanged:
-            self.update_label_position()
-            for transition in self.connected_transitions:
-                transition.update_position()
-            for connection_point in self.connection_points:
-                connection_point.update_position()
-        return super().itemChange(change, value)
-
-    def paint(self, painter, option, widget = ...):
-        """Paints the state group without drawing the selection state.
-
-        :param painter: The QPainter object used for drawing.
-        :param option: The style options for the item.
-        :param widget: The widget on which the item is painted, defaults to None.
-        """
-        option.state = option.state & ~QStyle.StateFlag.State_Selected
-        super().paint(painter, option, widget)

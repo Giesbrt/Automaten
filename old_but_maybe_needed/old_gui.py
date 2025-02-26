@@ -205,7 +205,7 @@ class GridView(QGraphicsView):
             if isinstance(item, Condition):
                 if hasattr(self.parent(), 'toggle_condition_edit_menu'):
                     self.parent().toggle_condition_edit_menu()
-                    self.parent().condition_edit_menu.set_token_list(item)
+                    self.parent().condition_edit_menu.set_token_lists(item)
                     self.parent().condition_edit_menu.name_changed.connect(item.set_name)
                     self.parent().condition_edit_menu.color_changed.connect(item.set_color)
                     self.parent().condition_edit_menu.size_changed.connect(item.set_size)

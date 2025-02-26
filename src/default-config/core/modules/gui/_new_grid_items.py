@@ -1,0 +1,416 @@
+import numpy as np
+from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, QTimer
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF
+from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsItemGroup, QGraphicsDropShadowEffect, QStyle, \
+    QGraphicsLineItem, QStyleOptionGraphicsItem
+
+from ._graphic_items import StateGraphicsItem, LabelGraphicsItem, TransitionGraphicsItem, ConditionGraphicsItem, StateConnectionGraphicsItem, TokenButton, TokenListFrame
+from .state_view_model import StateViewModel
+
+# Standard typing imports for aps
+import collections.abc as _a
+import typing as _ty
+import types as _ts
+
+from ..automaton.UIAutomaton import UiState, UiTransition
+
+
+class StateItem(QGraphicsItemGroup):
+    def __init__(self, x: float, y: float, width: int, height: int, number: int | str, default_color: QColor,
+                 default_selection_color: QColor, parent: QGraphicsItem | None = None) -> None:
+        """Initializes a state group with a graphical representation and interaction elements.
+
+        :param x: The x-coordinate of the state.
+        :param y: The y-coordinate of the state.
+        :param width: The width of the state.
+        :param height: The height of the state.
+        :param number: The state's identifier.
+        :param default_color: The default color of the state.
+        :param default_selection_color: The color used when the state is selected.
+        :param parent: The parent graphics item, defaults to None.
+        """
+        super().__init__(parent)
+
+        self.setCacheMode(QGraphicsItem.CacheMode.ItemCoordinateCache)
+
+        self.setSelected(False)
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemSendsScenePositionChanges, True)
+
+        self.size: int = width
+        self.selection_color = default_selection_color
+        self.state_type: _ty.Literal['default', 'start', 'end'] = 'default'
+        self.connected_transitions: list['TransitionItem'] = []
+        self.connection_points: list['StateConnectionGraphicsItem'] = []
+
+        self.shadow = QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(20)
+        self.shadow.setOffset(0)
+
+        self.ui_state = UiState(
+            colour=default_color,
+            position=(x, y),
+            display_text=f'q{number}' if isinstance(number, int) else number,
+            node_type=self.get_type()
+        )
+
+        self.state: 'StateGraphicsItem' = StateGraphicsItem(x, y, width, height, default_color, self)
+        self.addToGroup(self.state)
+        self.label: 'LabelGraphicsItem' = LabelGraphicsItem(f'q{number}' if isinstance(number, int) else number, self)
+        self.label.setParentItem(self)
+
+        self.connection_positions: dict[str, tuple[float, float, QColor]] = self.create_connection_positions(
+            self.state.rect())
+        self.create_connection_points()
+
+        self.update_shadow_effect()
+        self.update_label_position()
+
+    def connect_methods(self):
+        raise NotImplementedError()
+
+    def set_display_text(self, name: str) -> None:
+        """Sets the display name of the state.
+
+        :param name: The new name for the state.
+        """
+        self.label.setPlainText(name)
+        self.ui_state.set_display_text(name)
+
+    def set_size(self, size: float) -> None:
+        """Sets the size of the state while keeping it centered.
+
+        :param size: The new size of the state.
+        """
+        old_rect: QRectF = self.state.rect()
+
+        center_x: float = old_rect.x() + old_rect.width() / 2
+        center_y: float = old_rect.y() + old_rect.height() / 2
+
+        new_x: float = center_x - size / 2
+        new_y: float = center_y - size / 2
+        new_rect: QRectF = QRectF(new_x, new_y, size, size)
+        self.state.setRect(new_rect)
+        self.size = size
+
+        for transition in self.connected_transitions:
+            transition.update_position()
+
+    def set_color(self, color: QColor) -> None:
+        """Sets the color of the state.
+
+        :param color: The new color of the state.
+        """
+        self.state.setBrush(color)
+        self.get_ui_state().set_colour(color)
+
+    def set_arrow_head_size(self, size: int) -> None:
+        """Sets the arrow head size for all connected transitions.
+
+        :param size: The new arrow head size.
+        """
+        for line in self.connected_transitions:
+            line.arrow_size = size
+
+    def set_state_type(self, state_type: _ty.Literal['default', 'start', 'end']):
+        """Updates the type of the state
+
+        :param state_type: The new state type
+        """
+        self.get_ui_state().set_type(state_type)
+        self.state_type = state_type
+        self.state.update(self.state.rect())
+
+    def get_size(self) -> int:
+        """Gets the current size of the state.
+
+        :return: The size of the state.
+        """
+        return self.size
+
+    def get_color(self) -> QColor:
+        """Gets the color of the state.
+
+        :return: The state's color.
+        """
+        return self.get_ui_state().get_colour()
+
+    def get_type(self) -> _ty.Literal['default', 'start', 'end']:
+        """Gets the type of the state.
+
+        :return: The state's type as a literal.
+        """
+        return self.state_type
+
+    def get_ui_state(self) -> 'UiState':
+        """Retrieves the UI state representation of this state.
+
+        :return: The UI state.
+        """
+        return self.ui_state
+
+    def get_connected_transitions(self) -> _ty.List['Transition']:
+        """Gets the list of transitions connected to this state.
+
+        :return: A list of Transition objects.
+        """
+        return self.connected_transitions
+
+    def update_ui_state(self, color: QColor, position: tuple[float, float], display_text: str,
+                        node_type: _ty.Literal['default', 'start', 'end']) -> None:
+        """Updates the UI state with new parameters.
+
+        :param color: The new color.
+        :param position: The new position as a tuple (x, y).
+        :param display_text: The new display text.
+        :param node_type: The state type ('default', 'start', or 'end').
+        """
+        ui_state = self.get_ui_state()
+
+        ui_state.set_colour(color)
+        ui_state.set_position(position)
+        ui_state.set_display_text(display_text)
+        ui_state.set_type(node_type)
+
+    @staticmethod
+    def create_connection_positions(rect: QRectF) -> dict[str, tuple[float, float, QColor]]:
+        """Creates connection positions for the state.
+
+        :param rect: The bounding rectangle of the state.
+        :return: A dictionary mapping connection identifiers to a tuple (x, y, color).
+        """
+        connection_positions: dict[str, tuple[float, float, QColor]] = {
+            'n_in': (rect.left() + rect.width() * 0.4, rect.top(), QColor('darkRed')),
+            'n_out': (rect.left() + rect.width() * 0.6, rect.top(), QColor('darkGreen')),
+            'e_in': (rect.right(), rect.top() + rect.height() * 0.4, QColor('darkRed')),
+            'e_out': (rect.right(), rect.top() + rect.height() * 0.6, QColor('darkGreen')),
+            's_out': (rect.left() + rect.width() * 0.4, rect.bottom(), QColor('darkGreen')),
+            's_in': (rect.left() + rect.width() * 0.6, rect.bottom(), QColor('darkRed')),
+            'w_out': (rect.left(), rect.top() + rect.height() * 0.4, QColor('darkGreen')),
+            'w_in': (rect.left(), rect.top() + rect.height() * 0.6, QColor('darkRed'))
+        }
+        return connection_positions
+
+    def add_transition(self, transition: 'Transition') -> None:
+        """Adds a transition to the state's list of connected transitions.
+
+        :param transition: The Transition object to add.
+        """
+        self.connected_transitions.append(transition)
+
+    def create_connection_points(self) -> None:
+        """Creates and adds connection points to the state."""
+        for direction, value in self.connection_positions.items():
+            connection_point = StateConnectionGraphicsItem(value[0], value[1], value[2], direction[0], direction[2:], self)
+            self.connection_points.append(connection_point)
+            self.addToGroup(connection_point)
+
+    def activate(self) -> None:
+        """Activates the state, marking it as selected and updating its UI state."""
+        self.setSelected(True)
+        self.ui_state.set_active(True)
+
+    def deactivate(self) -> None:
+        """Deactivates the state, removing its selection and updating its UI state."""
+        self.setSelected(False)
+        self.ui_state.set_active(False)
+
+    def update_shadow_effect(self) -> None:
+        """Updates the shadow effect based on the selection state of the state."""
+        if self.isSelected():
+            self.shadow.setColor(self.selection_color)
+        else:
+            self.shadow.setColor(QColor('black'))
+
+        for item in self.childItems():
+            if isinstance(item, StateGraphicsItem):
+                item.setGraphicsEffect(self.shadow)
+
+    def update_label_position(self) -> None:
+        """Updates the position of the state's label to keep it centered."""
+        rect_center: QPointF = self.state.rect().center()
+        label_width: float = self.label.boundingRect().width()
+        label_height: float = self.label.boundingRect().height()
+        label_x: float = rect_center.x() - label_width / 2
+        label_y: float = rect_center.y() - label_height / 2
+        self.label.setPos(label_x, label_y)
+
+    def itemChange(self, change, value):
+        """Handles changes to the state item, such as selection or position changes.
+
+        :param change: The type of change.
+        :param value: The new value associated with the change.
+        :return: The processed value after the change.
+        """
+        if change == QGraphicsItem.GraphicsItemChange.ItemSelectedChange:
+            result = super().itemChange(change, value)
+            QTimer.singleShot(0, self.update_shadow_effect)
+            return result
+        if change == QGraphicsItem.GraphicsItemChange.ItemScenePositionHasChanged:
+            self.update_label_position()
+            for transition in self.connected_transitions:
+                transition.update_position()
+            for connection_point in self.connection_points:
+                connection_point.update_position()
+        return super().itemChange(change, value)
+
+    def paint(self, painter, option, widget=...):
+        """Paints the state group without drawing the selection state.
+
+        :param painter: The QPainter object used for drawing.
+        :param option: The style options for the item.
+        :param widget: The widget on which the item is painted, defaults to None.
+        """
+        option.state = option.state & ~QStyle.StateFlag.State_Selected
+        super().paint(painter, option, widget)
+
+
+class TransitionItem(QGraphicsLineItem):
+    """TBA"""
+    def __init__(self, start_point: StateConnectionGraphicsItem, end_point: StateConnectionGraphicsItem,
+                 parent: QGraphicsItem | None = None) -> None:
+        """Initializes a Transition between two connection points.
+
+        :param start_point: The starting connection point.
+        :param end_point: The ending connection point.
+        :param parent: The parent graphics item, defaults to None.
+        """
+        super().__init__(parent)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent)
+
+        self.start_point: StateConnectionGraphicsItem = start_point
+        self.end_point: StateConnectionGraphicsItem = end_point
+
+        self.start_state: StateItem = self.start_point.parentItem()
+        self.end_state: StateItem = self.end_point.parentItem()
+
+        self.ui_transition = UiTransition(
+            from_state=self.start_state.get_ui_state(),
+            from_state_connecting_point=start_point.get_direction(),
+            to_state=self.end_state.get_ui_state(),
+            to_state_connecting_point=end_point.get_direction(),
+            condition=[]
+        )
+
+        self.start_state.add_transition(self)
+        self.end_state.add_transition(self)
+
+        self.transition_function: 'TransitionFunction' | None = None
+        self.arrow_size: int = 10
+        self.arrow_head: QPolygonF | None = None
+
+        self.setPen(QPen(QColor(0, 10, 33), 4))
+        self.update_position()
+
+    def set_transition(self, condition: _ty.List[str]):
+        """Sets the condition of the transition.
+
+        :param condition: A list of strings representing the condition.
+        """
+        self.ui_transition.set_condition(condition)
+
+    def set_transition_function(self, transition_function) -> None:
+        """Sets the transition function associated with this transition.
+
+        :param transition_function: The widget or function representing the transition function.
+        """
+        self.transition_function = transition_function
+
+    def set_ui_transition(self, ui_transition):
+        self.ui_transition = ui_transition
+
+    def get_transition_function(self) -> 'TransitionFunction':
+        """Retrieves the transition function associated with this transition.
+
+        :return: The transition function.
+        """
+        return self.transition_function
+
+    def get_ui_transition(self) -> UiTransition:
+        """Retrieves the UI transition object associated with this transition.
+
+        :return: The UI transition object.
+        """
+        return self.ui_transition
+
+    @staticmethod
+    def get_center(p1: QPointF, p2: QPointF) -> QPointF:
+        """Calculates the center point between two given points.
+
+        :param p1: The first point.
+        :param p2: The second point.
+        :return: The center point as a QPointF.
+        """
+        return QPointF((p1.x() + p2.x()) / 2, (p1.y() + p2.y()) / 2)
+
+    def calculate_arrow_head(self, end_scene_pos: QPointF, angle: float) -> QPolygonF:
+        """Calculates the arrow head polygon for the transition line.
+
+        :param end_scene_pos: The end point of the transition in scene coordinates.
+        :param angle: The angle of the line in radians.
+        :return: A QPolygonF representing the arrow head.
+        """
+        arrow_p1 = end_scene_pos - QPointF(
+            np.cos(angle + np.pi / 6) * self.arrow_size,
+            np.sin(angle + np.pi / 6) * self.arrow_size
+        )
+        arrow_p2 = end_scene_pos - QPointF(
+            np.cos(angle - np.pi / 6) * self.arrow_size,
+            np.sin(angle - np.pi / 6) * self.arrow_size
+        )
+
+        return QPolygonF([
+            self.mapFromScene(arrow_p1),
+            self.mapFromScene(end_scene_pos),
+            self.mapFromScene(arrow_p2)
+        ])
+
+    def update_position(self) -> None:
+        """Updates the position of the transition line and arrow head.
+
+        This method recalculates the start and end points, updates the connecting line,
+        computes the angle for the arrow head, and centers the transition function if set.
+        """
+        start_scene_pos = self.start_point.mapToScene(self.start_point.boundingRect().center())
+        end_scene_pos = self.end_point.mapToScene(self.end_point.boundingRect().center())
+
+        start_local = self.mapFromScene(start_scene_pos)
+        end_local = self.mapFromScene(end_scene_pos)
+
+        self.setLine(QLineF(start_local, end_local))
+
+        line = QLineF(start_scene_pos, end_scene_pos)
+        self.setPos(0, 0)
+
+        angle = np.arctan2(line.dy(), line.dx())
+        self.arrow_head = self.calculate_arrow_head(end_scene_pos, angle)
+
+        if self.transition_function:
+            center = self.get_center(start_scene_pos, end_scene_pos)
+
+            button_size = self.transition_function.token_button_frame.size()
+            token_list_size = self.transition_function.token_list_frame.size()
+
+            button_x = center.x() - button_size.width() / 2
+            button_y = center.y() - button_size.height() / 2
+            self.transition_function.token_button_frame.setPos(button_x, button_y)
+
+            gap = 5
+
+            token_list_x = center.x() - token_list_size.width() / 2
+            token_list_y = button_y + button_size.height() + gap
+            self.transition_function.token_list_frame.setPos(token_list_x, token_list_y)
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
+        """Renders the transition line and arrow head.
+
+        :param painter: The QPainter object used for drawing.
+        :param option: The style options for the graphics item.
+        :param widget: The widget on which the item is painted, defaults to None.
+        """
+        super().paint(painter, option, widget)
+        if self.arrow_head:
+            painter.setBrush(QColor(0, 10, 33))
+            painter.drawPolygon(self.arrow_head)

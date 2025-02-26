@@ -6,6 +6,7 @@ from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QPara
 
 from aplustools.io.qtquick import QQuickMessageBox
 
+from utils.errorCache import ErrorCache
 from ..abstract import IMainWindow
 from ..signal_bus import SingletonObserver
 from ._panels import Panel, UserPanel, SettingsPanel
@@ -61,6 +62,7 @@ class MainWindow(QMainWindow, IMainWindow):
     settings_changed = Signal(dict[str, dict[str, str]])
 
     def __init__(self) -> None:
+        self.file_path: str = ''
         self.settings_button: QPushButton | None = None
         self.menu_bar: None = None
         self.user_panel: UserPanel | None = None
@@ -93,6 +95,9 @@ class MainWindow(QMainWindow, IMainWindow):
         self.switch_panel_simple()  # So they are ordered correctly
 
         file_menu = self.menuBar().addMenu("File")
+        new_action = QAction('New', self)
+        new_action.triggered.connect(self.user_panel.grid_view.empty_scene)
+        file_menu.addAction(new_action)
         open_action = QAction("Open", self)
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(self.open_file)
@@ -187,31 +192,39 @@ class MainWindow(QMainWindow, IMainWindow):
         return self.automaton_type
 
     def open_file(self):
-
-
-
+        save_selection = self.button_popup(title='Unsaved changes',
+                                            text='Do you want to save your changes? \nYour changes will be lost if you don´t save them.',
+                                            description='',
+                                            icon='Warning',
+                                            buttons=['Save', 'Don´t save', 'Cancel'],
+                                            default_button='Save')
+        if save_selection[0] == 'Save':
+            self.save_file()
+        elif save_selection[0] == 'Don´t save':
+            pass
+        elif save_selection[0] == 'Cancel':
+            return
         file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getOpenFileName(
+        self.file_path, _ = file_dialog.getOpenFileName(
             self, "Open File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au);;All Files (*)"
         )
-        if file_path:
-            self.open_file_signal.emit(file_path)
-            QMessageBox.information(self, "File Opened", f"You opened: {file_path}")
+        if self.file_path:
+            self.open_file_signal.emit(self.file_path)
+            QMessageBox.information(self, "File Opened", f"You opened: {self.file_path}")
 
     def save_file(self):
-        filepath: str = ""
-        if filepath != "":
-            ...  # Save
+        if self.file_path != "":
+            self.save_file_signal.emit(self.file_path)
         else:
             self.save_file_as()
 
     def save_file_as(self):
         file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getSaveFileName(
+        self.file_path, _ = file_dialog.getSaveFileName(
             self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
-        if file_path:
-            self.save_file_signal.emit(file_path)
-            QMessageBox.information(self, "File Saved", f"File saved to: {file_path}")
+        if self.file_path:
+            self.save_file_signal.emit(self.file_path)
+            QMessageBox.information(self, "File Saved", f"File saved to: {self.file_path}")
 
     def show_about(self):
         QMessageBox.about(self, "About", "This is a PySide6 Menu Bar Example.")

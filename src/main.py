@@ -24,7 +24,7 @@ import stdlib_list
 import requests
 
 from PySide6.QtWidgets import QApplication, QMessageBox
-from PySide6.QtCore import QUrl, Signal
+from PySide6.QtCore import QUrl, Signal, QTimer
 from PySide6.QtGui import QIcon, QDesktopServices
 
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
@@ -34,7 +34,7 @@ from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeL
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 # Core imports (dynamically resolved)
-from core.modules.signal_bus import SignalBus, SingletonObserver
+from core.modules.signal_bus import SingletonObserver
 from core.modules.automaton.UIAutomaton import UiAutomaton
 from core.modules.automaton.automatonProvider import AutomatonProvider
 from core.modules.serializer import serialize, deserialize
@@ -110,8 +110,6 @@ class App:
             self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                      args=(self.backend_stop_event,))
             self.backend_thread.start()
-
-            self.signal_bus = SignalBus()
             self.singleton_observer = SingletonObserver()
 
             # Setup errorCache
@@ -127,11 +125,8 @@ class App:
                 else:
                     self.ui_automaton = loaded_automaton
                     self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
+                    self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
                     self.singleton_observer.set('is_loaded', True)
-                    self.signal_bus.emit_automaton_changed(
-                        is_loaded=True,
-                        token_list=self.ui_automaton.get_token_lists()
-                    )
             if input_path == "":
                 states_with_design = {
                     'default': '',
@@ -183,20 +178,22 @@ class App:
     def connect_signals(self):
         automaton: UiAutomaton = self.ui_automaton
 
-        self.control_menu.play_button.clicked.connect(lambda: self.start_simulation(['a']))
+        self.control_menu.play_button.clicked.connect(lambda: self.start_simulation(['a', 'b']))
         self.control_menu.stop_button.clicked.connect(self.stop_simulation)
         self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(['a', 'b']))
 
         self.window.save_file_signal.connect(partial(self.save_to_file, automaton=self.ui_automaton))
         self.window.open_file_signal.connect(self.open_file)
 
+        self.grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
         self.grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
 
         self.grid_view.add_state.connect(automaton.add_state)
         self.grid_view.add_transition.connect(automaton.add_transition)
+        print(f'{hex(id(automaton))}')
         self.grid_view.delete_state.connect(automaton.delete_state)
         self.grid_view.delete_transition.connect(automaton.delete_transition)
-        self.window.settings_changed.connect(self.set_settings)
+        # self.window.settings_changed.connect(self.set_settings)
 
         """grid_view.get_start_state.connect(automaton.get_start_state)
         grid_view.get_state_types_with_design.connect(automaton.get_state_types_with_design)
@@ -206,7 +203,6 @@ class App:
         grid_view.get_is_changeable_token_list.connect(automaton.get_is_changeable_token_list)
         grid_view.get_transition_pattern.connect(automaton.get_transition_pattern)
         grid_view.set_token_lists.connect(automaton.set_token_lists)
-        grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
 
         grid_view.get_transitions.connect(automaton.get_transitions)
         grid_view.get_automaton_type.connect(automaton.get_automaton_type)
@@ -241,16 +237,25 @@ class App:
         self.window.set_states_paste_shortcut(self.user_settigs.retrieve("shortcuts", "states_paste", "string"))
         
     def update_simulation_controls(self, running: bool) -> None:
-        self.control_menu.play_button.setEnabled(not running)
-        self.control_menu.next_button.setEnabled(not running)
-        self.control_menu.stop_button.setEnabled(running)
+        if self.simulation_mode == 'auto':
+            self.control_menu.play_button.setEnabled(not running)
+            self.control_menu.next_button.setEnabled(False)
+            self.control_menu.stop_button.setEnabled(running)
+        elif self.simulation_mode == 'step':
+            self.control_menu.play_button.setEnabled(True)
+            self.control_menu.next_button.setEnabled(True)
+            self.control_menu.stop_button.setEnabled(running)
+        else:
+            self.control_menu.play_button.setEnabled(True)
+            self.control_menu.next_button.setEnabled(True)
+            self.control_menu.stop_button.setEnabled(False)
 
     def start_simulation(self, automaton_input: _ty.List[str]) -> None:
+        self.simulation_mode = 'auto'
         if not self.ui_automaton:
             ErrorCache().warning('No Automaton loaded!', '', True, True)
             return
         else:
-            print(self.ui_automaton)
             try:
                 result = self.ui_automaton.simulate(automaton_input, self.handle_simulation)
                 if isinstance(result, _result.Success):
@@ -261,49 +266,53 @@ class App:
                 ErrorCache().warning(e, '', True, True)
 
     def stop_simulation(self) -> None:
+        self.grid_view.reset_all_highlights()
         if self.ui_automaton:
             self.ui_automaton.stop_simulation()
+            self.simulation_mode = None
             self.update_simulation_controls(running=False)
+            ErrorCache().info('Finished Simulation!', '', True, False)
 
     def handle_simulation(self) -> None:
-        while self.ui_automaton.has_simulation_data():
+        self.simulation_timer = QtTimidTimer()
+        self.simulation_timer.timeout.connect(self.start_simulation_visualisation)
+        self.simulation_timer.start(500, 0)
+
+    def start_simulation_visualisation(self):
+        if self.ui_automaton.has_simulation_data():
             simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
             active_state: 'UiState' = self.ui_automaton.get_active_state()
             active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
-
-            self.grid_view.set_active_state(active_state)
-            # self.grid_view.set_active_transition(active_transition)
-            print(f'{simulation_result}', self.ui_automaton.get_active_state())
-
-        self.stop_simulation()
+            state_item = self.grid_view.set_active_state(active_state)
+            self.grid_view.highlight_state_item(state_item)
+        else:
+            self.simulation_timer.stop(0)
+            self.stop_simulation()
 
     def start_simulation_step_for_step(self, automaton_input: _ty.List[str]) -> None:
-        print(f'{self.ui_automaton.has_simulation_data()=}')
+        self.simulation_mode = 'step'
         if self.ui_automaton and not self.ui_automaton.has_simulation_data():
             result = self.ui_automaton.simulate(automaton_input, self.step_simulation)
             if isinstance(result, _result.Success):
                 self.update_simulation_controls(running=True)
-                # self.step_simulation()
         else:
             self.step_simulation()
 
     def step_simulation(self) -> None:
-        print('step simulation', 'has simulation data: ', self.ui_automaton.has_simulation_data())
         if self.ui_automaton.has_simulation_data():
-            self.control_menu.play_button.setEnabled(True)
-            self.control_menu.next_button.setEnabled(True)
-            self.control_menu.stop_button.setEnabled(True)
+            if self.simulation_mode == 'auto':
+                self.update_simulation_controls(running=True)
+            else:
+                self.control_menu.play_button.setEnabled(True)
+                self.control_menu.next_button.setEnabled(True)
+                self.control_menu.stop_button.setEnabled(True)
             simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
             active_state: 'UiState' = self.ui_automaton.get_active_state()
             active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
-
-            self.grid_view.set_active_state(active_state)
-            # self.grid_view.set_active_transition(active_transition)
+            state_item = self.grid_view.set_active_state(active_state)
+            self.grid_view.highlight_state_item(state_item)
         else:
             self.stop_simulation()
-            print('stop_simulation')
-            self.update_simulation_controls(running=False)
-            self.control_menu.next_button.setEnabled(False)
 
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
@@ -322,14 +331,6 @@ class App:
             ErrorCache().debug(f"Applied settings to {automaton_type}-automaton", "")
         else:
             ErrorCache().error(f"Could not load and apply settings of {automaton_type}", "", True)
-
-    def open_file(self, filepath: str):
-        self.ui_automaton.__del__()
-        self.ui_automaton = self.load_file(filepath)
-        if self.ui_automaton:
-            self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
-            # self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
-            self.singleton_observer.set('is_loaded', True)
 
     @staticmethod
     def _order_logs(directory: str) -> None:
@@ -399,6 +400,24 @@ class App:
         update_result = self.get_update_result()
         self.for_loop_list.append((self.show_update_result, (update_result,)))
 
+    def open_file(self, filepath: str):
+        self.ui_automaton.__del__()
+        self.singleton_observer.reset_instance()
+        self.ui_automaton = self.load_file(filepath)
+        if self.ui_automaton:
+            self.grid_view.empty_scene()
+            self.grid_view.delete_transition.disconnect()
+            self.grid_view.delete_transition.connect(self.ui_automaton.delete_transition)
+            print(list(self.ui_automaton.get_transitions())[0].get_condition())
+            print(f'{hex(id(self.ui_automaton))}, {self.ui_automaton.get_transitions()}')
+            self.singleton_observer = SingletonObserver()
+            self.grid_view.update_singleton_observer()
+
+            # print(f'{self.singleton_observer._observers["automaton_type"]}, \n{self.ui_automaton}')
+            self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
+            self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
+            self.singleton_observer.set('is_loaded', True)
+
     def load_file(self, filepath: str) -> UiAutomaton | None:
         """Loads a UIAutomaton from a serialized file.
         Returns an UIAutomaton upon successful load or None if an error occurred."""
@@ -437,7 +456,7 @@ class App:
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"
             result: _result.Result = CustomPythonHandler().load(custom_python, path)
-            ErrorCache().debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "", True, True)
+            # ErrorCache().debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "", True, True)
 
             print("CP", custom_python)
         except Exception as e:
@@ -450,6 +469,7 @@ class App:
     def save_to_file(self, filepath: str, automaton: UiAutomaton) -> str | None:
         """Saves a UIAutomaton to a file.
         Returns the filepath upon successful save or None if an error occurred."""
+        # print(automaton)
         end = filepath.rsplit(".", maxsplit=1)[1]
         filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
         if filetype is None:  # Error case
@@ -458,8 +478,6 @@ class App:
                 True, True)
             return None
         try:
-            print(automaton, filetype)
-
             # Custom python:
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{automaton.get_automaton_type()}.py"

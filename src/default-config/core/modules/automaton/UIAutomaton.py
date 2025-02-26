@@ -694,7 +694,27 @@ class UiAutomaton(IUiAutomaton):
         return self._active_transition
 
     def set_active_transition(self, transition: IUiTransition) -> None:
+        """ Sets the active transition of the automaton """
         self._active_transition = transition
+
+    def unload(self) -> None:
+        """ Unloads the automaton
+
+        :return: None
+        """
+        self.signal_bus = None
+
+        self.singleton_observer = None
+
+        self._type = None
+        self._states = None
+        self._transitions = None
+
+        self._start_state = None
+        self._input = None
+        self._pointer_index = None
+
+        self._bridge = None
 
     def __eq__(self, other: _ty.Self):
         print(self._type)

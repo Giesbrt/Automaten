@@ -1,6 +1,6 @@
 """TBA"""
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget, QDialog, \
-    QVBoxLayout, QLabel, QToolButton
+    QVBoxLayout, QLabel, QMenu
 from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont, QColor, QPalette
 from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl, Qt, Signal
 
@@ -97,6 +97,9 @@ class MainWindow(QMainWindow, IMainWindow):
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(self.open_file)
         file_menu.addAction(open_action)
+        self.recent_menu = QMenu("Open Recent", self)
+        file_menu.addMenu(self.recent_menu)
+        self.update_recent_files_menu()
         save_action = QAction("Save", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_file)
@@ -110,19 +113,19 @@ class MainWindow(QMainWindow, IMainWindow):
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
-        simulation_menu = self.menuBar().addMenu("Simulation")
-        start_action = QAction("Start", self)
-        start_action.setShortcut("Ctrl+G")
-        simulation_menu.addAction(start_action)
-        single_step_action = QAction("Single Step", self)
-        single_step_action.setCheckable(True)
-        simulation_menu.addAction(single_step_action)
-        step_action = QAction("Step", self)
-        step_action.setShortcut("Ctrl+T")
-        simulation_menu.addAction(step_action)
-        stop_action = QAction("Stop", self)
-        stop_action.setShortcut("Ctrl+Y")
-        simulation_menu.addAction(stop_action)
+        # simulation_menu = self.menuBar().addMenu("Simulation")
+        # start_action = QAction("Start", self)
+        # start_action.setShortcut("Ctrl+G")
+        # simulation_menu.addAction(start_action)
+        # single_step_action = QAction("Single Step", self)
+        # single_step_action.setCheckable(True)
+        # simulation_menu.addAction(single_step_action)
+        # step_action = QAction("Step", self)
+        # step_action.setShortcut("Ctrl+T")
+        # simulation_menu.addAction(step_action)
+        # stop_action = QAction("Stop", self)
+        # stop_action.setShortcut("Ctrl+Y")
+        # simulation_menu.addAction(stop_action)
 
         edit_menu = self.menuBar().addMenu("Edit")
         cut_action = QAction("Cut", self)
@@ -134,6 +137,20 @@ class MainWindow(QMainWindow, IMainWindow):
         paste_action = QAction("Paste", self)
         paste_action.setShortcut("Ctrl+V")
         edit_menu.addAction(paste_action)
+
+        view_menu = self.menuBar().addMenu("View")
+        zoom_in_action = QAction("Zoom in", self)
+        zoom_in_action.setShortcut("Ctrl++")  # QKeySequence.ZoomIn
+        view_menu.addAction(zoom_in_action)
+        zoom_out_action = QAction("Zoom out", self)
+        zoom_out_action.setShortcut("Ctrl+-")  # QKeySequence.ZoomOut
+        view_menu.addAction(zoom_out_action)
+        restore_default_zoom_action = QAction("Restore default zoom", self)
+        restore_default_zoom_action.setShortcut("Ctrl+0")
+        view_menu.addAction(restore_default_zoom_action)
+        status_bar_action = QAction("Status bar", self)
+        status_bar_action.setCheckable(True)
+        view_menu.addAction(status_bar_action)
 
         help_menu = self.menuBar().addMenu("Help")
         report_action = QAction("Report Issue", self)
@@ -153,6 +170,18 @@ class MainWindow(QMainWindow, IMainWindow):
         self.menuBar().setCornerWidget(self.settings_button, Qt.Corner.TopRightCorner)
 
         self.menuBar().setFixedHeight(30)
+
+    def update_recent_files_menu(self):
+        """Refreshes the Open Recent menu with updated file list."""
+        self.recent_menu.clear()
+        self.recent_files = None
+        if not self.recent_files:
+            self.recent_menu.addAction("No Recent Files").setEnabled(False)
+        else:
+            for file in self.recent_files:
+                action = QAction(os.path.basename(file), self)
+                action.triggered.connect(lambda checked, f=file: self.open_recent_file(f))
+                self.recent_menu.addAction(action)
 
     def get_automaton_type(self) -> str:
         return self.automaton_type

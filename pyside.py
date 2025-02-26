@@ -453,6 +453,9 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         if not self.getContent():
             self.input_edit.setText(token)
         else:
+            if self.input_edit.text().endswith(self.get_separator()):
+                self.input_edit.setText(self.input_edit.text() + token)
+                return
             self.input_edit.setText(self.input_edit.text() + self.get_separator() + token)
 
     def _check_for_errors(self) -> None:

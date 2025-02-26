@@ -88,7 +88,7 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         ...
 
     def enableWidgets(self) -> None:
-        self.output_edit.setEnabled(False)
+        self.output_edit.setReadOnly(True)
 
 
 if __name__ == "__main__":

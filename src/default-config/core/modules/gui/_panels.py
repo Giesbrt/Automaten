@@ -255,6 +255,14 @@ class UserPanel(Panel):
         self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
         self.layout().addWidget(self.grid_view)
 
+        # Menu Button
+        self.menu_button = QPushButton(self)
+        self.menu_button.setFixedSize(40, 40)
+
+        # Settings button
+        self.settings_button = QPushButton(self)
+        self.settings_button.setFixedSize(40, 40)
+
         # Control Menu
         self.control_menu = ControlMenu(self.grid_view, self)
         # Animation for Control Menu
@@ -275,14 +283,6 @@ class UserPanel(Panel):
         # Animation for Condition Edit Menu
         self.state_menu_animation = QPropertyAnimation(self.state_menu, b'geometry')
         self.state_menu_animation.setDuration(500)
-
-        # Menu Button
-        self.menu_button = QPushButton(QIcon(), '', self)
-        self.menu_button.setFixedSize(40, 40)
-
-        # Settings button
-        self.settings_button = QPushButton(parent=self)
-        self.settings_button.setFixedSize(40, 40)
 
         # Connect signals
         self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu

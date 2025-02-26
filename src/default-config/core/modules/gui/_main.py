@@ -60,6 +60,7 @@ class MainWindow(QMainWindow, IMainWindow):
 
     save_file_signal: Signal(str) = Signal(str)
     open_file_signal: Signal(str) = Signal(str)
+    settings_changed = Signal(dict[str, dict[str, str]])
 
     # def __new__(cls, *args, **kwargs):
     #     return QMainWindow.__new__(cls,)

@@ -472,9 +472,10 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
                 continue
             self.add_error(f"Unknown token '{token}'", is_generic=True)
 
-
         if self.get_error():
             self.display_text_error()
+        else:
+            self._hide_text_error()
 
 
 if __name__ == "__main__":

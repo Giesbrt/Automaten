@@ -89,7 +89,6 @@ class MainWindow(QMainWindow, IMainWindow):
         self.panel_animation_group.addAnimation(self.user_panel_animation)
         self.panel_animation_group.addAnimation(self.settings_panel_animation)
 
-        self.user_panel.settings_button.clicked.connect(self.switch_panel)
         self.settings_panel.back_button.clicked.connect(self.switch_panel)
         self.switch_panel_simple()  # So they are ordered correctly
 
@@ -143,6 +142,13 @@ class MainWindow(QMainWindow, IMainWindow):
         about_action = QAction("About", self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
+
+        settings_menu = self.menuBar().addMenu("Settings")
+        settings_action = QAction("Open Settings", self) 
+        settings_action.triggered.connect(self.switch_panel)  
+        settings_menu.addAction(settings_action)  
+
+
         self.menuBar().setFixedHeight(30)
 
     def get_automaton_type(self) -> str:

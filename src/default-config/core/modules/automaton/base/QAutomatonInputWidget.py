@@ -137,6 +137,10 @@ class QAutomatonInputOutput(QFrame):
     def getContent(self) -> bytes:
         raise NotImplementedError
 
+    def set_input_tokens(self, tokens: list[str]) -> None:
+        raise NotImplementedError
+
+
 class QAutomatonTokenIO(QAutomatonInputOutput):
     def __init__(self) -> None:
         super().__init__()

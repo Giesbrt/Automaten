@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget
+from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput, QAutomatonTokenIO
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -15,7 +15,7 @@ class Settings(_abc.ABC):
                  customisable_token_list: _ty.List[bool],
                  transition_description_layout: _ty.List[int],
                  state_types_with_design: _ty.Dict[str, str],
-                 input_widget: QWidget):
+                 input_widget: _ty.Type[QAutomatonInputOutput] = QAutomatonTokenIO):
         """ Constructor of the automaton settings file.
         This file serves as a settings-provider to make basic automaton settings (like the transition content)
         :param module_name: The short name of the automaton module (e.g. for a Deterministic Finite Automaton -> dfa)
@@ -25,7 +25,7 @@ class Settings(_abc.ABC):
         :param customisable_token_list: This defines which of the previous declared lists can be modified by the user (format: [True, False] if the first list should be changeable, but the second list not)
         :param transition_description_layout: This parameter defines which format the transition description has (format [0, 1] if the transition should have two parameters, and if the first transition attribute should be an element of the first token_list and the second attribute an element out of the second list)
         :param state_types_with_design: The different possible state types (like end or default) are the keys and the value is the design
-        :param input_widget: the QWidget which should handle the input of the automaton
+        :param input_widget: the _ty.Type[QAutomatonInputOutput] which should handle the input of the automaton
         """
         self._module_name: str = module_name
         self._full_automaton_name: str = full_automaton_name
@@ -34,7 +34,7 @@ class Settings(_abc.ABC):
         self._customisable_token_list: _ty.List[bool] = customisable_token_list
         self._transition_description_layout: _ty.List[int] = transition_description_layout
         self._state_types_with_design: _ty.Dict[str, str] = state_types_with_design
-        self._input_widget: QWidget = input_widget
+        self._input_widget: _ty.Type[QAutomatonInputOutput] = input_widget
 
     @property
     def module_name(self) -> str:
@@ -65,7 +65,7 @@ class Settings(_abc.ABC):
         return self._state_types_with_design
 
     @property
-    def input_widget(self) -> QWidget:
+    def input_widget(self) -> _ty.Type[QAutomatonInputOutput]:
         return self._input_widget
 
     def __iter__(self):
@@ -75,5 +75,6 @@ class Settings(_abc.ABC):
                                       self._token_lists,
                                       self._customisable_token_list,
                                       self._transition_description_layout,
-                                      self._state_types_with_design]
+                                      self._state_types_with_design,
+                                      self._input_widget]
         return iter(content)

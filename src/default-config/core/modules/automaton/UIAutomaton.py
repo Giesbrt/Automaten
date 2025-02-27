@@ -6,6 +6,7 @@ from returns import result as _result
 from core.modules.signal_bus import SignalBus, SingletonObserver
 # Bridge Import
 from core.modules.automaton.UiBridge import UiBridge
+from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 # abstract imports
 from core.modules.abstract import IUiState
@@ -277,6 +278,7 @@ class UiAutomaton(IUiAutomaton):
         self._pointer_index: int = 0
 
         self._bridge: UiBridge = UiBridge()
+        self._input_widget: _ty.Type[QAutomatonInputOutput] | None = None
 
     def call_method(self, method_name, args, kwargs):
         if self.signal_bus is None:
@@ -718,6 +720,13 @@ class UiAutomaton(IUiAutomaton):
         self._pointer_index = None
 
         self._bridge = None
+        self._input_widget = None
+
+    def get_input_widget(self) -> _ty.Type[QAutomatonInputOutput] | None:
+        return self._input_widget
+
+    def set_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput] | None) -> None:
+        self._input_widget = input_widget
 
     def __eq__(self, other: _ty.Self):
         print(self._type)

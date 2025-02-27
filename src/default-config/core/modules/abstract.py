@@ -6,6 +6,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
 from utils.OrderedSet import OrderedSet
+from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 # Standard typing imports for aps
 import abc as _abc
@@ -121,7 +122,7 @@ class IMainWindow:
 
     def close(self) -> None:
         raise NotImplementedError
-    
+
     def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):
         raise NotImplementedError
 
@@ -136,37 +137,37 @@ class IMainWindow:
 
     def set_transition_func_separator(self, func_separator: str):
         raise NotImplementedError
-    
+
     def set_file_open_shortcut(self, open_shortcut: str):
         raise NotImplementedError
-    
+
     def set_file_save_shortcut(self, save_shortcut: str):
         raise NotImplementedError
-    
+
     def set_file_close_shortcut(self, close_shortcut: str):
         raise NotImplementedError
-    
+
     def set_simulation_start_shortcut(self, start_shortcut: str):
         raise NotImplementedError
-    
+
     def set_simulation_step_shortcut(self, step_shortcut: str):
         raise NotImplementedError
-    
+
     def set_simulation_halt_shortcut(self, halt_shortcut: str):
         raise NotImplementedError
-    
+
     def set_simulation_end_shortcut(self, end_shortcut: str):
         raise NotImplementedError
-    
+
     def set_states_cut_shortcut(self, cut_shortcut: str):
         raise NotImplementedError
-    
+
     def set_states_copy_shortcut(self, copy_shortcut: str):
         raise NotImplementedError
-    
+
     def set_states_paste_shortcut(self, paste_shortcut: str):
         raise NotImplementedError
-   
+
 
 class IBackend(_abc.ABC):
     """The backend entry point"""
@@ -519,5 +520,15 @@ class IUiAutomaton(_abc.ABC):
 
     @_abc.abstractmethod
     def set_active_transition(self, transition: IUiTransition) -> None:
+        """sets the current active transition"""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def get_input_widget(self) -> _ty.Type[QAutomatonInputOutput] | None:
+        """Returns the current active transition"""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    @_abc.abstractmethod
+    def set_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput] | None) -> None:
         """sets the current active transition"""
         raise NotImplementedError("This method must be implemented by subclasses.")

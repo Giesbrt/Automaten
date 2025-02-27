@@ -105,7 +105,8 @@ class UiSettingsProvider:
         ui_automaton.set_transition_pattern(settings.transition_description_layout)
         ui_automaton.set_is_changeable_token_list(settings.customisable_token_list)
         ui_automaton.set_state_types_with_design(settings.state_types_with_design)
-        ui_automaton._author = settings.author
+        ui_automaton.set_author(settings.author)
+        ui_automaton.set_input_widget(settings.input_widget)
 
 
 if __name__ == '__main__':

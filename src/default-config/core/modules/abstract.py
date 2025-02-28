@@ -168,6 +168,12 @@ class IMainWindow:
     def set_states_paste_shortcut(self, paste_shortcut: str):
         raise NotImplementedError
 
+    def set_recently_opened_files(self, recently_opened_files: list[str]) -> None:
+        raise NotImplementedError
+
+    def get_recently_opened_files(self) -> list[str]:
+        raise NotImplementedError
+
 
 class IBackend(_abc.ABC):
     """The backend entry point"""

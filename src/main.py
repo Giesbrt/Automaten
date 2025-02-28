@@ -141,6 +141,7 @@ class App:
             self.load_themes(os.path.join(self.styling_folder, "themes"))
             self.load_styles(os.path.join(self.styling_folder, "styles"))
             self.window.app = self.qapp
+            self.window.set_recently_opened_files(list(self.user_settings.retrieve("auto", "recent_files", "tuple")))
 
             # Setup window
             self.system: BaseSystemType = get_system()
@@ -410,6 +411,10 @@ class App:
         self.for_loop_list.append((self.show_update_result, (update_result,)))
 
     def open_file(self, filepath: str):
+        lst = self.window.get_recently_opened_files()
+        lst.append(filepath)
+        self.window.set_recently_opened_files(lst)
+        self.window.update_recent_files_menu()
         self.ui_automaton.__del__()
         self.singleton_observer.reset_instance()
         self.ui_automaton = self.load_file(filepath)

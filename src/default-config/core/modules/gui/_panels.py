@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSp
                                QHBoxLayout, QColorDialog, QComboBox, QMenu)
 from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QEvent, Signal, QParallelAnimationGroup, QTimer
 from PySide6.QtGui import QColor, QIcon, QPen, QAction
+from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
@@ -18,9 +19,9 @@ import typing as _ty
 import types as _ts
 
 
-
 class Panel(QWidget):
     """Baseclass for all Panels"""
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
@@ -115,7 +116,8 @@ class StateMenu(QFrame):
         transitions = self.state.connected_transitions
         self.transitions_table.setRowCount(len(transitions))
         for i, transition in enumerate(transitions):
-            target_item: QTableWidgetItem = QTableWidgetItem(f'{transition.get_ui_transition().get_from_state().get_display_text()} - {transition.get_ui_transition().get_to_state().get_display_text()}')
+            target_item: QTableWidgetItem = QTableWidgetItem(
+                f'{transition.get_ui_transition().get_from_state().get_display_text()} - {transition.get_ui_transition().get_to_state().get_display_text()}')
             target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             target_item.setData(Qt.ItemDataRole.UserRole, transition)
 
@@ -139,7 +141,8 @@ class StateMenu(QFrame):
             self.singleton_observer.set('start_state', self.state.get_ui_state())
         self.state.set_state_type(state_type)
 
-    def on_current_item_changed(self, current: QTableWidgetItem | QComboBox, previous: QTableWidgetItem | QComboBox | None) -> None:
+    def on_current_item_changed(self, current: QTableWidgetItem | QComboBox,
+                                previous: QTableWidgetItem | QComboBox | None) -> None:
         if previous:
             previous.data(Qt.ItemDataRole.UserRole).setPen(QPen(QColor('black'), 4))
         current.data(Qt.ItemDataRole.UserRole).setPen(QPen(QColor('red'), 4))
@@ -218,7 +221,7 @@ class ControlMenu(QFrame):
         else:
             ErrorCache().warning('No whitespace or special characters allowed!', '', True, False)
 
-    def remove_token(self, token, token_index: int=None):
+    def remove_token(self, token, token_index: int = None):
         self.token_list_box.removeItem(token_index)
         self.token_lists[0].remove(token)
 
@@ -240,6 +243,7 @@ class ControlMenu(QFrame):
 
 class UserPanel(Panel):
     """The main panel to be shown"""
+
     def __init__(self, automaton_type: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         from ._grids import AutomatonInteractiveGridView
@@ -257,6 +261,9 @@ class UserPanel(Panel):
         # Settings button
         # self.settings_button = QPushButton(self)
         # self.settings_button.setFixedSize(40, 40)
+
+        # input_widget
+        self.input_widget: QAutomatonInputOutput | None = None
 
         # Control Menu
         self.control_menu = ControlMenu(self.grid_view, self)
@@ -284,6 +291,24 @@ class UserPanel(Panel):
         self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
         # TODO: SETTINGS
         # - Automaton loader settings
+
+    def position_input_widget(self, input_widget: QAutomatonInputOutput):
+        self.input_widget = input_widget
+        if True:  # Disabled
+            return
+        print(input_widget.x(), input_widget.y(), input_widget.width(), input_widget.height())
+
+        x = 100
+        y = 50
+        width = 200
+        height = 100
+
+        # Ändere die Geometrie des Widgets
+        input_widget.setGeometry(x, y, width, height)
+        print(input_widget.x(), input_widget.y(), input_widget.width(), input_widget.height())
+        self.layout().addWidget(input_widget)
+        input_widget.repaint()
+
 
     def set_token_list(self, token_list: _ty.List[str]):
         self.token_list = token_list
@@ -325,11 +350,13 @@ class UserPanel(Panel):
             state_start = QRect(self.width(), 0, width, height)
             state_end = QRect(self.width() - width, 0, width, height)
             control_start = QRect(self.width() - c_menu_width - 10, 10, c_menu_width, c_menu_height)
-            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width,
+                                c_menu_height)
         else:
             state_start = QRect(self.width() - width, 0, width, height)
             state_end = QRect(self.width(), 0, width, height)
-            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width, c_menu_height)
+            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width,
+                                  c_menu_height)
             control_end = QRect(self.width() - c_menu_width - 10, 10, c_menu_width, c_menu_height)
 
         self.state_menu_animation.setStartValue(state_start)
@@ -357,9 +384,11 @@ class UserPanel(Panel):
         else:
             self.state_menu.setGeometry(self.width(), 0, width, height)
         if self.state_menu.visible:
-            self.control_menu.setGeometry(self.width() - self.control_menu.width() - self.state_menu.width() - 20, 20, self.control_menu.width(), self.control_menu.height())
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - self.state_menu.width() - 20, 20,
+                                          self.control_menu.width(), self.control_menu.height())
         else:
-            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 10, 10, self.control_menu.width(), self.control_menu.height())
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 10, 10, self.control_menu.width(),
+                                          self.control_menu.height())
         self.update_menu_button_position()
         # self.settings_button.move(self.width() - 60, 100)
 
@@ -368,6 +397,7 @@ class UserPanel(Panel):
 
 class SettingsPanel(Panel):
     """The settings panel"""
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         # self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33); font-size: 16pt;")

@@ -48,6 +48,8 @@ from core.modules.automaton.UiSettingsProvider import UiSettingsProvider
 from core.modules.customPythonHandler import CustomPythonHandler
 from core.extensions_loader import Extensions_Loader
 
+from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
+
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
@@ -76,7 +78,7 @@ class App:
             # Thread pool
             self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
             self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
-            self.pool.submit(lambda :
+            self.pool.submit(lambda:
                              self.for_loop_list.append(
                                  (
                                      self.set_extensions,
@@ -163,7 +165,7 @@ class App:
 
             self.connect_signals()
             # Show gui
-            self.pool.submit(lambda : self.check_for_update())
+            self.pool.submit(lambda: self.check_for_update())
             self.window.start()
 
             self.timer: QtTimidTimer = QtTimidTimer()
@@ -217,13 +219,16 @@ class App:
         grid_view.has_simulation_data.connect(automaton.has_simulation_data)
         grid_view.has_bridge_updates.connect(automaton.has_bridge_updates)
         grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)"""
-        
+
     def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):
         self.window.set_font(self.user_settings.retrieve("design", "font", "string"))
         self.window.set_enable_animations(self.user_settings.retrieve("design", "enable_animations", "bool"))
-        self.window.set_auto_open_tutorial_tab(self.user_settings.retrieve("design", "auto_open_tutorial_tab", "string"))
-        self.window.set_transition_func_separator(self.user_settings.retrieve("design", "transition_func_separator", "string"))
-        self.window.set_default_state_background_color(self.user_settings.retrieve("design", "default_state_background_color", "str"))
+        self.window.set_auto_open_tutorial_tab(
+            self.user_settings.retrieve("design", "auto_open_tutorial_tab", "string"))
+        self.window.set_transition_func_separator(
+            self.user_settings.retrieve("design", "transition_func_separator", "string"))
+        self.window.set_default_state_background_color(
+            self.user_settings.retrieve("design", "default_state_background_color", "str"))
 
         self.window.set_file_open_shortcut(self.user_settigs.retrieve("shortcuts", "file_open", "string"))
         self.window.set_file_save_shortcut(self.user_settigs.retrieve("shortcuts", "file_save", "string"))
@@ -235,7 +240,7 @@ class App:
         self.window.set_states_cut_shortcut(self.user_settigs.retrieve("shortcuts", "states_cut", "string"))
         self.window.set_states_copy_shortcut(self.user_settigs.retrieve("shortcuts", "states_copy", "string"))
         self.window.set_states_paste_shortcut(self.user_settigs.retrieve("shortcuts", "states_paste", "string"))
-        
+
     def update_simulation_controls(self, running: bool) -> None:
         if self.simulation_mode == 'auto':
             self.control_menu.play_button.setEnabled(not running)
@@ -328,6 +333,10 @@ class App:
         automaton_settings = settings_loader.get_settings(automaton_type)
         if automaton_settings is not None:
             settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
+
+            widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()()
+            self.window.user_panel.position_input_widget(widget)
+
             ErrorCache().debug(f"Applied settings to {automaton_type}-automaton", "")
         else:
             ErrorCache().error(f"Could not load and apply settings of {automaton_type}", "", True)
@@ -430,7 +439,8 @@ class App:
                 f"The loading of the file '{os.path.basename(filepath)}' has failed.\nThe file could not be locked.",
                 format_exc(), True, True)
             return None
-        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
+        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml",
+                                                                  "au": "binary"}.get(end, None)  # type: ignore
         if filetype is None:  # Error case
             ErrorCache().warning(
                 f"The loading of the file '{os.path.basename(filepath)}' has failed.\nIncompatible file extension.", "",
@@ -448,6 +458,10 @@ class App:
                 automaton_settings = settings_loader.get_settings(automaton_type)
                 if automaton_settings is not None:
                     settings_loader.apply_to_automaton(automaton, None, automaton_settings)
+
+                    widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()()
+                    self.window.user_panel.position_input_widget(widget)
+
                     ErrorCache().debug(f"Applied settings to {automaton_type}-automaton", "")
                 else:
                     ErrorCache().error(f"Could not load and apply settings of {automaton_type}", "", True)
@@ -471,7 +485,8 @@ class App:
         Returns the filepath upon successful save or None if an error occurred."""
         # print(automaton)
         end = filepath.rsplit(".", maxsplit=1)[1]
-        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml", "au": "binary"}.get(end, None)  # type: ignore
+        filetype: _ty.Literal["json", "yaml", "binary"] | None = {"json": "json", "yml": "yaml", "yaml": "yaml",
+                                                                  "au": "binary"}.get(end, None)  # type: ignore
         if filetype is None:  # Error case
             ErrorCache().warning(
                 f"The saving to the file '{os.path.basename(filepath)}' has failed.\nIncompatible file extension.", "",
@@ -498,7 +513,9 @@ class App:
             return filepath
         return None
 
-    def get_update_result(self) -> tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]:
+    def get_update_result(self) -> tuple[
+        bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[
+            [str], _ty.Any]]:
         """
         Checks for an update and returns the result.
         """
@@ -612,7 +629,9 @@ class App:
                 (checkbox, checkbox_setting),
                 (standard_buttons, default_button), retval_func)
 
-    def show_update_result(self, update_result: tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]) -> None:
+    def show_update_result(self, update_result: tuple[
+        bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[
+            [str], _ty.Any]]) -> None:
         """
         Shows update result using a message box
         """
@@ -665,7 +684,8 @@ class App:
             # "dark_theming": "adalfarus::default/base",
             "window_icon_set": ":/data/assets/app_icons/shelline",
             "font": "Segoe UI",
-            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (" [INDEV]" if config.INDEV else ""),
+            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (
+                " [INDEV]" if config.INDEV else ""),
             "high_contrast_mode": "NO",  # Just make a high contrast theme
             "automaton_scaling": "NO",  # Why? We could manipulate the scroll max and mins
             "automatic_scaling": "True",  # Would enable / disable next two options
@@ -750,7 +770,8 @@ class App:
             return
         style: Style | None = theme.get_compatible_style(style_str.replace("_", " ").title())
         if style is None:
-            ErrorCache().warning(f"Couldn't find specified style {style_str} for theme {theme_str}", "", show_dialog=True)
+            ErrorCache().warning(f"Couldn't find specified style {style_str} for theme {theme_str}", "",
+                                 show_dialog=True)
             return
         theme_str, palette = theme.apply_style(style, self.qapp.palette(),
                                                transparency_mode="none")  # TODO: Get from settings
@@ -805,7 +826,8 @@ class App:
 
 
 if __name__ == "__main__":
-    print(f"Starting {config.PROGRAM_NAME} {str(config.VERSION) + config.VERSION_ADD} with py{'.'.join([str(x) for x in sys.version_info])} ...")
+    print(
+        f"Starting {config.PROGRAM_NAME} {str(config.VERSION) + config.VERSION_ADD} with py{'.'.join([str(x) for x in sys.version_info])} ...")
     CODES: dict[int, _a.Callable[[], None]] = {
         1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)
     }
@@ -857,7 +879,8 @@ if __name__ == "__main__":
             icon = QIcon(icon_path)
             custom_icon = True
 
-        msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning if custom_icon else None, error_title, error_text, error_description,
+        msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning if custom_icon else None, error_title, error_text,
+                                   error_description,
                                    standard_buttons=QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Retry,
                                    default_button=QMessageBox.StandardButton.Ok)
         msg_box.setWindowIcon(icon)

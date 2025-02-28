@@ -1,4 +1,6 @@
 """TBA"""
+import os
+
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget, QDialog, \
     QVBoxLayout, QLabel, QMenu
 from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont, QColor, QPalette
@@ -71,7 +73,9 @@ class MainWindow(QMainWindow, IMainWindow):
         self.settings_panel_animation: QPropertyAnimation | None = None
         self.panel_animation_group: QParallelAnimationGroup | None = None
         self.automaton_type: str | None = None
+        self.recent_files = []
         super().__init__(parent=None)
+        self.statusBar().showMessage("Statusbar")
 
     def setup_gui(self) -> None:
         self.settings_button = QPushButton(parent=self)
@@ -176,10 +180,16 @@ class MainWindow(QMainWindow, IMainWindow):
 
         self.menuBar().setFixedHeight(30)
 
+    def set_recently_opened_files(self, recently_opened_files: list[str]) -> None:
+        self.recent_files = recently_opened_files
+
+    def get_recently_opened_files(self) -> list[str]:
+        return self.recent_files
+
     def update_recent_files_menu(self):
         """Refreshes the Open Recent menu with updated file list."""
         self.recent_menu.clear()
-        self.recent_files = None
+        print("RECENT", self.recent_files)
         if not self.recent_files:
             self.recent_menu.addAction("No Recent Files").setEnabled(False)
         else:
@@ -264,7 +274,7 @@ class MainWindow(QMainWindow, IMainWindow):
     def reload_panels(self) -> None:
         menubar_bottom = self.menuBar().height()
         width = self.width()
-        height = self.height() - menubar_bottom
+        height = self.height() - menubar_bottom - self.statusBar().height()
         top = menubar_bottom
 
         user_panel_hidden_value = QRect(-width, top, width, height)

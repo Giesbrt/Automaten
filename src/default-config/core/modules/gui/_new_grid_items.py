@@ -1,16 +1,16 @@
-import numpy as np
-from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, QTimer
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF
-from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsItemGroup, QGraphicsDropShadowEffect, QStyle, \
-    QGraphicsLineItem, QStyleOptionGraphicsItem
+from PySide6.QtCore import QPointF, QLineF, QRectF, QTimer
+from PySide6.QtGui import QColor, QPainter, QPen, QPolygonF
+from PySide6.QtWidgets import (QGraphicsItem, QGraphicsItemGroup, QGraphicsDropShadowEffect, QStyle,
+                               QGraphicsLineItem, QStyleOptionGraphicsItem)
 
-from ._graphic_items import StateGraphicsItem, LabelGraphicsItem, TransitionGraphicsItem, ConditionGraphicsItem, StateConnectionGraphicsItem, TokenButton, TokenListFrame
-# from .state_view_model import StateViewModel
+from ._graphic_items import (StateGraphicsItem, LabelGraphicsItem,
+                             StateConnectionGraphicsItem, TokenListFrame, TokenButtonFrame, ConditionGraphicsItem)
 
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
 import types as _ts
+import numpy as np
 
 from ..automaton.UIAutomaton import UiState, UiTransition
 
@@ -207,6 +207,22 @@ class StateItem(QGraphicsItemGroup):
             self.connection_points.append(connection_point)
             self.addToGroup(connection_point)
 
+    def highlight(self) -> None:
+        """Highlights the transition."""
+        highlight_effect = QGraphicsDropShadowEffect()
+        highlight_effect.setBlurRadius(40)
+        highlight_effect.setOffset(0)
+        highlight_effect.setColor(QColor('yellow'))
+        self.state.setGraphicsEffect(highlight_effect)
+
+    def unhighlight(self) -> None:
+        """Removes the highlight effect from the transition."""
+        self.shadow = QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(20)
+        self.shadow.setOffset(0)
+        self.shadow.setColor(QColor('black'))
+        self.state.setGraphicsEffect(self.shadow)
+
     def activate(self) -> None:
         """Activates the state, marking it as selected and updating its UI state."""
         self.setSelected(True)
@@ -268,9 +284,8 @@ class StateItem(QGraphicsItemGroup):
 
 
 class TransitionItem(QGraphicsLineItem):
-    """TBA"""
-    def __init__(self, start_point: StateConnectionGraphicsItem, end_point: StateConnectionGraphicsItem,
-                 parent: QGraphicsItem | None = None) -> None:
+    def __init__(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]], sections: int,
+                 start_point: StateConnectionGraphicsItem, end_point: StateConnectionGraphicsItem, parent: QGraphicsItem | None = None) -> None:
         """Initializes a Transition between two connection points.
 
         :param start_point: The starting connection point.
@@ -278,7 +293,7 @@ class TransitionItem(QGraphicsLineItem):
         :param parent: The parent graphics item, defaults to None.
         """
         super().__init__(parent)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent, True)
 
         self.start_point: StateConnectionGraphicsItem = start_point
         self.end_point: StateConnectionGraphicsItem = end_point
@@ -297,36 +312,36 @@ class TransitionItem(QGraphicsLineItem):
         self.start_state.add_transition(self)
         self.end_state.add_transition(self)
 
-        self.transition_function: 'TransitionFunction' | None = None
+        self.condition_graphics_item = ConditionGraphicsItem(token_lists, sections, self)
+
+        # self.transition_function: 'TransitionFunction' | None = None
         self.arrow_size: int = 10
         self.arrow_head: QPolygonF | None = None
 
         self.setPen(QPen(QColor(0, 10, 33), 4))
         self.update_position()
 
-    def set_transition(self, condition: _ty.List[str]):
+    def set_condition(self, condition: _ty.List[str]):
         """Sets the condition of the transition.
 
         :param condition: A list of strings representing the condition.
         """
+        self.condition_graphics_item.set_condition(condition)
         self.ui_transition.set_condition(condition)
 
-    def set_transition_function(self, transition_function) -> None:
-        """Sets the transition function associated with this transition.
+    def set_token_lists(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]):
+        """Sets the token lists for the transition.
 
-        :param transition_function: The widget or function representing the transition function.
+        :param token_lists: A list of lists of strings representing the token lists.
         """
-        self.transition_function = transition_function
+        self.condition_graphics_item.set_token_lists(token_lists)
 
-    def set_ui_transition(self, ui_transition):
+    def set_ui_transition(self, ui_transition: 'UiTransition') -> None:
+        """Sets the UI transition object associated with this transition.
+
+        :param ui_transition: The UI transition object.
+        """
         self.ui_transition = ui_transition
-
-    def get_transition_function(self) -> 'TransitionFunction':
-        """Retrieves the transition function associated with this transition.
-
-        :return: The transition function.
-        """
-        return self.transition_function
 
     def get_ui_transition(self) -> UiTransition:
         """Retrieves the UI transition object associated with this transition.
@@ -344,6 +359,18 @@ class TransitionItem(QGraphicsLineItem):
         :return: The center point as a QPointF.
         """
         return QPointF((p1.x() + p2.x()) / 2, (p1.y() + p2.y()) / 2)
+
+    def highlight(self) -> None:
+        """Highlights the transition."""
+        highlight_effect = QGraphicsDropShadowEffect()
+        highlight_effect.setBlurRadius(40)
+        highlight_effect.setOffset(0)
+        highlight_effect.setColor(QColor('yellow'))
+        self.setGraphicsEffect(highlight_effect)
+
+    def unhighlight(self) -> None:
+        """Removes the highlight effect from the transition."""
+        self.setGraphicsEffect(None)
 
     def calculate_arrow_head(self, end_scene_pos: QPointF, angle: float) -> QPolygonF:
         """Calculates the arrow head polygon for the transition line.
@@ -387,21 +414,21 @@ class TransitionItem(QGraphicsLineItem):
         angle = np.arctan2(line.dy(), line.dx())
         self.arrow_head = self.calculate_arrow_head(end_scene_pos, angle)
 
-        if self.transition_function:
+        if self.condition_graphics_item:
             center = self.get_center(start_scene_pos, end_scene_pos)
 
-            button_size = self.transition_function.token_button_frame.size()
-            token_list_size = self.transition_function.token_list_frame.size()
+            button_size = self.condition_graphics_item.token_button_frame.size()
+            token_list_size = self.condition_graphics_item.token_list_frame.size()
 
             button_x = center.x() - button_size.width() / 2
             button_y = center.y() - button_size.height() / 2
-            self.transition_function.token_button_frame.setPos(button_x, button_y)
+            self.condition_graphics_item.token_button_frame.setPos(button_x, button_y)
 
             gap = 5
 
             token_list_x = center.x() - token_list_size.width() / 2
             token_list_y = button_y + button_size.height() + gap
-            self.transition_function.token_list_frame.setPos(token_list_x, token_list_y)
+            self.condition_graphics_item.token_list_frame.setPos(token_list_x, token_list_y)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         """Renders the transition line and arrow head.

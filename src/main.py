@@ -125,7 +125,6 @@ class App:
                 if loaded_automaton is None:
                     input_path = ""
                 else:
-                    self.ui_automaton = loaded_automaton
                     self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
                     self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
                     self.singleton_observer.set('is_loaded', True)
@@ -193,33 +192,9 @@ class App:
 
         self.grid_view.add_state.connect(automaton.add_state)
         self.grid_view.add_transition.connect(automaton.add_transition)
-        print(f'{hex(id(automaton))}')
         self.grid_view.delete_state.connect(automaton.delete_state)
         self.grid_view.delete_transition.connect(automaton.delete_transition)
         # self.window.settings_changed.connect(self.set_settings)
-
-        """grid_view.get_start_state.connect(automaton.get_start_state)
-        grid_view.get_state_types_with_design.connect(automaton.get_state_types_with_design)
-        grid_view.set_state_types_with_design.connect(automaton.set_state_types_with_design)
-        grid_view.get_author.connect(automaton.get_author)
-        grid_view.get_token_lists.connect(automaton.get_token_lists)
-        grid_view.get_is_changeable_token_list.connect(automaton.get_is_changeable_token_list)
-        grid_view.get_transition_pattern.connect(automaton.get_transition_pattern)
-        grid_view.set_token_lists.connect(automaton.set_token_lists)
-
-        grid_view.get_transitions.connect(automaton.get_transitions)
-        grid_view.get_automaton_type.connect(automaton.get_automaton_type)
-        grid_view.set_start_state.connect(automaton.set_start_state)
-        grid_view.get_state_by_id.connect(automaton.get_state_by_id)
-        grid_view.get_state_index.connect(automaton.get_state_index)
-        grid_view.get_transition_index.connect(automaton.get_transition_index)
-        grid_view.get_transition_by_id.connect(automaton.get_transition_by_id)
-        grid_view.simulate.connect(automaton.simulate)
-        grid_view.handle_simulation_updates.connect(automaton.handle_simulation_updates)
-        grid_view.handle_bridge_updates.connect(automaton.handle_bridge_updates)
-        grid_view.has_simulation_data.connect(automaton.has_simulation_data)
-        grid_view.has_bridge_updates.connect(automaton.has_bridge_updates)
-        grid_view.is_simulation_data_available.connect(automaton.is_simulation_data_available)"""
 
     def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):
         self.window.set_font(self.user_settings.retrieve("design", "font", "string"))
@@ -257,19 +232,21 @@ class App:
             self.control_menu.stop_button.setEnabled(False)
 
     def start_simulation(self, automaton_input: _ty.List[str]) -> None:
+        print('start_simulation')
         self.simulation_mode = 'auto'
         if not self.ui_automaton:
             ErrorCache().warning('No Automaton loaded!', '', True, True)
             return
         else:
+            # automaton_input = self.ui_automaton.get_input_widget().
             try:
                 result = self.ui_automaton.simulate(automaton_input, self.handle_simulation)
                 if isinstance(result, _result.Success):
                     self.update_simulation_controls(running=True)
                 elif isinstance(result, _result.Failure):
-                    ErrorCache().info('Fehler beim Simulieren aufgetreten!', '', True, True)
+                    ErrorCache().error('Fehler beim Simulieren aufgetreten!', '', True, False)
             except Exception as e:
-                ErrorCache().warning(e, '', True, True)
+                ErrorCache().error('External simulation error!', f'{e}', True, False)
 
     def stop_simulation(self) -> None:
         self.grid_view.reset_all_highlights()
@@ -280,22 +257,29 @@ class App:
             ErrorCache().info('Finished Simulation!', '', True, False)
 
     def handle_simulation(self) -> None:
+        print('handle_simulation')
         self.simulation_timer = QtTimidTimer()
         self.simulation_timer.timeout.connect(self.start_simulation_visualisation)
         self.simulation_timer.start(500, 0)
 
     def start_simulation_visualisation(self):
+        print('start_simulation_visualisation')
         if self.ui_automaton.has_simulation_data():
             simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
             active_state: 'UiState' = self.ui_automaton.get_active_state()
             active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
-            state_item = self.grid_view.set_active_state(active_state)
+            # print(f'active_state: {active_state}, \nactive_transition: {active_transition}')
+            state_item = self.grid_view.get_active_state(active_state)
             self.grid_view.highlight_state_item(state_item)
+            if active_transition:
+                transition_item = self.grid_view.get_active_transition(active_transition)
+                self.grid_view.highlight_transition_item(transition_item)
         else:
             self.simulation_timer.stop(0)
             self.stop_simulation()
 
     def start_simulation_step_for_step(self, automaton_input: _ty.List[str]) -> None:
+        print('start_simulation_step_for_step')
         self.simulation_mode = 'step'
         if self.ui_automaton and not self.ui_automaton.has_simulation_data():
             result = self.ui_automaton.simulate(automaton_input, self.step_simulation)
@@ -305,6 +289,7 @@ class App:
             self.step_simulation()
 
     def step_simulation(self) -> None:
+        print('step_simulation')
         if self.ui_automaton.has_simulation_data():
             if self.simulation_mode == 'auto':
                 self.update_simulation_controls(running=True)
@@ -315,8 +300,12 @@ class App:
             simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
             active_state: 'UiState' = self.ui_automaton.get_active_state()
             active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
-            state_item = self.grid_view.set_active_state(active_state)
+
+            state_item = self.grid_view.get_active_state(active_state)
             self.grid_view.highlight_state_item(state_item)
+            if active_transition:
+                transition_item = self.grid_view.get_active_transition(active_transition)
+                self.grid_view.highlight_transition_item(transition_item)
         else:
             self.stop_simulation()
 
@@ -410,23 +399,15 @@ class App:
         update_result = self.get_update_result()
         self.for_loop_list.append((self.show_update_result, (update_result,)))
 
-    def open_file(self, filepath: str):
+    def open_file(self, filepath: str) -> None:
         lst = self.window.get_recently_opened_files()
         lst.append(filepath)
         self.window.set_recently_opened_files(lst)
         self.window.update_recent_files_menu()
-        self.ui_automaton.__del__()
-        self.singleton_observer.reset_instance()
+        # self.singleton_observer.reset_instance()
         self.ui_automaton = self.load_file(filepath)
         if self.ui_automaton:
             self.grid_view.empty_scene()
-            self.grid_view.delete_transition.disconnect()
-            self.grid_view.delete_transition.connect(self.ui_automaton.delete_transition)
-            print(list(self.ui_automaton.get_transitions())[0].get_condition())
-            print(f'{hex(id(self.ui_automaton))}, {self.ui_automaton.get_transitions()}')
-            self.singleton_observer = SingletonObserver()
-            self.grid_view.update_singleton_observer()
-
             # print(f'{self.singleton_observer._observers["automaton_type"]}, \n{self.ui_automaton}')
             self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
             self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
@@ -454,7 +435,13 @@ class App:
         try:
             automaton: UiAutomaton
             custom_python: str
-            automaton, custom_python = deserialize(content, filetype)
+            print(f'{(not hasattr(self, "ui_automaton"))=} \n')
+            if not hasattr(self, 'ui_automaton'):
+                self.ui_automaton = UiAutomaton(None, 'TheCodeJak', {})
+            self.ui_automaton.unload()
+            automaton, custom_python = deserialize(self.ui_automaton, content, filetype)
+
+            print(hex(id(self.ui_automaton)), self.ui_automaton.__dict__, '\n')
 
             # apply settings
             if self.extensions:
@@ -477,7 +464,7 @@ class App:
             result: _result.Result = CustomPythonHandler().load(custom_python, path)
             # ErrorCache().debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "", True, True)
 
-            print("CP", custom_python)
+            # print("CP", custom_python)
         except Exception as e:
             ErrorCache().warning(
                 f"The loading of the file '{os.path.basename(filepath)}' has failed.\nThe file may be corrupted.",

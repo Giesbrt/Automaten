@@ -1,13 +1,13 @@
+
 import numpy as np
-from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal
+from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal, QEvent
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QFont, QPolygonF
 from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem, QGraphicsWidget, \
     QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, \
-    QGraphicsProxyWidget
+    QGraphicsProxyWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent
 
 from ._graphic_support_items import FrameWidgetItem
-# from ._new_grid_items import StateItem, TransitionItem
-from ..painter import PainterStr, PainterColor, PainterToStr, StrToPainter
+from ..painter import PainterStr, StrToPainter
 
 # Standard typing imports for aps
 from functools import partial
@@ -51,13 +51,18 @@ class StateGraphicsItem(QGraphicsEllipseItem):
         self.end_painter_str: PainterStr = PainterStr(
             "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
         self.start_painter_str: PainterStr = PainterStr(
-            "Text: (195.62833599002374, 91.36730222890128), 'MyText', 13#0000ff;Polygon: ((211.25667198004749, 2.7346044578025612), (179.99999999999997, 360.0), (0.0, 179.99999999999997)), 0#000000##00000000;Rect: ((205.005337584038, 38.18768356624204), (179.99999999999997, 324.0)), 0#000000##00000000;Arc: ((360.0, 360.0), 162.0, 162.0), (270, 360), 2#00ff00##00ff00;Arc: ((180.0, 180.0), 162.0, 162.0), (0, 90), 2#00ff00##00ff00;")
+            "Polygon: ((80.0, 160.0), (230.0, 160.0), (230.0, 130.0), (280.0, 180.0), (230.0, 230.0), (230.0, 200.0), (80.0, 200.0)), 0#ff0000##ff0000;")
 
-        obj = PainterToStr()
-        obj.ellipse((obj.coord().load_from_cartesian(0, 0), 180.0, 180.0), border_color=PainterColor(255, 0, 0),
-                    border_thickness=6, fill_color=PainterColor(a=0))
-        is_active_str = obj.clean_out_style_str()
-        self.is_active_str: PainterStr = PainterStr(is_active_str)
+        """arrow = PainterToStr()
+        arrow.polygon([arrow.coord().load_from_cartesian(-100, -20),
+                       arrow.coord().load_from_cartesian(50, -20),
+                       arrow.coord().load_from_cartesian(50, -50),
+                       arrow.coord().load_from_cartesian(100, 0),
+                       arrow.coord().load_from_cartesian(50, 50),
+                       arrow.coord().load_from_cartesian(50, 20),
+                       arrow.coord().load_from_cartesian(-100, 20)], fill_color=PainterColor(255, 0, 0))
+        arrow_str = arrow.clean_out_style_str()
+        self.start_painter_str = PainterStr(arrow_str)"""
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """Paints the state as an ellipse and adds an inner circle if the state type is 'end'.
@@ -81,8 +86,6 @@ class StateGraphicsItem(QGraphicsEllipseItem):
             str_painter.draw_painter_str(self.end_painter_str)
         elif state_type == "start":
             str_painter.draw_painter_str(self.start_painter_str)
-        """if self.is_active:
-            str_painter.draw_painter_str(self.is_active_str)"""
         painter.restore()
 
 
@@ -205,14 +208,6 @@ class TransitionGraphicsItem(QGraphicsLineItem):
 
         self.start_state: 'StateItem' = self.start_point.parentItem()
         self.end_state: 'StateItem' = self.end_point.parentItem()
-
-        """self.ui_transition = UiTransition(
-            from_state=self.start_state.get_ui_state(),
-            from_state_connecting_point=start_point.get_direction(),
-            to_state=self.end_state.get_ui_state(),
-            to_state_connecting_point=end_point.get_direction(),
-            condition=[]
-        )"""
 
         self.start_state.add_transition(self)
         self.end_state.add_transition(self)
@@ -337,7 +332,50 @@ class TransitionGraphicsItem(QGraphicsLineItem):
 
 
 class ConditionGraphicsItem(QGraphicsProxyWidget):
-    pass
+    """Zwischeninstanz für die Verwaltung der Token-UI-Elemente einer Transition."""
+
+    def __init__(self, token_lists: tuple[list[str], list[str]], sections: int, parent: 'TransitionItem') -> None:
+        """Initialisiert die Condition-Komponente für eine Transition.
+
+        :param token_lists: Tuple mit verfügbaren Tokens (input_tokens, tape_tokens)
+        :param parent: Die übergeordnete TransitionItem-Instanz
+        """
+        super().__init__(parent)
+        self.transition = parent
+
+        # UI-Komponenten erstellen
+        self.token_list_frame = TokenListFrame(token_lists, parent=self)
+        self.token_button_frame = TokenButtonFrame(self.token_list_frame, sections, parent=self)
+
+        # Signale verbinden
+        self._setup_signals()
+
+    def _setup_signals(self) -> None:
+        """Verbindet die Signale der UI-Komponenten."""
+        self.token_list_frame.token_selected.connect(self.token_button_frame.set_token)
+        self.token_button_frame.all_token_set.connect(self._on_condition_changed)
+
+    def _on_condition_changed(self, condition: list[str]) -> None:
+        """Handler für Änderungen der Bedingung.
+
+        :param condition: Liste der ausgewählten Tokens
+        """
+        self.token_button_frame.set_condition(condition)
+        self.transition.get_ui_transition().set_condition(condition)
+
+    def set_condition(self, condition: _ty.List[str]) -> None:
+        """Sets the condition for the transition.
+
+        :param condition: A list of tokens representing the transition condition.
+        """
+        self.token_button_frame.set_condition(condition)
+
+    def set_token_lists(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
+        """Aktualisiert die verfügbaren Token-Listen.
+
+        :param token_lists: Neue Token-Listen (input_tokens, tape_tokens)
+        """
+        self.token_list_frame.update_token_lists(token_lists)
 
 
 class TokenButton(QPushButton):
@@ -465,10 +503,7 @@ class TokenListFrame(QGraphicsProxyWidget):
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = token_list
         self.button_index: _ty.Union[int, None] = None
 
-        container = FrameWidgetItem(bg_color=QColor("white"),
-                                       border_color=QColor("white"),
-                                       border_radius=10,
-                                       border_width=0)
+        container = FrameWidgetItem(bg_color=QColor("white"), border_color=QColor("white"), border_radius=10, border_width=0)
         container.setFixedSize(100, 150)
 
         layout = QVBoxLayout(container)
@@ -494,7 +529,6 @@ class TokenListFrame(QGraphicsProxyWidget):
         layout.addWidget(self.search_separator)
 
         self.list_widget = QListWidget(container)
-        # self.list_widget.addItems(self.token_list)
         self.list_widget.setStyleSheet('''
             QListWidget { 
                 border: none; 
@@ -528,9 +562,9 @@ class TokenListFrame(QGraphicsProxyWidget):
         self.setVisible(visible)
         self.button_index = button_index
         if self.token_lists:
-            self.update_token_list(self.token_lists)
+            self.update_token_lists(self.token_lists)
 
-    def update_token_list(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
+    def update_token_lists(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
         """Updates the token list with view on the automaton type
 
         :param token_lists: The new token list
@@ -592,24 +626,15 @@ class TransitionFunction(QGraphicsProxyWidget):
 
         :param condition: A list of the currently selected tokens.
         """
-        print(condition)
+        # traceback.print_stack()
+        print(f'Vor condition set: {self.transition.get_ui_transition()}')
         self.token_button_frame.set_condition(condition)
         self.transition.get_ui_transition().set_condition(condition)
-
-    def _validate_condition(self, condition: _ty.List[str]) -> _ty.List[str]:
-        """Checks and replaces invalid tokens in the condition."""
-        valid_condition = []
-        for token in condition:
-            if token in self.token_lists[0]:
-                valid_condition.append(token)
-        return valid_condition
+        print(f'Nach condition set: {self.transition.get_ui_transition()}')
 
     def update_token_list(self, token_lists: tuple[list[str], list[str]]) -> None:
         """Updates the token list and replaces invalid tokens in the condition."""
         self.token_lists = token_lists
-        self.token_list_frame.update_token_list(token_lists)
+        self.token_list_frame.update_token_lists(token_lists)
 
-        current_condition = self.token_button_frame.token_buttons
-        new_condition = self._validate_condition([btn.text() for btn in current_condition])
-
-        self.set_condition(new_condition)
+        # self.set_condition(token_lists[0])

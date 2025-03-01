@@ -404,7 +404,7 @@ def deserialize(automaton: IUiAutomaton, bytes_like: bytes,
         for i in dcg_dict["abs_transition_idxs"]  # type: ignore
     ]
 
-    automaton.set_name(name)
+    automaton.set_automaton_type(name)
     automaton.set_author(author)
     automaton.set_state_types_with_design(types)
     automaton.set_token_lists(token_lsts)

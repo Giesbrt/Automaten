@@ -243,8 +243,8 @@ class UiTransition(IUiTransition):
                 and self._from_state_connecting_point == other.get_from_state_connecting_point()
                 and self._to_state == other.get_to_state()
                 and self._to_state_connecting_point == other.get_to_state_connecting_point()
-                and self._is_active == other.is_active()
                 and self._condition == other.get_condition())
+                # and self._is_active == other.is_active()
 
     def __hash__(self):
         return hash(repr(self))
@@ -260,10 +260,10 @@ class UiAutomaton(IUiAutomaton):
         super().__init__(automaton_type, author, state_types_with_design, token_lists, changeable_token_lists,
                          transition_pattern)
 
-        self.signal_bus = SignalBus()
+        self.signal_bus: SignalBus = SignalBus()
         self.signal_bus.request_method.connect(self.call_method)
 
-        self.singleton_observer = SingletonObserver()
+        self.singleton_observer: SingletonObserver = SingletonObserver()
         self.singleton_observer.subscribe('token_lists', self.set_token_lists)
         self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
         self.singleton_observer.subscribe('start_state', self.set_start_state)
@@ -294,10 +294,6 @@ class UiAutomaton(IUiAutomaton):
                 ErrorCache().warning(f'UiAutomaton: {method_name} is not a callable method!', '', True, True)
         else:
             ErrorCache().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)
-
-    def __del__(self):
-        print("delete")
-        self.signal_bus = None
 
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)
@@ -580,6 +576,10 @@ class UiAutomaton(IUiAutomaton):
         return self._author
 
     def set_author(self, author: str) -> None:
+        """Sets the author of the automaton.
+
+        :param author: The author of the automaton.
+        """
         self._author = author
 
     def get_token_lists(self) -> _ty.List[_ty.List[str]]:
@@ -707,10 +707,6 @@ class UiAutomaton(IUiAutomaton):
 
         :return: None
         """
-        self.signal_bus = None
-
-        self.singleton_observer = None
-
         self._type = None
         self._states.clear()
         self._transitions.clear()
@@ -718,9 +714,6 @@ class UiAutomaton(IUiAutomaton):
         self._start_state = None
         self._input = None
         self._pointer_index = None
-
-        self._bridge = None
-        self._input_widget = None
 
     def get_input_widget(self) -> _ty.Type[QAutomatonInputOutput] | None:
         return self._input_widget

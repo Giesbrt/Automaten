@@ -3,8 +3,9 @@ Default/os/reuse_st
 
 /* Start of QSS */
 /* STYLING OF INDIVIDUAL BUTTONS, ... TO INCLUDE ICONS */
-QFrame#user_panel-side_menu, QFrame#user_panel-state_menu {
+QFrame#user_panel-info_menu, QFrame#user_panel-state_menu {
     background-color: $background_secondary;
+    border: 1px solid $border_primary;
 }
 QLabel#user_panel-state_menu-title_label {
     font: 14px 'Segoe UI';
@@ -75,9 +76,30 @@ QPushButton#menu_bar-QPushButton {
     icon: $menu_icon;
     icon-size: 10px 10px;
 }
-QPushButton#user_panel-menu_button {
+QPushButton#user_panel-info_menu_button {
     icon: $info_icon;
     icon-size: 20px 20px;
+}
+QAutomatonTokenIO {
+    background-color: $background_secondary;
+    border: 1px solid $border_primary;
+    border-radius: 6px;
+}
+QGraphicsView QScrollBar:vertical {
+    background: $background_tertiary;
+    width: 10px;
+}
+QGraphicsView QScrollBar:horizontal {
+    background: $background_tertiary;
+    height: 10px;
+}
+QGraphicsView QScrollBar::handle:vertical {
+    border-radius: 5px;
+    border: 1px solid $selection_background;
+}
+QGraphicsView QScrollBar::handle:horizontal {
+    border-radius: 5px;
+    border: 1px solid $selection_background;
 }
 /* End of QSS */
 

@@ -11,7 +11,7 @@ import types as _ts
 
 
 # Abstract Machine related imports
-from core.modules.automaton.base.state import State
+from automaton.base.state import State
 
 
 # Docs generated with Chat-GPT

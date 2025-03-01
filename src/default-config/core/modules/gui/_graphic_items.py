@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphi
 
 from ._graphic_support_items import FrameWidgetItem
 # from ._new_grid_items import StateItem, TransitionItem
-from ..painter import PainterStr, PainterColor, PainterToStr, StrToPainter
+from painter import PainterStr, PainterColor, PainterToStr, StrToPainter
 
 # Standard typing imports for aps
 from functools import partial

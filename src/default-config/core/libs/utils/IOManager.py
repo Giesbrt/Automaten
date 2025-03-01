@@ -1,11 +1,13 @@
 """TBA"""
+import os.path
+import logging, sys
 
 from utils.OrderedSet import OrderedSet
 from aplustools.io import ActLogger
 from queue import Queue
 from utils.staticContainer import StaticContainer
 from logging import ERROR, WARNING, INFO, DEBUG
-# import src.config as config
+# import src.config as configg
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -14,36 +16,15 @@ import typing as _ty
 import types as _ts
 
 
-class ErrorSeverity:
-    FATAL = "fatal"
-    NORMAL = "normal"
-
-    def __str__(self) -> str:
-        """
-        Returns the string representation of the ErrorSeverity.
-        :return: A string representing the error severity.
-        """
-        return "undefined"
-
-    def __repr__(self) -> str:
-        """
-        Returns the string representation of the ErrorSeverity for debugging.
-        :return: A string representing the error severity.
-        """
-        return self.__str__()
-
-
-class ErrorCache:
+class IOManager:
+    """TBA"""
     _do_not_show_again: OrderedSet[str] = OrderedSet()
     _currently_displayed: OrderedSet[str] = OrderedSet()
     _button_display_callable: StaticContainer[_ty.Callable] = StaticContainer()
     _is_indev: StaticContainer[bool] = StaticContainer()
-    _popup_queue: _ty.List[_ty.Callable] = []
+    _popup_queue: _ty.List[_ty.Callable[[_ty.Any], _ty.Any]] = []
 
-    _logger: ActLogger = ActLogger()
-
-    def __init__(self) -> None:
-        pass
+    _logger: ActLogger
 
     def has_cached_errors(self) -> bool:
         """
@@ -65,16 +46,80 @@ class ErrorCache:
 
         popup_callable()
 
-    def init(self, popup_creation_callable: _ty.Callable, is_indev: bool) -> None:
+    def init(self, popup_creation_callable: _ty.Callable, logs_folder_path: str, is_indev: bool) -> None:
         """
         Initializes the ErrorCache with a popup creation callable and development mode flag.
         :param popup_creation_callable: Callable used to create popups.
+        :param logs_folder_path: File path to the logs folder.
         :param is_indev: Boolean indicating whether the application is in development mode.
         :return: None
         """
         self._button_display_callable.set_value(popup_creation_callable)
-
+        self._order_logs(logs_folder_path)
+        self._logger = ActLogger(log_to_file=True, filename=os.path.join(logs_folder_path, "latest.log"))
+        self._logger.monitor_pipe(sys.stdout, level=logging.DEBUG)
+        self._logger.monitor_pipe(sys.stderr, level=logging.ERROR)
         self._is_indev.set_value(is_indev)
+
+    def set_logging_level(self, level: int) -> None:
+        """
+        Sets the logging level of the Logger
+        :param level: Logging level to set to.
+        :return: None
+        """
+        self._logger.setLevel(level)
+
+    @staticmethod
+    def _order_logs(directory: str) -> None:
+        logs_dir = PLPath(directory)
+        to_log_file = logs_dir / "latest.log"
+
+        if not to_log_file.exists():
+            return
+
+        with open(to_log_file, "rb") as f:
+            # (solution from https://stackoverflow.com/questions/46258499/how-to-read-the-last-line-of-a-file-in-python)
+            first_line = f.readline().decode()
+            try:  # catch OSError in case of a one line file
+                f.seek(-2, os.SEEK_END)
+                while f.read(1) != b"\n":
+                    f.seek(-2, os.SEEK_CUR)
+            except OSError:
+                f.seek(0)
+            last_line = f.readline().decode()
+
+        try:
+            date_pattern = r"^[\[(](\d{4}-\d{2}-\d{2})"
+            start_date = re.search(date_pattern, first_line).group(1)  # type: ignore
+            end_date = re.search(date_pattern, last_line).group(1)  # type: ignore
+        except AttributeError:
+            print("Removing malformed latest.log")
+            os.remove(to_log_file)
+            return
+
+        date_name = f"{start_date}_{end_date}"
+        date_logs = list(logs_dir.rglob(f"{date_name}*.log"))
+
+        if not date_logs:
+            new_log_file_name = logs_dir / f"{date_name}.log"
+        else:
+            try:
+                max_num = max(
+                    (int(re.search(r"#(\d+)$", p.stem).group(1)) for p in date_logs if  # type: ignore
+                     re.search(r"#(\d+)$", p.stem)),
+                    default=0
+                )
+            except AttributeError:
+                return
+            max_num += 1
+            base_log_file = logs_dir / f"{date_name}.log"
+            if base_log_file.exists():
+                os.rename(base_log_file, logs_dir / f"{date_name}#{max_num}.log")
+                max_num += 1
+            new_log_file_name = logs_dir / f"{date_name}#{max_num}.log"
+
+        os.rename(to_log_file, new_log_file_name)
+        print(f"Renamed latest.log to {new_log_file_name}")
 
     def _show_dialog(self, title: str, text: str, description: str,
                      icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"],
@@ -142,9 +187,8 @@ class ErrorCache:
 
     # "Errors"
 
-    def warn(self, log_message: str, description: str, show_dialog: bool = False,
+    def warn(self, log_message: str, description: str = "", show_dialog: bool = False,
              print_log: bool = True,
-             icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"] = "Warning",
              popup_title: str | None = None,
              custom_buttons: _ty.Dict[str, _ty.Callable] | None = None) -> None:
         """
@@ -155,14 +199,12 @@ class ErrorCache:
         :param description: Additional description of the warning.
         :param show_dialog: Whether to show a dialog for the warning.
         :param print_log: Whether to print the log message.
-        :param icon: Icon type for the dialog.
         :return: None
         """
-        return self.warning(log_message, description, show_dialog, print_log, icon, popup_title, custom_buttons)
+        return self.warning(log_message, description, show_dialog, print_log, popup_title, custom_buttons)
 
-    def info(self, log_message: str, description: str, show_dialog: bool = False,
+    def info(self, log_message: str, description: str = "", show_dialog: bool = False,
              print_log: bool = True,
-             icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"] = "Information",
              popup_title: str | None = None,
              custom_buttons: _ty.Dict[str, _ty.Callable] | None = None) -> None:
         """
@@ -171,7 +213,6 @@ class ErrorCache:
         :param description: Additional description of the information.
         :param show_dialog: Whether to show a dialog for the information.
         :param print_log: Whether to print the log message.
-        :param icon: Icon type for the dialog.
         :param popup_title: Sets the popup window title
         :param custom_buttons: Defines additional buttons for the popup window
         :return: None
@@ -186,11 +227,10 @@ class ErrorCache:
         if ActLogger().logging_level >= INFO:
             return
 
-        self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)
+        self._handle_dialog(show_dialog, title, log_message, description, "Information", custom_buttons)
 
-    def warning(self, log_message: str, description: str, show_dialog: bool = False,
+    def warning(self, log_message: str, description: str = "", show_dialog: bool = False,
                 print_log: bool = True,
-                icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"] = "Warning",
                 popup_title: str | None = None,
                 custom_buttons: _ty.Dict[str, _ty.Callable] | None = None) -> None:
         """
@@ -199,7 +239,6 @@ class ErrorCache:
         :param description: Additional description of the warning.
         :param show_dialog: Whether to show a dialog for the warning.
         :param print_log: Whether to print the log message.
-        :param icon: Icon type for the dialog.
         :param popup_title: Sets the popup window title
         :param custom_buttons: Defines additional buttons for the popup window
         :return: None
@@ -214,24 +253,38 @@ class ErrorCache:
         if ActLogger().logging_level >= WARNING:
             return
 
-        self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)
+        self._handle_dialog(show_dialog, title, log_message, description, "Warning", custom_buttons)
 
-    def error(self, log_message: str, description: str, show_dialog: bool = False,
+    def fatal_error(self, log_message: str, description: str = "", show_dialog: bool = False,
               print_log: bool = True,
-              error_severity: ErrorSeverity = ErrorSeverity.NORMAL,
-              icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"] = "Critical",
               popup_title: str | None = None,
               custom_buttons: _ty.Dict[str, _ty.Callable] | None = None) -> None:
+        """
+        Logs a fatal error message and optionally displays an error dialog.
+        :param log_message: The error message to log.
+        :param description: Additional description of the error.
+        :param show_dialog: Whether to show a dialog for the error.
+        :param print_log: Whether to print the log message.
+        :param popup_title: Sets the popup window title
+        :param custom_buttons: Defines additional buttons for the popup window
+        :return: None
+        """
+        self.error(log_message, description, show_dialog, print_log, popup_title, custom_buttons, error_severity="FATAL")
+
+    def error(self, log_message: str, description: str = "", show_dialog: bool = False,
+              print_log: bool = True,
+              popup_title: str | None = None,
+              custom_buttons: _ty.Dict[str, _ty.Callable] | None = None, *_,
+              error_severity: str = "NORMAL") -> None:
         """
         Logs an error message and optionally displays an error dialog.
         :param log_message: The error message to log.
         :param description: Additional description of the error.
         :param show_dialog: Whether to show a dialog for the error.
         :param print_log: Whether to print the log message.
-        :param error_severity: Severity level of the error.
-        :param icon: Icon type for the dialog.
         :param popup_title: Sets the popup window title
         :param custom_buttons: Defines additional buttons for the popup window
+        :param error_severity: Defined a custom error name.
         :return: None
         """
         title: str = f"{str(error_severity).capitalize()} Error"
@@ -244,11 +297,10 @@ class ErrorCache:
         if ActLogger().logging_level >= ERROR:
             return
 
-        self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)
+        self._handle_dialog(show_dialog, title, log_message, description, "Critical", custom_buttons)
 
-    def debug(self, log_message: str, description: str, show_dialog: bool = False,
+    def debug(self, log_message: str, description: str = "", show_dialog: bool = False,
               print_log: bool = True,
-              icon: _ty.Literal["Information", "Critical", "Question", "Warning", "NoIcon"] = "Information",
               popup_title: str | None = None,
               custom_buttons: _ty.Dict[str, _ty.Callable] | None = None) -> None:
         """
@@ -257,7 +309,6 @@ class ErrorCache:
         :param description: Additional description of the debug information.
         :param show_dialog: Whether to show a dialog for the debug information.
         :param print_log: Whether to print the log message.
-        :param icon: Icon type for the dialog.
         :param popup_title: Sets the popup window title
         :param custom_buttons: Defines additional buttons for the popup window
         :return: None
@@ -279,4 +330,4 @@ class ErrorCache:
         if ActLogger().logging_level >= DEBUG:
             return
 
-        self._handle_dialog(show_dialog, title, log_message, description, icon, custom_buttons)
+        self._handle_dialog(show_dialog, title, log_message, description, "NoIcon", custom_buttons)

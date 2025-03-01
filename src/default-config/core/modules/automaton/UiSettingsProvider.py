@@ -1,13 +1,10 @@
-from core.modules.automaton.base.settings import Settings as BaseSettings
-from core.modules.abstract import IUiAutomaton
-from utils.errorCache import ErrorCache
+from automaton.base.settings import Settings as BaseSettings
+from abstractions import IUiAutomaton
+from utils.IOManager import IOManager
 from aplustools.io import ActLogger
 
 # Standard typing imports for aps
-import collections.abc as _a
-import abc as _abc
 import typing as _ty
-import types as _ts
 
 
 class UiSettingsProvider:
@@ -46,16 +43,16 @@ class UiSettingsProvider:
     def get_settings(self, automaton_type: str) -> BaseSettings | None:
         automaton_type: str = automaton_type.lower()
         if automaton_type not in self._loaded_settings:
-            ErrorCache().warn(f"Could not load settings for automaton of type {automaton_type}!",
+            IOManager().warn(f"Could not load settings for automaton of type {automaton_type}!",
                               f"Settings for {automaton_type}-automaton could not be cached due to it being not loaded!",
-                              True)
+                             True)
             return None
 
         return self._loaded_settings[automaton_type]
 
     def add_settings(self, settings: BaseSettings, override: bool = False) -> None:
         if not all(iter(settings)):
-            ErrorCache().error("Could not load settings due to fields being unfilled!",
+            IOManager().error("Could not load settings due to fields being unfilled!",
                                f"Affected Settings: {settings}", True)
             return
         name: str = settings.module_name.lower()
@@ -113,7 +110,7 @@ if __name__ == '__main__':
     from extensions.dfa import DFASettings
     from extensions.tm import TmSettings
     from extensions.mealy import MealySettings
-    from core.modules.automaton.UIAutomaton import UiAutomaton
+    from automaton.UIAutomaton import UiAutomaton
 
     auto = UiAutomaton(None, None, None)
 

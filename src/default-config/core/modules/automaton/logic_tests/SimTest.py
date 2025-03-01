@@ -1,6 +1,6 @@
 import threading
-from core.modules.automaton.UiBridge import UiBridge
-from core.modules.automaton_loader import start
+from automaton.UiBridge import UiBridge
+from automaton_loader import start
 from time import sleep
 
 

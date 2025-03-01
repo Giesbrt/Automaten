@@ -1,11 +1,11 @@
 from returns import result as _result
 from aplustools.io import ActLogger
 
-from core.modules.automaton.automatonBridge import AutomatonBridge
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from core.modules.automaton.automatonProvider import AutomatonProvider
+from automaton.automatonBridge import AutomatonBridge
+from automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.automatonProvider import AutomatonProvider
 
-from utils.errorCache import ErrorCache
+from utils.IOManager import IOManager
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -39,7 +39,7 @@ class AutomatonSimulator:
 
         if self.automaton.automaton_impl is None:
             log_message: str = "Failed to simulate automaton due to a failed initialisation"
-            ErrorCache().error(log_message, "", True)
+            IOManager().error(log_message, "", True)
             return _result.Failure(log_message)
 
         self.automaton.set_input(automaton_input)

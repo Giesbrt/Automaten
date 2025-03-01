@@ -1,5 +1,5 @@
-from core.modules.serializer import serialize, deserialize
-from core.modules.automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
+from serializer import serialize, deserialize
+from automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 from PySide6.QtGui import QColor
 from pprint import pprint
 

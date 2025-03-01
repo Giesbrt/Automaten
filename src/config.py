@@ -80,6 +80,7 @@ def _configure() -> dict[str, str]:
     for dir_to_create in dirs_to_create:
         _os.makedirs(dir_to_create, exist_ok=True)
     _sys.path.insert(0, _os.path.join(base_app_dir, "core", "libs"))
+    _sys.path.insert(0, _os.path.join(base_app_dir, "core", "modules"))
     _sys.path.insert(0, base_app_dir)  # To bug-fix some problem, I think with std libs
 
     for dirpath, dirnames, filenames in _os.walk(install_dir):

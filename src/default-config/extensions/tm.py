@@ -10,10 +10,10 @@ import typing as _ty
 import types as _ts
 #sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 # Abstract Machine related imports
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from core.modules.automaton.base.state import State as BaseState
-from core.modules.automaton.base.transition import Transition as BaseTransition
-from core.modules.automaton.base.settings import Settings as BaseSettings
+from automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.base.state import State as BaseState
+from automaton.base.transition import Transition as BaseTransition
+from automaton.base.settings import Settings as BaseSettings
 # Comments generated with Chat-GPT
 
 class TmSettings(BaseSettings):

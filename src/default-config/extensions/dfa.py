@@ -6,12 +6,12 @@ from aplustools.io import ActLogger
 import typing as _ty
 
 # Abstract Machine related imports
-from core.modules.automaton.base.state import State as BaseState
-from core.modules.automaton.base.transition import Transition as BaseTransition
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from core.modules.automaton.base.settings import Settings as BaseSettings
+from automaton.base.state import State as BaseState
+from automaton.base.transition import Transition as BaseTransition
+from automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.base.settings import Settings as BaseSettings
 
-from core.modules.automaton.base.state import State
+from automaton.base.state import State
 
 
 # Docs generated with Chat-GPT

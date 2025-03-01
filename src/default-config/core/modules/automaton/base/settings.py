@@ -1,4 +1,4 @@
-from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput, QAutomatonTokenIO
+from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput, QAutomatonTokenIO
 
 # Standard typing imports for aps
 import collections.abc as _a

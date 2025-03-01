@@ -3,9 +3,9 @@
 import returns.result as _result
 
 # Abstract Machine related imports
-from core.modules.automaton.base.state import State
-from core.modules.automaton.base.transition import Transition
-from core.modules.automaton.base.automaton import Automaton
+from automaton.base.state import State
+from automaton.base.transition import Transition
+from automaton.base.automaton import Automaton
 
 from utils.OrderedSet import OrderedSet
 

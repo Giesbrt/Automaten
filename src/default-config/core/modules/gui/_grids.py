@@ -6,8 +6,8 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWid
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QPen, QCursor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 
-# from core.modules.automaton.base.transition import Transition
-# from core.modules.automaton.base.state import State
+# from automaton.base.transition import Transition
+# from automaton.base.state import State
 
 # from ._grid_items import StateGraphicsItem, StateItem, LabelGraphicsItem, StateConnectionGraphicsItem, TempTransitionItem, Transition, TransitionFunction, \
 #     TokenListFrame, TokenButtonFrame, TokenButton
@@ -15,14 +15,12 @@ from ._new_grid_items import StateItem, TransitionItem
 from ._graphic_items import TransitionFunction, TokenListFrame, TokenButtonFrame, TokenButton, StateGraphicsItem, StateConnectionGraphicsItem, LabelGraphicsItem, TransitionGraphicsItem
 from ._graphic_support_items import TempTransitionItem
 from ._panels import UserPanel
-from ..signal_bus import SignalBus, SingletonObserver
-from ..automaton.UIAutomaton import UiState, UiTransition
+from automaton.UIAutomaton import UiState, UiTransition
 
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-
 
 
 class StaticGridView(QGraphicsView):
@@ -76,30 +74,12 @@ class StaticGridView(QGraphicsView):
         raise NotImplementedError
 
 
-class XGraphicsItem(QGraphicsRectItem):
-    def __init__(self, x, y, width, height):
-        super().__init__(x, y, width, height)
-        self.setPen(QPen(Qt.black, 2))
-
-    def paint(self, painter: QPainter, option, widget=None):
-        painter.setRenderHint(QPainter.Antialiasing)
-        pen = self.pen()
-        painter.setPen(pen)
-
-        if self.brush().style() != Qt.NoBrush:
-            painter.fillRect(self.rect(), self.brush())
-
-        # Draw the X
-        painter.drawLine(self.rect().topLeft(), self.rect().bottomRight())
-        painter.drawLine(self.rect().topRight(), self.rect().bottomLeft())
-
-
 class InteractiveGridView(StaticGridView):
     """Represents an interactable GridView, it creates its own scene"""
 
     MAX_TOTAL_UPDATE_FPS: int = 15
 
-    def __init__(self, grid_size: int = 100, scene_rect: tuple[int, int, int, int] = (-10_000, -10_000, 20_000, 20_000),
+    def __init__(self, grid_size: int = 1000, scene_rect: tuple[int, int, int, int] = (-10_000, -10_000, 20_000, 20_000),
                  starting_zoom_level: float = 1.0, zoom_step: float = 0.05, min_zoom: float = 0.1, max_zoom: float = 2.0,
                  parent: QWidget | None = None) -> None:
         super().__init__(grid_size, None, parent)
@@ -107,12 +87,6 @@ class InteractiveGridView(StaticGridView):
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
         self.setScene(QGraphicsScene(self))
         self.scene().setSceneRect(QRect(*scene_rect))
-
-        # Center object (input)
-        center_rect: XGraphicsItem = XGraphicsItem(0, 0, self.grid_size, self.grid_size)
-        center_rect.setBrush(QColor('black'))
-        center_rect.setPen(QPen(Qt.GlobalColor.red, 2))
-        self.scene().addItem(center_rect)
 
         # Zoom parameters
         self.zoom_step: float = zoom_step
@@ -298,10 +272,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self.singleton_observer.subscribe('is_loaded', self.load_automaton_from_file)
         self.singleton_observer.subscribe('token_lists', self.set_token_lists)
         self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
-
-    def update_singleton_observer(self):
-        del self.singleton_observer
-        self.singeleton_observer = SingletonObserver()
 
     def load_automaton_from_file(self, is_loaded):
         """Loads the UiAutomaton"""

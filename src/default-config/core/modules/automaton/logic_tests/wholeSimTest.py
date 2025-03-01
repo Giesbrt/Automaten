@@ -1,7 +1,7 @@
 import threading
-from core.modules.automaton.UiBridge import UiBridge
-from core.modules.automaton_loader import start
-from core.modules.automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
+from automaton.UiBridge import UiBridge
+from automaton_loader import start
+from automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 
 from utils.staticSignal import SignalCache, Signal
 from time import sleep

@@ -1,17 +1,17 @@
 """TBA"""
 
 from aplustools.io import ActLogger
-from utils.errorCache import ErrorCache
+from utils.IOManager import IOManager
 
 # Standard typing imports for aps
 import typing as _ty
 import types as _ts
 
 # Abstract Machine related
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from core.modules.automaton.base.state import State as BaseState
-from core.modules.automaton.base.transition import Transition as BaseTransition
-from core.modules.automaton.base.settings import Settings as BaseSettings
+from automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.base.state import State as BaseState
+from automaton.base.transition import Transition as BaseTransition
+from automaton.base.settings import Settings as BaseSettings
 
 from extensions.dfa import DFAState, DFATransition, DFAAutomaton, DFASettings
 
@@ -66,7 +66,7 @@ class AutomatonProvider:
                                                transition is not None, settings is not None]
 
             if not all(integrity_check):
-                ErrorCache().error(f"Failed to load {key}-automaton!",
+                IOManager().error(f"Failed to load {key}-automaton!",
                                    f"Could not load {key}-Automaton due to a class mismatching!\n "
                                    f"{automaton}, {state}, {transition}, {settings}", True)
                 return

@@ -125,8 +125,8 @@ class SmartTextEdit(QTextEdit):
 
 
 class QAutomatonInputOutput(QFrame):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent=parent)
 
     def reset(self) -> None:
         raise NotImplementedError
@@ -140,10 +140,13 @@ class QAutomatonInputOutput(QFrame):
     def set_input_tokens(self, tokens: list[str]) -> None:
         raise NotImplementedError
 
+    def sizeHint(self) -> QSize:
+        raise NotImplementedError
+
 
 class QAutomatonTokenIO(QAutomatonInputOutput):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent=parent)
         # Class Vars
         self._regulated_separators: list[str] = []
         self._separators: list[str] = [",", ":", ";", " ", ":", "|", "/", "\\"]
@@ -435,3 +438,6 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
             self.display_text_error()
         else:
             self._hide_text_error()
+
+    def sizeHint(self) -> QSize:
+        return self.layout().sizeHint()

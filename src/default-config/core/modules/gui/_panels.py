@@ -1,17 +1,17 @@
 """Panels of the gui"""
+from PyQt5.QtWidgets import QScrollBar
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
                                QFormLayout, QLineEdit,
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QHBoxLayout, QColorDialog, QComboBox, QMenu)
 from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QEvent, Signal, QParallelAnimationGroup, QTimer
 from PySide6.QtGui import QColor, QIcon, QPen, QAction
-from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
+from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
-from utils.errorCache import ErrorCache
+from utils.IOManager import IOManager
 from ._grid_items import StateItem
-from ..signal_bus import SingletonObserver
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -219,7 +219,7 @@ class ControlMenu(QFrame):
             self.token_lists[0].append(token)
             self.singleton_observer.set('token_lists', self.token_lists)
         else:
-            ErrorCache().warning('No whitespace or special characters allowed!', '', True, False)
+            IOManager().warning('No whitespace or special characters allowed!', '', True, False)
 
     def remove_token(self, token, token_index: int = None):
         self.token_list_box.removeItem(token_index)
@@ -243,71 +243,95 @@ class ControlMenu(QFrame):
 
 class UserPanel(Panel):
     """The main panel to be shown"""
-
-    def __init__(self, automaton_type: str, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         from ._grids import AutomatonInteractiveGridView
-        self.setLayout(QNoSpacingBoxLayout(QBoxDirection.TopToBottom))
-
-        # self.token_list: _ty.List[str] = ['Apfel', 'Birne', 'Orange', 'Blaubeere', 'Aubergine', 'Erdbeere']
+        main_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=self)
 
         self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
-        self.layout().addWidget(self.grid_view)
+        main_layout.addWidget(self.grid_view)
 
-        # Menu Button
-        self.menu_button = QPushButton(self)
-        self.menu_button.setFixedSize(40, 40)
+        # Info Menu
+        self.info_menu_button = QPushButton(self)
+        self.info_menu_button.setFixedSize(40, 40)
+        self.info_menu = QFrame(self)
+        self.info_menu.setFrameShape(QFrame.Shape.StyledPanel)
+        self.info_menu.setAutoFillBackground(True)
+        self.info_menu_animation = QPropertyAnimation(self.info_menu, b'geometry')
+        self.info_menu_animation.setDuration(500)
 
-        # Settings button
-        # self.settings_button = QPushButton(self)
-        # self.settings_button.setFixedSize(40, 40)
-
-        # input_widget
+        # Input/Output
+        self.input_frame: QFrame = QFrame(self)
+        self.input_frame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.input_frame_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom)
+        self.input_frame.setLayout(self.input_frame_layout)
         self.input_widget: QAutomatonInputOutput | None = None
+        top_layout = QQuickBoxLayout(QBoxDirection.RightToLeft)
+        self.hide_button = QPushButton("Show Input/Output")
+        top_layout.addWidget(self.hide_button)
+        self.input_frame_layout.addLayout(top_layout)
 
         # Control Menu
         self.control_menu = ControlMenu(self.grid_view, self)
-        # Animation for Control Menu
         self.control_menu_animation = QPropertyAnimation(self.control_menu, b'geometry')
         self.control_menu_animation.setDuration(500)
 
-        # Side Menu
-        self.side_menu = QFrame(self)
-        self.side_menu.setFrameShape(QFrame.Shape.StyledPanel)
-        self.side_menu.setAutoFillBackground(True)
-        # Animation for Side Menu
-        self.side_menu_animation = QPropertyAnimation(self.side_menu, b'geometry')
-        self.side_menu_animation.setDuration(500)
-
         # Condition Edit Menu
         self.state_menu = StateMenu(self)
-        self.state_menu.setGeometry(self.parent().width(), 0, 300, self.height())
-        # Animation for Condition Edit Menu
         self.state_menu_animation = QPropertyAnimation(self.state_menu, b'geometry')
         self.state_menu_animation.setDuration(500)
 
         # Connect signals
-        self.side_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
-        self.menu_button.clicked.connect(self.toggle_side_menu)  # Menu
+        self.info_menu_animation.valueChanged.connect(self.side_menu_animation_value_changed)  # Menu
+        self.info_menu_button.clicked.connect(self.toggle_side_menu)  # Menu
+        self.hide_button.clicked.connect(self.toggle_hide_input)
+
         # TODO: SETTINGS
         # - Automaton loader settings
 
-    def position_input_widget(self, input_widget: QAutomatonInputOutput):
-        self.input_widget = input_widget
-        if True:  # Disabled
+    def setShowScrollbars(self, flag: bool) -> None:
+        if flag:
+            policy = Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        else:
+            policy = Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        self.grid_view.setVerticalScrollBarPolicy(policy)
+        self.grid_view.setHorizontalScrollBarPolicy(policy)
+
+    def setAutoShowInfoMenu(self, flag: bool) -> None:
+        self.auto_show_info_menu = flag
+
+    #def setStartingZoomLevel(self):
+
+    def toggle_hide_input(self):
+        if self.input_widget is None:
             return
-        print(input_widget.x(), input_widget.y(), input_widget.width(), input_widget.height())
+        if self.input_widget.isVisible():
+            self.input_widget.hide()
+            self.input_frame.setFixedHeight(self.hide_button.height() + 20)
+            self.hide_button.setText("Show Input/Output")
+        else:
+            self.input_widget.show()
+            self.input_frame.setFixedHeight(self.input_widget.sizeHint().height() + self.hide_button.height())
+            self.hide_button.setText("Hide Input/Output")
 
-        x = 100
-        y = 50
-        width = 200
-        height = 100
+    def position_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput]):
+        self.input_widget = input_widget(parent=self)
+        self.input_frame.layout().addWidget(self.input_widget)
+        #self.input_widget.raise_()
+        #if True:  # Disabled
+        #    return
+        # print(input_widget.x(), input_widget.y(), input_widget.width(), input_widget.height())
 
-        # Ändere die Geometrie des Widgets
-        input_widget.setGeometry(x, y, width, height)
-        print(input_widget.x(), input_widget.y(), input_widget.width(), input_widget.height())
-        self.layout().addWidget(input_widget)
-        input_widget.repaint()
+        # width = 200
+        # height = 100
+        # x = self.width() - width
+        # y = self.height()
+        #
+        # # Ändere die Geometrie des Widgets
+        # self.input_widget.setGeometry(x, y, width, height)
+        # print(self.input_widget.x(), self.input_widget.y(), self.input_widget.width(), self.input_widget.height())
+        # self.layout().addWidget(input_widget)
+        # input_widget.repaint()
 
 
     def set_token_list(self, token_list: _ty.List[str]):
@@ -318,8 +342,8 @@ class UserPanel(Panel):
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:
-            preset_value = self.side_menu.x()
-        self.menu_button.move(preset_value + self.side_menu.width(), 20)
+            preset_value = self.info_menu.x()
+        self.info_menu_button.move(preset_value + self.info_menu.width(), 20)
 
     def side_menu_animation_value_changed(self, value: QRect):
         self.update_menu_button_position(value.x())
@@ -328,19 +352,20 @@ class UserPanel(Panel):
         width = max(200, int(self.width() / 4))
         height = self.height()
 
-        if self.side_menu.x() < 0:
+        if self.info_menu.x() < 0:
             start_value = QRect(-width, 0, width, height)
-            end_value = QRect(0, 0, width, height)
+            end_value = QRect(1, 0, width, height)
         else:
-            start_value = QRect(0, 0, width, height)
+            start_value = QRect(1, 0, width, height)
             end_value = QRect(-width, 0, width, height)
 
-        self.side_menu_animation.setStartValue(start_value)
-        self.side_menu_animation.setEndValue(end_value)
-        self.side_menu_animation.start()
+        self.info_menu_animation.setStartValue(start_value)
+        self.info_menu_animation.setEndValue(end_value)
+        self.info_menu_animation.start()
 
     def toggle_condition_edit_menu(self, to_state: bool) -> None:
-        width = max(200, int(self.width() / 4))
+        width = min(300, int(self.width() / 4))
+        print("WIDTH", width)
         height = self.height()
         c_menu_width = self.control_menu.width()
         c_menu_height = self.control_menu.height()
@@ -349,15 +374,15 @@ class UserPanel(Panel):
         if to_state:
             state_start = QRect(self.width(), 0, width, height)
             state_end = QRect(self.width() - width, 0, width, height)
-            control_start = QRect(self.width() - c_menu_width - 10, 10, c_menu_width, c_menu_height)
-            control_end = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width,
+            control_start = QRect(self.width() - width - 10, 10, width, c_menu_height)
+            control_end = QRect(self.width() - width - self.state_menu.width() - 10, 10, width,
                                 c_menu_height)
         else:
             state_start = QRect(self.width() - width, 0, width, height)
             state_end = QRect(self.width(), 0, width, height)
-            control_start = QRect(self.width() - c_menu_width - self.state_menu.width() - 10, 10, c_menu_width,
+            control_start = QRect(self.width() - width - self.state_menu.width() - 10, 10, width,
                                   c_menu_height)
-            control_end = QRect(self.width() - c_menu_width - 10, 10, c_menu_width, c_menu_height)
+            control_end = QRect(self.width() - width - 10, 10, width, c_menu_height)
 
         self.state_menu_animation.setStartValue(state_start)
         self.state_menu_animation.setEndValue(state_end)
@@ -373,21 +398,35 @@ class UserPanel(Panel):
     def resizeEvent(self, event):
         height = self.height()
         width = max(200, int(self.width() / 4))
-        if self.side_menu.x() < 0:
-            self.side_menu.setGeometry(-width, 0, width, height)
-            self.menu_button.move(width + 40, 20)  # Update the position of the menu button
+        # self.state_menu.setGeometry(self.width(), 0, 300, self.height())
+
+        if self.input_widget is not None:
+            # Ändere die Geometrie des Widgets
+            width = max(200, min(300, int(self.width() / 4)))
+            self.input_frame.setGeometry(self.width() - width - 15, self.control_menu.height() + 10, width, self.input_widget.sizeHint().height() + self.hide_button.height())
+            self.control_menu.setFixedWidth(width)
         else:
-            self.side_menu.setGeometry(0, 0, width, height)
-            self.menu_button.move(40, 20)  # Update the position of the menu button
+            self.input_frame.setGeometry(self.width() - width - 15, self.control_menu.height() + 10, width, self.hide_button.height() + 20)
+
+        if self.info_menu.x() == 0 and not self.auto_show_info_menu:
+            self.info_menu.setGeometry(-width, 0, width, height)
+            self.info_menu_button.move(width + 40, 20)  # Update the position of the menu button
+
+        if self.info_menu.x() < 0:
+            self.info_menu.setGeometry(-width, 0, width, height)
+            self.info_menu_button.move(width + 40, 20)  # Update the position of the menu button
+        else:
+            self.info_menu.setGeometry(1, 0, width, height)
+            self.info_menu_button.move(40, 20)  # Update the position of the menu button
         if self.state_menu.visible:
             self.state_menu.setGeometry(self.width() - width, 0, width, height)
         else:
             self.state_menu.setGeometry(self.width(), 0, width, height)
         if self.state_menu.visible:
-            self.control_menu.setGeometry(self.width() - self.control_menu.width() - self.state_menu.width() - 20, 20,
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - self.state_menu.width() - 20, 5,
                                           self.control_menu.width(), self.control_menu.height())
         else:
-            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 10, 10, self.control_menu.width(),
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 15, 5, self.control_menu.width(),
                                           self.control_menu.height())
         self.update_menu_button_position()
         # self.settings_button.move(self.width() - 60, 100)

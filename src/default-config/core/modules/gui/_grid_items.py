@@ -14,8 +14,8 @@ import typing as _ty
 import types as _ts
 import numpy as np
 
-from core.modules.automaton.UIAutomaton import UiState, UiTransition
-from core.modules.painter import StrToPainter, PainterStr, PainterToStr, PainterColor
+from automaton.UIAutomaton import UiState, UiTransition
+from painter import StrToPainter, PainterStr, PainterToStr, PainterColor
 
 
 class LabelGraphicsItem(QGraphicsTextItem):

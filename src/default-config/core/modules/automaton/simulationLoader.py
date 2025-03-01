@@ -2,20 +2,16 @@
 from returns import result as _result
 
 # Abstract Machine related imports
-from core.modules.automaton.automatonSimulator import AutomatonSimulator
-from core.modules.automaton.UiBridge import UiBridge
+from automaton.automatonSimulator import AutomatonSimulator
+from automaton.UiBridge import UiBridge
 
-from queue import Queue
+from abstractions import IAppSettings
 
 from aplustools.io import ActLogger
-from core.modules.storage import JSONAppStorage
-from utils.errorCache import ErrorCache
+from utils.IOManager import IOManager
 
 # Standard typing imports for aps
-import collections.abc as _a
-import abc as _abc
 import typing as _ty
-import types as _ts
 import traceback
 
 
@@ -24,10 +20,9 @@ import traceback
 
 class SimulationLoader:
 
-    def __init__(self, json_app_storage: JSONAppStorage):
+    def __init__(self, app_settings: IAppSettings):
         super().__init__()
-        # App storage access
-        self._app_storage: JSONAppStorage = json_app_storage
+        self._app_storage: IAppSettings = app_settings
 
         self._bridge: UiBridge = UiBridge()
 
@@ -41,7 +36,7 @@ class SimulationLoader:
 
         # check if simulation result packet is send
         if "type" not in item:
-            ErrorCache().debug("Simulation tried to push malformed simulation-packet to bridge", "", True)
+            IOManager().debug("Simulation tried to push malformed simulation-packet to bridge", "", True)
             return
 
         self._bridge.add_simulation_item(item)
@@ -70,7 +65,7 @@ class SimulationLoader:
                 if clear_queue not in bridge_queue_callables:
                     ActLogger().debug(
                         f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge (CLEAR)")
-                    ErrorCache().debug(f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge "
+                    IOManager().debug(f"Failed to recognise {clear_queue} queue whilst trying to push error to bridge "
                                       f"(CLEAR)", "", True)
                     return
                 bridge_queue_callables[clear_queue][1]()  # Invoke the clear method
@@ -78,7 +73,7 @@ class SimulationLoader:
         # push error to queue
         if error_queue not in bridge_queue_callables:
             ActLogger().debug(f"Failed to recognise {error_queue} queue whilst trying to push error to bridge (PUSH)")
-            ErrorCache().debug(f"Failed to recognise {error_queue} queue whilst trying to push error to bridge (PUSH)",
+            IOManager().debug(f"Failed to recognise {error_queue} queue whilst trying to push error to bridge (PUSH)",
                               "", True)
             return
 

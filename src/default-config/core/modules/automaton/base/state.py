@@ -11,7 +11,7 @@ import types as _ts
 
 # Abstract Machine related imports
 if _ty.TYPE_CHECKING:
-    from core.modules.automaton.base.transition import Transition
+    from automaton.base.transition import Transition
 
 
 # Docs generated with Chat-GPT

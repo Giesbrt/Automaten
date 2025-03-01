@@ -12,7 +12,7 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 
-from ..automaton.UIAutomaton import UiState, UiTransition
+from automaton.UIAutomaton import UiState, UiTransition
 
 
 class StateItem(QGraphicsItemGroup):

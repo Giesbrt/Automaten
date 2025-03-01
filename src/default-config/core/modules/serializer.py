@@ -1,7 +1,7 @@
 """TBA"""
 
-from core.modules.abstract import IUiState, IUiTransition, IUiAutomaton  # Many thanks :)
-from core.modules.automaton.UIAutomaton import UiAutomaton, UiState, UiTransition  # Don't know how to do without this
+from abstractions import IUiState, IUiTransition, IUiAutomaton  # Many thanks :)
+from automaton.UIAutomaton import UiAutomaton, UiState, UiTransition  # Don't know how to do without this
 
 from queue import Queue
 from io import BytesIO, StringIO
@@ -16,8 +16,6 @@ from aplustools.data.bintools import (get_variable_bytes_like, encode_float, enc
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
-import types as _ts
-
 
 DCGDictT = dict[str, str  # name, author, custom_python
                      | list[list[str]]  # token_lsts
@@ -381,7 +379,7 @@ def _deserialize_from_binary(bytes_like: bytes) -> DCGDictT:
 
 
 def deserialize(automaton: IUiAutomaton, bytes_like: bytes,
-                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> tuple[IUiAutomaton, str]:
+                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> str:
     """TBA"""
     dcg_dict: DCGDictT = {"json": _deserialize_from_json,
                           "yaml": _deserialize_from_yaml,
@@ -404,7 +402,7 @@ def deserialize(automaton: IUiAutomaton, bytes_like: bytes,
         for i in dcg_dict["abs_transition_idxs"]  # type: ignore
     ]
 
-    automaton.set_name(name)
+    automaton.set_automaton_type(name)
     automaton.set_author(author)
     automaton.set_state_types_with_design(types)
     automaton.set_token_lists(token_lsts)
@@ -441,7 +439,7 @@ def deserialize(automaton: IUiAutomaton, bytes_like: bytes,
              for i, j in zip(abs_transition_idxs, transition_pattern)]
         )
         automaton.add_transition(transition_obj)
-    return automaton, custom_python
+    return custom_python
 
 
 if __name__ == "__main__":

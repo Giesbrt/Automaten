@@ -1,4 +1,4 @@
-from core.modules.automaton.automatonSimulator import AutomatonSimulator
+from automaton.automatonSimulator import AutomatonSimulator
 from returns import result as _result
 
 # Standard typing imports for aps

@@ -3,27 +3,21 @@ from PySide6.QtGui import QColor
 
 from returns import result as _result
 
-from core.modules.signal_bus import SignalBus, SingletonObserver
 # Bridge Import
-from core.modules.automaton.UiBridge import UiBridge
-from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
+from automaton.UiBridge import UiBridge
+from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 # abstract imports
-from core.modules.abstract import IUiState
-from core.modules.abstract import IUiTransition
-from core.modules.abstract import IUiAutomaton
+from abstractions import IUiState, IUiTransition, IUiAutomaton
 
 from aplustools.io.env import auto_repr_with_privates
 from aplustools.io import ActLogger
 from utils.OrderedSet import OrderedSet
-from utils.errorCache import ErrorCache, ErrorSeverity
+from utils.IOManager import IOManager
 from utils.staticSignal import Signal
 
 # Standard typing imports for aps
-import collections.abc as _a
-import abc as _abc
 import typing as _ty
-import types as _ts
 
 
 # Docs generated with Github Copilot
@@ -291,9 +285,9 @@ class UiAutomaton(IUiAutomaton):
                 # print(f'UiAutomaton: {method_name} -> {result}')
                 self.signal_bus.send_response.emit(method_name, result)
             else:
-                ErrorCache().warning(f'UiAutomaton: {method_name} is not a callable method!', '', True, True)
+                IOManager().warning(f'UiAutomaton: {method_name} is not a callable method!', '', True, True)
         else:
-            ErrorCache().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)
+            IOManager().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)
 
     def __del__(self):
         print("delete")
@@ -405,10 +399,10 @@ class UiAutomaton(IUiAutomaton):
 
         args: list = [formatted_error_type, message, True]
         if not success:
-            ErrorCache().error(*args)
+            IOManager().error(*args)
             return
 
-        ErrorCache().info(*args)
+        IOManager().info(*args)
 
     def get_state_by_id(self, state_id: int) -> UiState:
         """Gets a state by its id.
@@ -489,7 +483,7 @@ class UiAutomaton(IUiAutomaton):
         if not structure["content"]:
             log_message: str = "No structure found for simulation!"
             ActLogger().error(log_message)
-            ErrorCache().info(log_message, "Can not simulate an automaton without any contents", True, False)
+            IOManager().info(log_message, "Can not simulate an automaton without any contents", True, False)
             return _result.Failure(log_message)
 
         # send to bridge
@@ -525,7 +519,7 @@ class UiAutomaton(IUiAutomaton):
 
         if simulation_task["type"].upper() != "SIMULATION_UPDATE":
             if simulation_task["type"].upper() != "SIMULATION_RESULT":
-                ErrorCache().warn(
+                IOManager().warn(
                     f"Could not recognise simulation packet with header: {simulation_task["type"].upper()}", "")
                 return
 
@@ -545,9 +539,9 @@ class UiAutomaton(IUiAutomaton):
 
             state: UiState = self.get_state_by_id(state_index)
             if state is None:
-                ErrorCache().error("Failure occurred while deserialisating of simulation results",
+                IOManager().error("Failure occurred while deserialisating of simulation results",
                                    f"State with index {state_index} not found.",
-                                   True, False)
+                                  True, False)
                 return _result.Failure(f"State with index {state_index} not found.")
             state._activate()
             self.set_active_state(state)
@@ -559,9 +553,9 @@ class UiAutomaton(IUiAutomaton):
 
             transition: UiTransition = self.get_transition_by_id(transition_index)
             if transition is None:
-                ErrorCache().error("Failure occurred while deserialisating of simulation results",
+                IOManager().error("Failure occurred while deserialisating of simulation results",
                                    f"Transition with index {transition_index} not found.",
-                                   True, False)
+                                  True, False)
                 return _result.Failure(f"Transition with index {transition_index} not found.")
             transition._activate()
             self.set_active_transition(transition)

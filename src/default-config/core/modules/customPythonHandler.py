@@ -1,7 +1,7 @@
 from returns import result as _result
 from os import path
 from aplustools.io.fileio import os_open
-from utils.errorCache import ErrorCache, ErrorSeverity
+from utils.IOManager import IOManager
 from traceback import format_exc
 
 # Standard typing imports for aps
@@ -35,8 +35,8 @@ class CustomPythonHandler:
             with os_open(extensions_path, "wb") as f:
                 f.write(custom_python.encode())
         except Exception as e:
-            ErrorCache().error("An error occurred whilst trying to load a custom python extension",
-                               format_exc(), True, ErrorSeverity.FATAL)
+            IOManager().error("An error occurred whilst trying to load a custom python extension",
+                              format_exc(), True, ErrorSeverity.FATAL)
             return _result.Failure(f"An error occurred whilst trying to load a custom python extension {str(e)}!")
         return _result.Success("File successfully created!")
 
@@ -54,8 +54,8 @@ class CustomPythonHandler:
                 file_content: bytes = f.read()
 
         except Exception as e:
-            ErrorCache().error("An error occurred whilst trying to load a custom python extension",
-                               format_exc(), True)
+            IOManager().error("An error occurred whilst trying to load a custom python extension",
+                              format_exc(), True)
             return ""
 
         if not file_content:

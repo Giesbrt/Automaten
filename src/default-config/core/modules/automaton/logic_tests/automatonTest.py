@@ -1,5 +1,5 @@
-from core.modules.automaton.UiBridge import UiBridge
-from core.modules.automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
+from automaton.UiBridge import UiBridge
+from automaton.UIAutomaton import UiAutomaton, UiState, UiTransition
 from pprint import pprint
 
 states_with_design: dict = {"end": "Circle: ((180.0, 180.0), 162.0), 2##000000;",

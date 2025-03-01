@@ -1,8 +1,6 @@
 """TBA"""
-from typing import Any, Callable
 
 import config
-import core.modules.serializer  # So we know the backend still works
 
 # Standard imports
 from pathlib import Path as PLPath
@@ -17,7 +15,7 @@ import os
 import re
 
 # Third party imports
-from PySide6.QtWidgets import QApplication, QCheckBox, QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QIcon, QDesktopServices
 from PySide6.QtGui import (QCloseEvent, QResizeEvent, QMoveEvent, QFocusEvent, QKeyEvent, QMouseEvent,
@@ -28,7 +26,6 @@ from PySide6.QtCore import QEvent, QTimerEvent
 
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType
 from aplustools.io import ActLogger
-from aplustools.package.timid import TimidTimer
 from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 
 from packaging.version import Version, InvalidVersion
@@ -38,14 +35,12 @@ import requests
 # Core imports (dynamically resolved)
 from core.modules.storage import MultiUserDBStorage, JSONAppStorage
 from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
-from core.modules.abstract import IMainWindow, IBackend
+from abstractions import IMainWindow, IBackend
 from core.modules.automaton_loader import start
-from core.modules.automaton.UiBridge import UiBridge
 
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
-import types as _ts
 
 hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()

@@ -8,16 +8,12 @@ from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QPara
 
 from aplustools.io.qtquick import QQuickMessageBox
 
-from utils.errorCache import ErrorCache
-from ..abstract import IMainWindow
-from ..signal_bus import SingletonObserver
-from ._panels import Panel, UserPanel, SettingsPanel
+from abstractions import IMainWindow
+from ._panels import UserPanel, SettingsPanel
 
 # Standard typing imports for aps
 import re as _re
-import collections.abc as _a
 import typing as _ty
-import types as _ts
 
 
 class AutomatonSelectionDialog(QDialog):
@@ -80,7 +76,7 @@ class MainWindow(QMainWindow, IMainWindow):
     def setup_gui(self) -> None:
         self.settings_button = QPushButton(parent=self)
         self.menu_bar = self.menuBar()
-        self.user_panel = UserPanel(self.automaton_type, parent=self)
+        self.user_panel = UserPanel(parent=self)
         self.settings_panel = SettingsPanel(parent=self)
         # import time
         # time.sleep(10)
@@ -219,6 +215,7 @@ class MainWindow(QMainWindow, IMainWindow):
             self, "Open File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au);;All Files (*)"
         )
         if self.file_path:
+            self.user_panel.grid_view.empty_scene()
             self.open_file_signal.emit(self.file_path)
             QMessageBox.information(self, "File Opened", f"You opened: {self.file_path}")
 

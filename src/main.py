@@ -190,9 +190,7 @@ class App:
 
 
             # Automaton backend init
-            # self.singleton_observer = SingletonObserver()
-            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {}) # Placeholder
-            # self.singleton_observer.set('is_loaded', False)
+            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
             if input_path != "":
                 success: bool = self.load_file(input_path)
                 if not success:
@@ -229,7 +227,7 @@ class App:
             self.backend_stop_event: threading.Event = threading.Event()
             self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                      args=(self.backend_stop_event,))
-            # self.backend_thread.start()
+            self.backend_thread.start()
 
             print(6)
 

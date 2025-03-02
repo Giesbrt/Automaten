@@ -80,7 +80,6 @@ class SimulationLoader:
         bridge_queue_callables[error_queue][0]()
 
     def handle_bridge(self) -> None:
-        return
         """Handle the bridge requests
         
         :return: None

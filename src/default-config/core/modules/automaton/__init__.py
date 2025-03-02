@@ -1,6 +1,7 @@
 """TBA"""
 # Std Lib imports
 import threading
+import time
 
 # Third party imports
 
@@ -26,6 +27,7 @@ class _Backend(IBackend):
             raise RuntimeError("Backend start function has not been called yet")
         simulation_loader: SimulationLoader = SimulationLoader(settings)
         while not backend_stop_event.is_set():
+            time.sleep(0.1)
             simulation_loader.handle_bridge()
 
     def __new__(cls, *args, **kwargs) -> _ty.Self:

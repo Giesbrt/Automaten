@@ -8,6 +8,9 @@ QWidget {
     font-size: 14px;
     border: 1px solid #FFFFFF;
 }
+QWidget:disabled {
+    background-color: rgb(127, 127, 127);
+}
 
 /* Buttons */
 QPushButton {

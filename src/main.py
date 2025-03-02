@@ -113,7 +113,9 @@ class AppSettings(IAppSettings):
             "default_state_background_color": "#FFFFFFFF",
             "hide_scrollbars": "True"
         })
-        # self._settings.set_default_settings("performance", "")
+        self._settings.set_default_settings("performance", {
+            "option": "True"
+        })
         self._settings.set_default_settings("security", {
             "warn_of_new_plugins": "True",
             "run_plugin_in_separate_process": "False",
@@ -128,10 +130,6 @@ class AppSettings(IAppSettings):
             "max_timer_tick_handled_events": "5",
             "logging_mode": "DEBUG" if config.INDEV else "INFO",
         })
-        # Debugging:
-        # Developer Options:
-        #  - Load selected plugin from disk
-        #  -> Install plugins from e.g. Github for now no!
 
     def get_window_geometry(self) -> tuple[int, int, int, int]:
         return self._settings.retrieve("auto", "geometry", "tuple")  # type: ignore

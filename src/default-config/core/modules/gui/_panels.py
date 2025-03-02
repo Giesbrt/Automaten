@@ -13,7 +13,6 @@ from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxL
 
 from pyside import QFlowLayout
 from utils.IOManager import IOManager
-from ._grid_items import StateItem
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -36,7 +35,7 @@ class StateMenu(QFrame):
         # self.singleton_observer = SingletonObserver()
 
         self.visible: bool = False
-        self.state: StateItem | None = None
+        self.state: 'StateItem' | None = None
         self.token_list: _ty.List[str] | None = None
         self.selected_color: QColor = QColor(52, 152, 219)
 
@@ -104,8 +103,8 @@ class StateMenu(QFrame):
             if self.state is not None:
                 self.state.set_color(color)
 
-    def set_state(self, state: StateItem) -> None:
-        self.state: StateItem = state
+    def set_state(self, state: 'StateItem') -> None:
+        self.state: 'StateItem' = state
         self.set_parameters()
 
     def set_parameters(self):
@@ -125,8 +124,8 @@ class StateMenu(QFrame):
 
             # token_list = self.singleton_observer.get('token_lists')
             condition_edit: QComboBox = QComboBox()
-            condition_edit.addItems(token_list[0] if token_list else [])
-            condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
+            # condition_edit.addItems(token_list[0] if token_list else [])
+            # condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
 
             self.transitions_table.setItem(i, 0, target_item)
             self.transitions_table.setCellWidget(i, 1, condition_edit)

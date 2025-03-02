@@ -176,6 +176,9 @@ class HorizontalLayout(_DirectionalLayout):
         for child, size in zip(self._children, self._children_sizes):
             width = (size / total_size) * available_width
             if child:
-                child_rect = QRectF(x_offset, self._working_rect.y(), width, self._working_rect.height())
+                size = min(width, self._working_rect.height())
+                missing_x = (width - size) / 2
+                missing_y = (self._working_rect.height() - size) / 2
+                child_rect = QRectF(x_offset + missing_x, self._working_rect.y() + missing_y, size, size)
                 child.setRect(child_rect)
             x_offset += width + self._spacing

@@ -715,7 +715,10 @@ class SettingsPanel(Panel):
         self.state_bg_color_button.clicked.connect(self.open_color_dialog)
         rows.append(("Default state background: ", self.state_bg_color_button))
 
-        rows.append(("Hide scrollbars: ", QCheckBox()))
+        hide_scrollbars_checkbox = QCheckBox()
+        hide_scrollbars_checkbox.setChecked(self.settings.get_hide_scrollbars())
+        hide_scrollbars_checkbox.checkStateChanged.connect(lambda: (self.settings.set_hide_scrollbars(hide_scrollbars_checkbox.isChecked())))
+        rows.append(("Hide scrollbars: ", hide_scrollbars_checkbox))
 
         for name, widget in rows:
             frame = QFrame()
@@ -729,9 +732,9 @@ class SettingsPanel(Panel):
         return design_panel
 
     def open_color_dialog(self):
-        color: QColor = QColorDialog.getColor(initial=Qt.GlobalColor.white, parent=self, title="Choose a color")
+        color: QColor = QColorDialog.getColor(initial=QColor(self.settings.get_default_state_background_color()), parent=self, title="Choose a color")
         if color.isValid():
-            self.selected_color = color
+            self.settings.set_default_state_background_color(color.name(QColor.NameFormat.HexArgb))
 
     def create_performance_page(self) -> QWidget:
         performance_panel = QWidget()

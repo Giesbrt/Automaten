@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSp
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QHBoxLayout, QColorDialog, QComboBox, QMenu, QSpinBox, QDoubleSpinBox)
 from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QLocale, Signal, QParallelAnimationGroup, QTimer
-from PySide6.QtGui import QColor, QIcon, QPen, QKeySequence
+from PySide6.QtGui import QColor, QIcon, QPen, QKeySequence, QFont
 from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
@@ -652,24 +652,27 @@ class SettingsPanel(Panel):
 
         rows: list[tuple[str, QWidget | None]] = []
 
-        self.window_icon_set_dropdown = QComboBox()
-        base_icon_set_dir = os.path.join(os.getcwd(), "data", "assets", "app_icons")
+        window_icon_set_dropdown = QComboBox()
+        base_icon_set_dir = self.settings.get_window_icon_sets_path().replace(":", os.getcwd(), 1)
         for sub in os.listdir(base_icon_set_dir):
             subpath = os.path.join(base_icon_set_dir, sub)
             if os.path.isdir(subpath):
                 icon_path: str = os.path.join(subpath, "logo-nobg.png")
                 if os.path.exists(icon_path):
                     name: str = os.path.basename(subpath)
-                    self.window_icon_set_dropdown.addItem(QIcon(icon_path), name.title())
-                    if name == "shelline":
-                        self.window_icon_set_dropdown.setCurrentIndex(self.window_icon_set_dropdown.count() - 1)
-        rows.append(("Window Icon: ", self.window_icon_set_dropdown))
+                    window_icon_set_dropdown.addItem(QIcon(icon_path), name.replace("_", " ").title())
+                    if name == self.settings.get_window_icon_set():
+                        window_icon_set_dropdown.setCurrentIndex(window_icon_set_dropdown.count() - 1)
+        window_icon_set_dropdown.currentIndexChanged.connect(lambda: self.settings.set_window_icon_set(window_icon_set_dropdown.currentText().lower().replace(" ", "_")))
+        rows.append(("Window Icon: ", window_icon_set_dropdown))
 
-        self.window_title_template_edit = QLineEdit("E.F.S $version$version_add $title [INDEV]")
-        rows.append(("Window Title Template: ", self.window_title_template_edit))
+        window_title_template_edit = QLineEdit(self.settings.get_window_title_template())
+        window_title_template_edit.textChanged.connect(lambda: self.settings.set_window_title_template(window_title_template_edit.text()))
+        rows.append(("Window Title Template: ", window_title_template_edit))
 
-        self.font_edit = QFontComboBox()
-        rows.append(("Font: ", self.font_edit))
+        font_edit = QFontComboBox(currentFont=QFont(self.settings.get_font()))
+        font_edit.currentIndexChanged.connect(lambda: self.settings.set_font(font_edit.currentText()))
+        rows.append(("Font: ", font_edit))
 
         rows.append(("Theming: ", None))
         theming_frame = QFrame()
@@ -692,6 +695,21 @@ class SettingsPanel(Panel):
         dark_layout.addWidget(self.dark_style_dropdown, stretch=5)
         theming_layout.addLayout(dark_layout)
         rows.append(("", theming_frame))
+
+        for file in os.listdir(os.path.join(os.getcwd(), "data", "styling", "themes")):
+            if not file.endswith(".th"):
+                continue
+            author, name = file.removesuffix(".th").split("_", maxsplit=1)
+            self.light_theme_dropdown.addItem(f"{author}::{name}")
+            self.dark_theme_dropdown.addItem(f"{author}::{name}")
+
+        for file in os.listdir(os.path.join(os.getcwd(), "data", "styling", "styles")):
+            if not file.endswith(".st"):
+                continue
+            # TODO: How to identify the correct styles for the themes?
+            self.light_style_dropdown.addItem(file.removesuffix(".st"))
+            self.dark_style_dropdown.addItem(file.removesuffix(".st"))
+        # TODO: Get current light & dark theming from settings
 
         self.state_bg_color_button: QPushButton = QPushButton("Choose Color", self)
         self.state_bg_color_button.clicked.connect(self.open_color_dialog)

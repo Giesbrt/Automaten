@@ -6,12 +6,13 @@ from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSp
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QHBoxLayout, QColorDialog, QComboBox, QMenu, QSpinBox, QDoubleSpinBox)
 from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QLocale, Signal, QParallelAnimationGroup, QTimer
-from PySide6.QtGui import QColor, QIcon, QPen, QAction
+from PySide6.QtGui import QColor, QIcon, QPen, QKeySequence
 from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
 from pyside import QFlowLayout
+from storage import AppSettings
 from utils.IOManager import IOManager
 
 # Standard typing imports for aps
@@ -458,12 +459,55 @@ class LanguageDropdown(QComboBox):
             self.addItem(name, locale)
 
 
+class PresetSlider(QFrame):
+    preset_changed = Signal(str)
+
+    def __init__(self, presets: list[str], preset_values: dict[str, str], parent: QWidget | None = None) -> None:
+        super().__init__(parent=parent)
+        self._layout: QHBoxLayout = QHBoxLayout(self)
+        self._layout.setSpacing(2)
+        self._layout.setContentsMargins(5, 5, 5, 5)
+
+        self._preset_buttons: dict[str, QPushButton] = {}
+        self._presets: list[str] = presets
+        self._preset_values: dict[str, str] = preset_values
+        self._last_button: str | None = None
+
+        for i, preset in enumerate(self._presets):
+            btn = QPushButton(preset)
+            btn.setCheckable(True)
+            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            btn.setObjectName("preset_button")
+            btn.clicked.connect(lambda checked, p=preset: self._set_preset(p, True))
+            self._layout.addWidget(btn)
+            self._preset_buttons[preset] = btn
+
+    def _set_preset(self, preset: str, do_signal: bool) -> None:
+        if self._last_button is not None and self._last_button == preset:
+            self._preset_buttons[preset].setChecked(True)
+            return None
+        self._last_button = preset
+        for btn in self._preset_buttons.values():
+            btn.setChecked(False)
+        self._preset_buttons[preset].setChecked(True)
+
+        update_rate = self._preset_values[preset]
+        if not do_signal:
+            return None
+        self.preset_changed.emit(update_rate)
+
+    def set_preset(self, preset: str) -> None:
+        self._set_preset(preset, False)
+
+
 class SettingsPanel(Panel):
     """The settings panel"""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setLayout(QQuickBoxLayout(QBoxDirection.TopToBottom))
+
+        self.settings = AppSettings()
 
         # Main content layout
         main_content = QQuickBoxLayout(QBoxDirection.LeftToRight)
@@ -508,21 +552,29 @@ class SettingsPanel(Panel):
         sc_frame.addLayout(shortcuts_layout)
 
         shortcuts: dict[str, str] = {
-            "file_open": "Ctrl+O",
-            "file_save": "Ctrl+S",
-            "file_close": "Ctrl+Q",
-            "simulation_start": "Ctrl+G",
-            "simulation_step": "Ctrl+T",
-            "simulation_halt": "Ctrl+H",
-            "simulation_end": "Ctrl+Y",
-            "states_cut": "Ctrl+X",
-            "states_copy": "Ctrl+C",
-            "states_paste": "Ctrl+V",
+            "file_open": self.settings.get_file_open_shortcut(),
+            "file_save": self.settings.get_file_save_shortcut(),
+            "file_close": self.settings.get_file_close_shortcut(),
+            "simulation_start": self.settings.get_simulation_start_shortcut(),
+            "simulation_step": self.settings.get_simulation_step_shortcut(),
+            "simulation_halt": self.settings.get_simulation_halt_shortcut(),
+            "simulation_end": self.settings.get_simulation_end_shortcut(),
+            "states_cut": self.settings.get_states_cut_shortcut(),
+            "states_copy": self.settings.get_states_copy_shortcut(),
+            "states_paste": self.settings.get_states_paste_shortcut(),
         }
         shortcut_widgets: list[tuple[str, QKeySequenceEdit, QCheckBox]] = []
 
-        def _create_lambda(shortcut_key_sequence_edit):
-            return lambda: shortcut_key_sequence_edit.setEnabled(not shortcut_key_sequence_edit.isEnabled())
+        def _create_lambda(name: str, shortcut_key_sequence_edit: QKeySequenceEdit):
+            return lambda: (
+                shortcut_key_sequence_edit.setKeySequence(QKeySequence("")),
+                shortcut_key_sequence_edit.setEnabled(not shortcut_key_sequence_edit.isEnabled()),
+                getattr(self.settings, f"set_{name}_shortcut")("")
+            )
+        def _create_lambda_2(name: str, shortcut_key_sequence_edit: QKeySequenceEdit):
+            return lambda: (
+                getattr(self.settings, f"set_{name}_shortcut")(shortcut_key_sequence_edit.keySequence().toString())
+            )
 
         for name, current_shortcut in shortcuts.items():
             formatted_name = name.replace("_", " ").title()
@@ -530,11 +582,14 @@ class SettingsPanel(Panel):
             shortcut_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0),
                                               apply_layout_to=shortcut_frame)
             shortcut_layout.addWidget(QLabel(f"{formatted_name}: "))
-            shortcut_key_sequence_edit = QKeySequenceEdit(parent=self, maximumSequenceLength=1)
+            shortcut_key_sequence_edit = QKeySequenceEdit(QKeySequence(current_shortcut), parent=self, maximumSequenceLength=1)
+            shortcut_key_sequence_edit.editingFinished.connect(_create_lambda_2(name, shortcut_key_sequence_edit))
             shortcut_layout.addWidget(shortcut_key_sequence_edit)
             shortcut_checkbox = QCheckBox(parent=self)
             shortcut_checkbox.setChecked(True)
-            shortcut_checkbox.checkStateChanged.connect(_create_lambda(shortcut_key_sequence_edit))
+            shortcut_checkbox.checkStateChanged.connect(_create_lambda(name, shortcut_key_sequence_edit))
+            if current_shortcut == "":
+                shortcut_checkbox.setChecked(False)
             shortcut_layout.addWidget(shortcut_checkbox)
             shortcut_widgets.append((name, shortcut_key_sequence_edit, shortcut_checkbox))
             shortcuts_layout.addWidget(shortcut_frame)
@@ -545,18 +600,32 @@ class SettingsPanel(Panel):
         update_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0), apply_layout_to=update_frame)
         check_for_update_button = QPushButton("Check for update")
         update_layout.addWidget(check_for_update_button)
-        self.check_for_updates_checkbox = QCheckBox("Autocheck")
-        self.check_for_updates_checkbox.setChecked(True)
-        update_layout.addWidget(self.check_for_updates_checkbox)
+        check_for_updates_checkbox = QCheckBox("AutoCheck")
+        check_for_updates_checkbox.setChecked(self.settings.get_auto_check_for_updates())
+        check_for_updates_checkbox.checkStateChanged.connect(lambda: (self.settings.set_auto_check_for_updates(check_for_updates_checkbox.isChecked())))
+        update_layout.addWidget(check_for_updates_checkbox)
         rows.append(("Updates: ", update_frame))
 
-        rows.append(("Show no update info: ", QCheckBox()))
-        rows.append(("Show update info: ", QCheckBox()))
-        rows.append(("Show update timeout: ", QCheckBox()))
-        rows.append(("Ask to reopen last file: ", QCheckBox()))
-        auto_open_tutorial_tab = QCheckBox()
-        auto_open_tutorial_tab.setChecked(True)
-        rows.append(("Auto open tutorial tab: ", auto_open_tutorial_tab))
+        show_no_update_info_checkbox = QCheckBox()
+        show_no_update_info_checkbox.setChecked(self.settings.get_show_no_update_info())
+        show_no_update_info_checkbox.checkStateChanged.connect(lambda: (self.settings.set_show_no_update_info(show_no_update_info_checkbox.isChecked())))
+        rows.append(("Show no update info: ", show_no_update_info_checkbox))
+        show_update_info_checkbox = QCheckBox()
+        show_update_info_checkbox.setChecked(self.settings.get_show_update_info())
+        show_update_info_checkbox.checkStateChanged.connect(lambda: (self.settings.set_show_update_info(show_update_info_checkbox.isChecked())))
+        rows.append(("Show update info: ", show_update_info_checkbox))
+        show_update_timeout_checkbox = QCheckBox()
+        show_update_timeout_checkbox.setChecked(self.settings.get_show_update_timeout())
+        show_update_timeout_checkbox.checkStateChanged.connect(lambda: (self.settings.set_show_update_timeout(show_update_timeout_checkbox.isChecked())))
+        rows.append(("Show update timeout: ", show_update_timeout_checkbox))
+        ask_to_reopen_last_file_checkbox = QCheckBox()
+        ask_to_reopen_last_file_checkbox.setChecked(self.settings.get_ask_to_reopen_last_opened_file())
+        ask_to_reopen_last_file_checkbox.checkStateChanged.connect(lambda: (self.settings.set_ask_to_reopen_last_opened_file(ask_to_reopen_last_file_checkbox.isChecked())))
+        rows.append(("Ask to reopen last file: ", ask_to_reopen_last_file_checkbox))
+        auto_open_tutorial_tab_checkbox = QCheckBox()
+        auto_open_tutorial_tab_checkbox.setChecked(self.settings.get_auto_open_tutorial_tab())
+        auto_open_tutorial_tab_checkbox.checkStateChanged.connect(lambda: (self.settings.set_auto_open_tutorial_tab(auto_open_tutorial_tab_checkbox.isChecked())))
+        rows.append(("Auto open tutorial tab: ", auto_open_tutorial_tab_checkbox))
 
         for name, widget in rows:
             frame = QFrame()
@@ -652,7 +721,11 @@ class SettingsPanel(Panel):
 
         rows: list[tuple[str, QWidget | None]] = []
 
-        rows.append(("Option: ", QCheckBox()))
+        preset_slider = PresetSlider(["Low", "Medium", "High", "Ultra", "Custom"],
+                                     {"Low": "Low", "Medium": "Medium", "High": "High", "Ultra": "Ultra", "Custom": "Custom"})
+        preset_slider.set_preset("Low")
+        preset_slider.preset_changed.connect(lambda v: print("Preset", v))
+        rows.append(("", preset_slider))
 
         for name, widget in rows:
             frame = QFrame()

@@ -1,7 +1,10 @@
+from threading import RLock as _RLock
+
+from abstractions import IAppSettings
+
 from aplustools.data.storage import SQLite3Storage as _SQLite3Storage  # User safe
 from aplustools.data.storage import SimpleJSONStorage as _SimpleJSONStorage
-
-from threading import RLock as _RLock
+from aplustools.io.env import SystemTheme
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -226,3 +229,252 @@ class JSONAppStorage:
         :return:
         """
         self._lock.release()
+
+
+class AppSettings(IAppSettings):
+    """TBA"""
+    _instance: _ty.Self | None = None
+    _settings: MultiUserDBStorage
+    setup: bool = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(AppSettings, cls).__new__(cls)
+            cls._instance._initialized = False  # Track initialization state
+        return cls._instance
+
+    def __init__(self) -> None:
+        ...
+
+    def init(self, config, settings_folder_path: str) -> None:
+        """Initializes the AppSettings"""
+        if self._initialized:  # Prevent reinitialization
+            return
+        self._settings: MultiUserDBStorage = MultiUserDBStorage(f"{settings_folder_path}/user_settings.db",
+                                                                    ("general", "auto", "design", "security", "performance", "advanced", "shortcuts"))
+        # self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
+        # print(self.app_settings._storage._filepath)
+        self._configure_settings(config)
+        self.setup = True
+
+    def _configure_settings(self, config) -> None:
+        self._settings.set_default_settings("general", {
+            "app_language": "enUS",
+            "auto_open_tutorial_tab": "True",
+            "auto_check_for_updates": "True"
+        })
+        self._settings.set_default_settings("auto", {
+            "geometry": "(100, 100, 1050, 640)",
+            "show_no_update_info": "False",
+            "show_update_info": "True",
+            "show_update_timeout": "True",
+            "ask_to_reopen_last_opened_file": "True",
+            "recent_files": "()"
+        })
+        self._settings.set_default_settings("shortcuts", {
+            "file_open": "Ctrl+O",  # "" means disabled
+            "file_save": "Ctrl+S",
+            "file_close": "Ctrl+Q",
+            "simulation_start": "Ctrl+G",
+            "simulation_step": "Ctrl+T",
+            "simulation_halt": "Ctrl+H",
+            "simulation_end": "Ctrl+Y",
+            "states_cut": "Ctrl+X",
+            "states_copy": "Ctrl+C",
+            "states_paste": "Ctrl+V",
+        })
+        self._settings.set_default_settings("design", {
+            "light_theming": "adalfarus::thin/thin_light_green",  # thin_light_dark, colored_summer_sky
+            # "dark_theming": "adalfarus::high_contrast/base",
+            # "dark_theming": "adalfarus::thin/high_contrast",
+            "dark_theming": "adalfarus::thin/colored_evening_sky",
+            # "dark_theming": "adalfarus::thick/thick_light",
+            # "dark_theming": "adalfarus::chisled/base",
+            # "dark_theming": "adalfarus::modern/base",
+            # "dark_theming": "adalfarus::default/base",
+            "window_icon_sets_path": ":/data/assets/app_icons",
+            "window_icon_set": "shelline",
+            "font": "Segoe UI",
+            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (
+                " [INDEV]" if config.INDEV else ""),
+            "enable_animations": "True",
+            "default_state_background_color": "#FFFFFFFF",
+            "hide_scrollbars": "True"
+        })
+        self._settings.set_default_settings("performance", {
+            "option": "True"
+        })
+        self._settings.set_default_settings("security", {
+            "warn_of_new_plugins": "True",
+            "run_plugin_in_separate_process": "False",
+            "use_safe_file_access": "True"
+        })
+        self._settings.set_default_settings("advanced", {
+            "hide_titlebar": "False",
+            "stay_on_top": "False",
+            "save_window_dimensions": "True",
+            "save_window_position": "False",
+            "update_check_request_timeout": "2.0",
+            "max_timer_tick_handled_events": "5",
+            "logging_mode": "DEBUG" if config.INDEV else "INFO",
+        })
+
+    # general
+    def get_app_language(self) -> str:
+        return self._settings.retrieve("general", "app_language", "string")
+    def set_app_language(self, app_language: str) -> None:
+        self._settings.store("general", "app_language", app_language, "string")
+    def get_auto_open_tutorial_tab(self) -> bool:
+        return self._settings.retrieve("general", "auto_open_tutorial_tab", "bool")
+    def set_auto_open_tutorial_tab(self, flag: bool) -> None:
+        self._settings.store("general", "auto_open_tutorial_tab", flag, "bool")
+    def get_auto_check_for_updates(self) -> bool:
+        return self._settings.retrieve("general", "auto_check_for_updates", "bool")
+    def set_auto_check_for_updates(self, flag: bool) -> None:
+        self._settings.store("general", "auto_check_for_updates", flag, "bool")
+    # auto
+    def get_window_geometry(self) -> tuple[int, int, int, int]:
+        return self._settings.retrieve("auto", "geometry", "tuple")  # type: ignore
+    def set_window_geometry(self, window_geometry: tuple[int, int, int, int]) -> None:
+        self._settings.store("auto", "geometry", window_geometry, "tuple")
+    def get_show_no_update_info(self) -> bool:
+        return self._settings.retrieve("auto", "show_no_update_info", "bool")  # type: ignore
+    def set_show_no_update_info(self, flag: bool) -> None:
+        self._settings.store("auto", "show_no_update_info", flag, "bool")
+    def get_show_update_info(self) -> bool:
+        return self._settings.retrieve("auto", "show_update_info", "bool")  # type: ignore
+    def set_show_update_info(self, flag: bool) -> None:
+        self._settings.store("auto", "show_update_info", flag, "bool")
+    def get_show_update_timeout(self) -> bool:
+        return self._settings.retrieve("auto", "show_update_timeout", "bool")  # type: ignore
+    def set_show_update_timeout(self, flag: bool) -> None:
+        self._settings.store("auto", "show_update_timeout", flag, "bool")
+    def get_ask_to_reopen_last_opened_file(self) -> bool:
+        return self._settings.retrieve("auto", "ask_to_reopen_last_opened_file", "bool")  # type: ignore
+    def set_ask_to_reopen_last_opened_file(self, flag: bool) -> None:
+        self._settings.store("auto", "ask_to_reopen_last_opened_file", flag, "bool")
+    def get_recent_files(self) -> tuple[str, ...]:
+        return self._settings.retrieve("auto", "recent_files", "tuple")  # type: ignore
+    def set_recent_files(self, recent_files: tuple[str, ...]) -> None:
+        self._settings.store("auto", "recent_files", recent_files, "tuple")
+    # shortcuts
+    def get_file_open_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "file_open", "string")
+    def set_file_open_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "file_open", shortcut_str, "string")
+    def get_file_save_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "file_save", "string")
+    def set_file_save_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "file_save", shortcut_str, "string")
+    def get_file_close_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "file_close", "string")
+    def set_file_close_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "file_close", shortcut_str, "string")
+    def get_simulation_start_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "simulation_start", "string")
+    def set_simulation_start_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "simulation_start", shortcut_str, "string")
+    def get_simulation_step_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "simulation_step", "string")
+    def set_simulation_step_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "simulation_step", shortcut_str, "string")
+    def get_simulation_halt_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "simulation_halt", "string")
+    def set_simulation_halt_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "simulation_halt", shortcut_str, "string")
+    def get_simulation_end_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "simulation_end", "string")
+    def set_simulation_end_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "simulation_end", shortcut_str, "string")
+    def get_states_cut_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "states_cut", "string")
+    def set_states_cut_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "states_cut", shortcut_str, "string")
+    def get_states_copy_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "states_copy", "string")
+    def set_states_copy_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "states_copy", shortcut_str, "string")
+    def get_states_paste_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "states_paste", "string")
+    def set_states_paste_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "states_paste", shortcut_str, "string")
+    # design
+    def get_theming(self, mode: SystemTheme) -> str:
+        theming_type: str = {SystemTheme.LIGHT: "light_theming",
+                             SystemTheme.DARK: "dark_theming"}[mode]
+        return self._settings.retrieve("design", theming_type, "string")
+    def get_window_icon_sets_path(self) -> str:
+        return self._settings.retrieve("design", "window_icon_sets_path", "string")
+    def set_window_icon_sets_path(self, icon_set: str) -> None:
+        self._settings.store("design", "window_icon_sets_path", icon_set, "string")
+    def get_window_icon_set(self) -> str:
+        return self._settings.retrieve("design", "window_icon_set", "string")
+    def set_window_icon_set(self, icon_set: str) -> None:
+        self._settings.store("design", "window_icon_set", icon_set, "string")
+    def get_font(self) -> str:
+        return self._settings.retrieve("design", "font", "string")
+    def set_font(self, font: str) -> None:
+        self._settings.store("design", "font", font, "string")
+    def get_window_title_template(self) -> str:
+        return self._settings.retrieve("design", "window_title_template", "string")
+    def set_window_title_template(self, title_template: str) -> None:
+        self._settings.store("design", "window_title_template", title_template, "string")
+    def get_enable_animations(self) -> bool:
+        return self._settings.retrieve("design", "enable_animations", "bool")  # type: ignore
+    def set_enable_animations(self, flag: bool) -> None:
+        self._settings.store("design", "enable_animations", flag, "bool")
+    def get_default_state_background_color(self) -> str:
+        return self._settings.retrieve("design", "default_state_background_color", "string")
+    def set_default_state_background_color(self, default_state_background_color: str) -> None:
+        self._settings.store("design", "default_state_background_color", default_state_background_color, "string")
+    def get_hide_scrollbars(self) -> bool:
+        return self._settings.retrieve("design", "hide_scrollbars", "bool")  # type: ignore
+    def set_hide_scrollbars(self, flag: bool) -> None:
+        self._settings.store("design", "hide_scrollbars", flag, "bool")
+    # performance
+    def get_option(self) -> bool:
+        return self._settings.retrieve("performance", "option", "bool")  # type: ignore
+    def set_option(self, flag: bool) -> None:
+        self._settings.store("performance", "option", flag, "bool")
+    # security
+    def get_warn_of_new_plugins(self) -> bool:
+        return self._settings.retrieve("security", "warn_of_new_plugins", "bool")  # type: ignore
+    def set_warn_of_new_plugins(self, flag: bool) -> None:
+        self._settings.store("security", "warn_of_new_plugins", flag, "bool")
+    def get_run_plugin_in_separate_process(self) -> bool:
+        return self._settings.retrieve("security", "run_plugin_in_separate_process", "bool")  # type: ignore
+    def set_run_plugin_in_separate_process(self, flag: bool) -> None:
+        self._settings.store("security", "run_plugin_in_separate_process", flag, "bool")
+    def get_use_safe_file_access(self) -> bool:
+        return self._settings.retrieve("security", "use_safe_file_access", "bool")  # type: ignore
+    def set_use_safe_file_access(self, flag: bool) -> None:
+        self._settings.store("security", "use_safe_file_access", flag, "bool")
+    # advanced
+    def get_hide_titlebar(self) -> bool:
+        return self._settings.retrieve("advanced", "hide_titlebar", "bool")  # type: ignore
+    def set_hide_titlebar(self, flag: bool) -> None:
+        self._settings.store("advanced", "hide_titlebar", flag, "bool")
+    def get_stay_on_top(self) -> bool:
+        return self._settings.retrieve("advanced", "stay_on_top", "bool")  # type: ignore
+    def set_stay_on_top(self, flag: bool) -> None:
+        self._settings.store("advanced", "stay_on_top", flag, "bool")
+    def get_save_window_dimensions(self) -> bool:
+        return self._settings.retrieve("advanced", "save_window_dimensions", "bool")  # type: ignore
+    def set_save_window_dimensions(self, flag: bool) -> None:
+        self._settings.store("advanced", "save_window_dimensions", flag, "bool")
+    def get_save_window_position(self) -> bool:
+        return self._settings.retrieve("advanced", "save_window_position", "bool")  # type: ignore
+    def set_save_window_position(self, flag: bool) -> None:
+        self._settings.store("advanced", "save_window_position", flag, "bool")
+    def get_update_check_request_timeout(self) -> float:
+        return self._settings.retrieve("advanced", "update_check_request_timeout", "float")
+    def set_update_check_request_timeout(self, request_timeout: float) -> None:
+        self._settings.store("advanced", "update_check_request_timeout", request_timeout, "float")
+    def get_max_timer_tick_handled_events(self) -> float:
+        return self._settings.retrieve("advanced", "max_timer_tick_handled_events", "float")
+    def set_max_timer_tick_handled_events(self, request_timeout: float) -> None:
+        self._settings.store("advanced", "max_timer_tick_handled_events", request_timeout, "float")
+    def get_logging_mode(self) -> str:
+        return self._settings.retrieve("advanced", "logging_mode", "string")
+    def set_logging_mode(self, logging_mode: str) -> None:
+        self._settings.store("advanced", "logging_mode", logging_mode, "string")

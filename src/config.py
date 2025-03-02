@@ -6,6 +6,7 @@ import platform as _platform
 
 
 INDEV: bool = True
+INDEV_KEEP_SETTINGS: bool = True
 OLD_CWD: str = _os.getcwd()
 PROGRAM_NAME: str = "E.F.S Simulator"
 PROGRAM_NAME_NORMALIZED: str = "efs_simulator"
@@ -48,8 +49,18 @@ def _configure() -> dict[str, str]:
     base_app_dir = _os.path.join(_os.environ.get("LOCALAPPDATA", "."), PROGRAM_NAME_NORMALIZED)
 
     if INDEV and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
-        _shutil.rmtree(base_app_dir)
-        _os.mkdir(base_app_dir)
+        if not INDEV_KEEP_SETTINGS:
+            _shutil.rmtree(base_app_dir)
+            _os.mkdir(base_app_dir)
+        else:  # Skip only .db files
+            for root, dirs, files in _os.walk(base_app_dir, topdown=False):
+                for file in files:
+                    if not file.endswith(".db"):
+                        _os.remove(_os.path.join(root, file))
+                for directory in dirs:
+                    dir_path = _os.path.join(root, directory)
+                    if not any(f.endswith(".db") for f in _os.listdir(dir_path)):
+                        _shutil.rmtree(dir_path)
 
     dirs_to_create = []
     dir_structure = (

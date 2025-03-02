@@ -33,7 +33,7 @@ from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 from automaton.UIAutomaton import UiAutomaton
 from automaton.automatonProvider import AutomatonProvider
 from serializer import serialize, deserialize
-from storage import MultiUserDBStorage
+from storage import AppSettings
 from gui import MainWindow, assign_object_names_iterative, Theme, Style
 from abstractions import IMainWindow, IBackend, IAppSettings
 from automaton import start_backend
@@ -53,143 +53,6 @@ hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
 
 
-class AppSettings(IAppSettings):
-    """TBA"""
-    _settings: MultiUserDBStorage
-
-    def __init__(self) -> None:
-        ...
-
-    def init(self, settings_folder_path: str) -> None:
-        """Initializes the AppSettings"""
-        self._settings: MultiUserDBStorage = MultiUserDBStorage(f"{settings_folder_path}/user_settings.db",
-                                                                    ("auto", "design", "advanced", "shortcuts"))
-        # self.app_settings: JSONAppStorage = JSONAppStorage(f"{config.old_cwd}/locations.json")
-        # print(self.app_settings._storage._filepath)
-        self._configure_settings()
-
-    def _configure_settings(self) -> None:
-        self._settings.set_default_settings("general", {
-            "app_language": "enUS",
-            "auto_open_tutorial_tab": "True"
-        })
-        self._settings.set_default_settings("auto", {
-            "geometry": "(100, 100, 1050, 640)",
-            "show_no_update_info": "False",
-            "show_update_info": "True",
-            "show_update_timeout": "True",
-            # "last_scroll_positions": "(0, 0, 0, 0)",
-            # "scrolling_sensitivity": "4.0",
-            "ask_to_reopen_last_opened_file": "True",
-            "recent_files": "()"
-        })
-        self._settings.set_default_settings("shortcuts", {
-            "file_open": "Ctrl+O",  # "" means disabled
-            "file_save": "Ctrl+S",
-            "file_close": "Ctrl+Q",
-            "simulation_start": "Ctrl+G",
-            "simulation_step": "Ctrl+T",
-            "simulation_halt": "Ctrl+H",
-            "simulation_end": "Ctrl+Y",
-            "states_cut": "Ctrl+X",
-            "states_copy": "Ctrl+C",
-            "states_paste": "Ctrl+V",
-        })
-        self._settings.set_default_settings("design", {
-            "light_theming": "adalfarus::thin/thin_light_green",  # thin_light_dark, colored_summer_sky
-            # "dark_theming": "adalfarus::high_contrast/base",
-            # "dark_theming": "adalfarus::thin/high_contrast",
-            "dark_theming": "adalfarus::thin/colored_evening_sky",
-            # "dark_theming": "adalfarus::thick/thick_light",
-            # "dark_theming": "adalfarus::chisled/base",
-            # "dark_theming": "adalfarus::modern/base",
-            # "dark_theming": "adalfarus::default/base",
-            "window_icon_sets_path": ":/data/assets/app_icons",
-            "window_icon_set": "shelline",
-            "font": "Segoe UI",
-            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (
-                " [INDEV]" if config.INDEV else ""),
-            "enable_animations": "True",
-            "default_state_background_color": "#FFFFFFFF",
-            "hide_scrollbars": "True"
-        })
-        self._settings.set_default_settings("performance", {
-            "option": "True"
-        })
-        self._settings.set_default_settings("security", {
-            "warn_of_new_plugins": "True",
-            "run_plugin_in_separate_process": "False",
-            "use_safe_file_access": "True"
-        })
-        self._settings.set_default_settings("advanced", {
-            "hide_titlebar": "False",
-            "stay_on_top": "False",
-            "save_window_dimensions": "True",
-            "save_window_position": "False",
-            "update_check_request_timeout": "2.0",
-            "max_timer_tick_handled_events": "5",
-            "logging_mode": "DEBUG" if config.INDEV else "INFO",
-        })
-
-    def get_window_geometry(self) -> tuple[int, int, int, int]:
-        return self._settings.retrieve("auto", "geometry", "tuple")  # type: ignore
-
-    def set_window_geometry(self, window_geometry: tuple[int, int, int, int]) -> None:
-        self._settings.store("auto", "geometry", window_geometry, "tuple")
-
-    def get_save_window_dimensions(self) -> bool:
-        return self._settings.retrieve("advanced", "save_window_dimensions", "bool")  # type: ignore
-
-    def set_save_window_dimensions(self, flag: bool) -> None:
-        self._settings.store("advanced", "save_window_dimensions", flag, "bool")
-
-    def get_save_window_position(self) -> bool:
-        return self._settings.retrieve("advanced", "save_window_position", "bool")  # type: ignore
-
-    def set_save_window_position(self, flag: bool) -> None:
-        self._settings.store("advanced", "save_window_position", flag, "bool")
-
-    def get_window_icon_set(self) -> str:
-        return self._settings.retrieve("design", "window_icon_set", "string")
-
-    def set_window_icon_set(self, icon_set: str) -> None:
-        self._settings.store("design", "window_icon_set", icon_set, "string")
-
-    def get_window_title_template(self) -> str:
-        return self._settings.retrieve("design", "window_title_template", "string")
-
-    def set_window_title_template(self, title_template: str) -> None:
-        self._settings.store("design", "window_title_template", title_template, "string")
-
-    def get_font(self) -> str:
-        return self._settings.retrieve("design", "font", "string")
-
-    def set_font(self, font: str) -> None:
-        self._settings.store("design", "font", font, "string")
-
-    def get_theming(self, mode: SystemTheme) -> str:
-        theming_type: str = {SystemTheme.LIGHT: "light_theming",
-                             SystemTheme.DARK: "dark_theming"}[mode]
-        return self._settings.retrieve("design", theming_type, "string")
-
-    def set_theming(self, mode: SystemTheme, theming: str) -> None:
-        theming_type: str = {SystemTheme.LIGHT: "light_theming",
-                             SystemTheme.DARK: "dark_theming"}[mode]
-        self._settings.store("design", theming_type, theming, "string")
-
-    def get_window_icon_sets_path(self) -> str:
-        return self._settings.retrieve("design", "window_icon_sets_path", "string")
-
-    def set_window_icon_sets_path(self, window_icon_sets_path: str) -> None:
-        self._settings.store("design", "window_icon_sets_path", window_icon_sets_path, "string")
-
-    def get_window_icon_set(self) -> str:
-        return self._settings.retrieve("design", "window_icon_set", "string")
-
-    def set_window_icon_set(self, window_icon_set: str) -> None:
-        self._settings.store("design", "window_icon_set", window_icon_set, "string")
-
-
 class App:
     """The main logic and gui are separated"""
     def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str, logging_level: int | None = None
@@ -206,6 +69,17 @@ class App:
             self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
             self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
 
+            # Setup IOManager
+            self.io_manager: IOManager = IOManager()
+            self.io_manager.init(self.window.button_popup, f"{self.data_folder}/logs", config.INDEV)
+            self.io_manager.set_logging_level(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
+            for exported_line in config.exported_logs.split("\n"):
+                self.io_manager.debug(exported_line)  # Flush config prints
+
+            # Settings
+            self.settings: AppSettings = AppSettings()
+            self.settings.init(config, self.config_folder)
+
             # Thread pool
             self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
             self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
@@ -216,7 +90,8 @@ class App:
                                      (Extensions_Loader(self.base_app_dir).load_content(),)
                                  )
                              ))
-            self.pool.submit(self.check_for_update)
+            if self.settings.get_auto_check_for_updates():
+                self.pool.submit(self.check_for_update)
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             # Automaton backend init
@@ -256,17 +131,6 @@ class App:
             self.grid_view = self.window.user_panel.grid_view
             self.control_menu = self.window.user_panel.control_menu
 
-            # Setup IOManager
-            self.io_manager: IOManager = IOManager()
-            self.io_manager.init(self.window.button_popup, f"{self.data_folder}/logs", config.INDEV)
-            self.io_manager.set_logging_level(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
-            for exported_line in config.exported_logs.split("\n"):
-                self.io_manager.debug(exported_line)  # Flush config prints
-
-            # Settings
-            self.settings: AppSettings = AppSettings()
-            self.settings.init(self.config_folder)
-
             self.backend: IBackend = start_backend(self.settings)
             self.backend_stop_event: threading.Event = threading.Event()
             self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
@@ -293,13 +157,16 @@ class App:
             self.apply_theme()
             self.connect_signals()
 
+            self.update_icon()
+            self.update_title()
+            self.update_font()
+
+            self.window.start()  # Shows gui
+
             self.timer_number: int = 1
-            self.timer_tick(0)  # Updates everything
             self.timer: QtTimidTimer = QtTimidTimer()
             self.timer.timeout.connect(self.timer_tick)
             self.timer.start(500, 0)
-
-            self.window.start()  # Shows gui
         except Exception as e:
             self.exit()
             raise Exception("Exception occurred during initialization of the App class") from e
@@ -322,14 +189,14 @@ class App:
         try:  # Get update content
             response: requests.Response = requests.get(
                 "https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
-                timeout=self.user_settings.retrieve("advanced", "update_check_request_timeout", "float"))
+                timeout=self.settings.get_update_check_request_timeout())
         except requests.exceptions.Timeout:
             title, text, description = "Update Info", ("The request timed out.\n"
                                                        "Please check your internet connection, "
                                                        "and try again."), format_exc()
             standard_buttons, default_button = ["Ok"], "Ok"
             checkbox, checkbox_setting = "Do not show again", ("auto", "show_update_timeout")
-            show_update_timeout: bool = self.user_settings.retrieve("auto", "show_update_timeout", "bool")
+            show_update_timeout: bool = self.settings.get_show_update_timeout()
             if not show_update_timeout:
                 do_popup = False
             return (do_popup,
@@ -365,8 +232,8 @@ class App:
                         found_version = release_version
                         found_release = release
                         found_push = push
-                if found_release and found_version != current_version:
-                    raise NotImplementedError
+                # if found_release and found_version != current_version:
+                #     raise NotImplementedError
         except (requests.exceptions.JSONDecodeError, InvalidVersion, NotImplementedError):
             icon = "Information"  # Reset everything to default, we don't know when the error happened
             title, text, description = "Update Info", "There was an error when decoding the update info.", format_exc()
@@ -378,8 +245,8 @@ class App:
                     (checkbox, checkbox_setting),
                     (standard_buttons, default_button), retval_func)
 
-        show_update_info: bool = self.user_settings.retrieve("auto", "show_update_info", "bool")
-        show_no_update_info: bool = self.user_settings.retrieve("auto", "show_no_update_info", "bool")
+        show_update_info: bool = self.settings.get_show_update_info()
+        show_no_update_info: bool = self.settings.get_show_no_update_info()
 
         if found_version != current_version and show_update_info and found_push:
             title = "There is an update available"
@@ -398,7 +265,7 @@ class App:
                     else:
                         link = url
                     QDesktopServices.openUrl(QUrl(link))
-        elif show_no_update_info and found_version == current_version:
+        elif show_no_update_info and found_version <= current_version:
             title = "Update Info"
             text = (f"No new updates available.\nChecklist last updated "
                     f"{update_json['metadata']['lastUpdated'].replace('-', '.')}.")
@@ -758,11 +625,6 @@ class App:
                 func(*args)
                 num_handled += 1
             # print(self.extensions)
-        else:
-            print("Tock")
-        # if not self.threading:
-        #     self.update_content()
-        ...
 
     def exit(self) -> None:
         """Cleans up resources"""

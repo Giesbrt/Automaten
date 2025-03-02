@@ -582,6 +582,8 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if not isinstance(parent, UserPanel):
             return
 
+        print(item)
+
         current_parent_item = None
         if isinstance(item, StateGraphicsItem | LabelGraphicsItem):
             item.parentItem().setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)

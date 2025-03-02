@@ -327,18 +327,15 @@ class TransitionItem(QGraphicsItemGroup):
         self.transition_line_item.arrow_head = self.transition_line_item.calculate_arrow_head(end_scene, angle)
 
         # transition_function_item
-        # Berechne den Mittelpunkt der Linie präzise mithilfe von QLineF.midpoint
-        center_scene = QLineF(start_scene, end_scene).pointAt(0.5)
-        center_local = self.mapFromScene(center_scene)
+        center = self.transition_line_item.get_center(start_scene, end_scene)
 
-        # Positioniere den TokenButton exakt im Mittelpunkt
-        button_frame = self.transition_function_item.token_button_frame
-        button_size = button_frame.size()
-        button_frame.setPos(center_local.x() - button_size.width() / 2,
-                            center_local.y() - button_size.height() / 2)
+        button_size = self.transition_function_item.token_button_frame.size()
+        token_list_size = self.transition_function_item.token_list_frame.size()
 
-        # Positioniere die TokenListe direkt unter dem TokenButton
-        token_list = self.transition_function_item.token_list_frame
-        token_list_size = token_list.size()
-        token_list.setPos(center_local.x() - token_list_size.width() / 2,
-                          center_local.y() + button_size.height() / 2 + 5)
+        button_x = center.x() - button_size.width() / 2
+        button_y = center.y() - button_size.height() / 2
+        self.transition_function_item.token_button_frame.setPos(button_x, button_y)
+
+        token_list_x = center.x() - token_list_size.width() / 2
+        token_list_y = button_y + button_size.height() + 5
+        self.transition_function_item.token_list_frame.setPos(token_list_x, token_list_y)

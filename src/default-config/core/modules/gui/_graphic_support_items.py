@@ -138,7 +138,7 @@ class _DirectionalLayout:
         self._children_sizes.append(size)
         self.reposition()
 
-    def resize(self, rect: QRectF | tuple[int, int, int, int]) -> None:
+    def setRect(self, rect: QRectF | tuple[int, int, int, int]) -> None:
         """Resizes the rect of the layout to a new rect and repositions all children within it"""
         self._rect = rect if not isinstance(rect, tuple) else QRectF(*rect)
         self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
@@ -155,6 +155,20 @@ class _DirectionalLayout:
                 child.paint(painter, option)
 
 
+class VerticalLayout(_DirectionalLayout):
+    def reposition(self):
+        total_size = sum(self._children_sizes)
+        y_offset = self._working_rect.y()
+        available_height = self._working_rect.height() - (self._spacing * max(0, len(self._children) - 1))
+
+        for child, size in zip(self._children, self._children_sizes):
+            height = (size / total_size) * available_height
+            if child:
+                child_rect = QRectF(self._working_rect.x(), y_offset, self._working_rect.width(), height)
+                child.setRect(child_rect)
+            y_offset += height + self._spacing
+
+
 class HorizontalLayout(_DirectionalLayout):
     def reposition(self):
         total_size = sum(self._children_sizes)
@@ -164,6 +178,6 @@ class HorizontalLayout(_DirectionalLayout):
         for child, size in zip(self._children, self._children_sizes):
             width = (size / total_size) * available_width
             if child:
-                child_rect = QRectF(x_offset + self.base_x, self._working_rect.y() + self.base_y, width, self._working_rect.height())
+                child_rect = QRectF(x_offset, self._working_rect.y(), width, self._working_rect.height())
                 child.setRect(child_rect)
             x_offset += width + self._spacing

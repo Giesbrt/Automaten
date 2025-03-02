@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphi
     QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QVBoxLayout, \
     QGraphicsProxyWidget, QGraphicsRectItem
 
-from ._graphic_support_items import FrameWidgetItem, HorizontalLayout
+from ._graphic_support_items import FrameWidgetItem, HorizontalLayout, VerticalLayout
 from painter import PainterStr, StrToPainter
 
 # Standard typing imports for aps
@@ -308,6 +308,8 @@ class TokenButton(QGraphicsRectItem):
 
     def paint(self, painter, option, widget=None):
         """Custom rendering of the button."""
+
+
         super().paint(painter, option, widget)  # Draw default rectangle
         painter.drawText(self.boundingRect(), Qt.AlignmentFlag.AlignCenter, self.text)  # Draw text
 
@@ -338,11 +340,10 @@ class TokenButtonFrame(QGraphicsWidget):
     def __init__(self, token_list_frame, sections: int, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.widget_layout = HorizontalLayout(self.x(), self.y())
+
         self.token_list_frame = token_list_frame
         self.sections = sections
         self.token_buttons: _ty.List[TokenButton] = []
-
-        self.setGeometry(QRectF(0, 0, 100, 50))
 
         # container = self._create_container()
 
@@ -353,8 +354,15 @@ class TokenButtonFrame(QGraphicsWidget):
             # if i < self.sections - 1:
             #     layout.addWidget(self._create_separator(container))
 
+        self.widget_layout.setRect(self.rect())
+
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         # super().paint(painter, option, widget)
+        painter.save()
+        painter.setPen(QPen(Qt.GlobalColor.black))
+        painter.setBrush(Qt.GlobalColor.transparent)
+        painter.drawRect(self.boundingRect())
+        painter.restore()
         self.widget_layout.paint(painter, option)
 
     def _create_container(self) -> QWidget:
@@ -413,8 +421,7 @@ class TokenButtonFrame(QGraphicsWidget):
             self.all_token_set.emit(tokens)
 
     def moveEvent(self, event):
-        self.widget_layout.base_x = event.newPos().x()
-        self.widget_layout.base_y = event.newPos().y()
+        self.widget_layout.setRect(self.rect())
 
 
 class TokenListFrame(QGraphicsProxyWidget):

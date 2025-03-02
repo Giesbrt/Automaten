@@ -301,7 +301,7 @@ class AppSettings(QObject):
 
     def init(self, config, settings_folder_path: str) -> None:
         """Initializes the AppSettings"""
-        if self._initialized:  # Prevent reinitialization
+        if self.setup:  # Prevent reinitialization
             return
         self._settings: MultiUserDBStorage = MultiUserDBStorage(f"{settings_folder_path}/user_settings.db",
                                                                     ("general", "auto", "design", "security", "performance", "advanced", "shortcuts"))

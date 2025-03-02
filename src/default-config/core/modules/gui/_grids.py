@@ -1,6 +1,8 @@
 """Everything regarding the infinite grid"""
+import numpy as np
+import math
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWidget, QGraphicsRectItem, QMenu, \
-    QGraphicsDropShadowEffect, QGraphicsProxyWidget
+    QGraphicsDropShadowEffect
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QPen, QCursor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 
@@ -20,8 +22,6 @@ from ..automaton.UIAutomaton import UiState, UiTransition
 import collections.abc as _a
 import typing as _ty
 import types as _ts
-import numpy as np
-import math
 
 
 
@@ -240,6 +240,28 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     This class extends `InteractiveGridView` to support different types
     of automata, handling states, transitions, and user interactions.
     """
+    get_start_state: Signal = Signal()
+    get_state_types_with_design: Signal = Signal()
+    set_state_types_with_design: Signal = Signal()
+    get_author: Signal = Signal()
+    get_token_lists: Signal = Signal()
+    get_is_changeable_token_list: Signal = Signal()
+    get_transition_pattern: Signal = Signal()
+    get_states: Signal = Signal()
+    get_transitions: Signal = Signal()
+    get_automaton_type: Signal = Signal()
+    set_start_state: Signal = Signal()
+    get_state_by_id: Signal = Signal()
+    get_state_index: Signal = Signal()
+    get_transition_index: Signal = Signal()
+    get_transition_by_id: Signal = Signal()
+    simulate: Signal = Signal()
+    handle_simulation_updates: Signal = Signal()
+    handle_bridge_updates: Signal = Signal()
+    has_simulation_data: Signal = Signal()
+    has_bridge_updates: Signal = Signal()
+    is_simulation_data_available: Signal = Signal()
+
     set_transition_pattern: Signal = Signal(list)
     set_is_changeable_token_list: Signal = Signal(list)
 
@@ -277,6 +299,10 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self.singleton_observer.subscribe('token_lists', self.set_token_lists)
         self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
 
+    def update_singleton_observer(self):
+        del self.singleton_observer
+        self.singeleton_observer = SingletonObserver()
+
     def load_automaton_from_file(self, is_loaded):
         """Loads the UiAutomaton"""
         if is_loaded:
@@ -288,9 +314,8 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         # print(f'GridView: Anfrage an {method_name}')
         self.signal_bus.request_method.emit(method_name, args, kwargs)
 
-    def handle_response(self, method_name, response) -> None:
+    def handle_response(self, method_name, response) -> None: # print(f"GridView: Antwort von {method_name} -> {response}")
         """Empfängt das Ergebnis und gibt es aus."""
-        # print(f"GridView: Antwort von {method_name} -> {response}")
         if not response:
             return
         if method_name == 'get_states':
@@ -300,13 +325,23 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         elif method_name == 'get_token_lists':
             self.set_token_lists(response)
 
+    def render_automaton(self, ui_objects: _ty.List[_ty.Union[UiState, UiTransition]]) -> None:
+        """Renders the States and the Transitions"""
+        if not ui_objects:
+            return
+        if isinstance(list(ui_objects)[0], UiState):
+            for state in ui_objects:
+                self.create_state_from_automaton(state)
+        elif isinstance(list(ui_objects)[0], UiTransition):
+            for transition in ui_objects:
+                self.create_transition_from_automaton(transition)
+
     def render_states(self, states):
         for state in states:
             self.create_state_from_automaton(state)
 
     def render_transitions(self, transitions):
-        for itteration, transition in enumerate(transitions):
-            print(f'{itteration=}')
+        for transition in transitions:
             self.create_transition_from_automaton(transition)
 
     def _setup_automaton_view(self) -> None:
@@ -357,35 +392,21 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._setup_automaton_view()
         self.set_transition_pattern.emit(self._automaton_settings['transition_pattern'])
 
-    def get_active_state(self, active_state) -> StateItem | None:
-        """Sets the active state in the scene.
-
-        :param active_state: The state to be set as active.
-        :return: The active StateItem if found, otherwise None.
-        """
+    def set_active_state(self, active_state):
         for item in self.scene().items():
             if isinstance(item, StateItem):
-                # print(DeepDiff(item.get_ui_state(), active_state)) # TODO: uninstall DeepDiff
                 if item.get_ui_state() == active_state:
+                    item.state.is_active = True
                     return item
 
-    def get_active_transition(self, active_transition) -> TransitionItem | None:
-        """Sets the active transition in the scene.
-
-        :param active_transition: The transition to be set as active.
-        :return: The active TransitionItem if found, otherwise None.
-        """
+    def set_active_transition(self, active_transition):
         for item in self.scene().items():
             if isinstance(item, TransitionItem):
-                # print(item.get_ui_transition().get_condition(), active_transition.get_condition())
                 if item.get_ui_transition() == active_transition:
+                    item.setPen(QPen(QColor('red'), 4))
                     return item
 
     def get_token_list(self) -> _ty.Tuple[_ty.List[str], _ty.List[str]]:
-        """Retrieve the current token list.
-
-        :return: A tuple containing two lists of strings representing the token list.
-        """
         return self.token_list
 
     def get_mapped_position(self, item: QGraphicsItem) -> any:
@@ -401,7 +422,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         scene_pos = item.mapToScene(item.boundingRect().center())
         return self.mapFromScene(scene_pos)
 
-    def get_item_at(self, pos: QPoint) -> QGraphicsItem | TokenButton:
+    def get_item_at(self, pos: QPoint) -> QGraphicsItem:
         """
         Retrieve the item at a given position.
 
@@ -412,15 +433,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             QGraphicsItem: The item at the given position, if any.
         """
         scene_pos: QPointF = self.mapToScene(pos)
-        item = self.scene().itemAt(scene_pos, self.transform())
-
-        if isinstance(item, QGraphicsProxyWidget):
-            widget = item.widget()
-            widget_pos = widget.mapFromGlobal(self.mapToGlobal(pos))
-            child = widget.childAt(widget_pos)
-            if isinstance(child, TokenButton):
-                return child
-        return item
+        return self.scene().itemAt(scene_pos, self.transform())
 
     def get_item_group(self, item: StateGraphicsItem | LabelGraphicsItem | StateConnectionGraphicsItem) -> StateItem:
         """
@@ -437,39 +450,47 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         return item
 
     def highlight_state_item(self, state_item: 'StateItem') -> None:
-        """Highlights the specified StateItem and removes the highlight from previously highlighted items.
-
-        :param state_item: The StateItem to highlight.
-        """
+        """Hebt den angegebenen StateItem hervor und entfernt das Highlight von zuvor hervorgehobenen Items."""
+        # Entferne vorheriges StateItem-Highlight
         if self._highlighted_state_item and self._highlighted_state_item != state_item:
             self.unhighlight_state_item()
+        # Setze den neuen Highlight
         self._highlighted_state_item = state_item
-        self._highlighted_state_item.highlight()
+        # Beispielsweise wird das StateItem farblich markiert oder mit einem Rahmen versehen.
+        # Hier setzen wir den 'Selected'-Flag als Beispiel:
+        highlight_effect = QGraphicsDropShadowEffect()
+        highlight_effect.setBlurRadius(40)
+        highlight_effect.setOffset(0)
+        highlight_effect.setColor(QColor("yellow"))
+        self.setGraphicsEffect(highlight_effect)
+        self._highlighted_state_item.setGraphicsEffect(highlight_effect)
 
     def unhighlight_state_item(self) -> None:
-        """Removes the highlight from the currently highlighted StateItem."""
+        """Entfernt das Highlight vom aktuell hervorgehobenen StateItem."""
         if self._highlighted_state_item:
-            self._highlighted_state_item.unhighlight()
+            self._highlighted_state_item.setGraphicsEffect(None)
             self._highlighted_state_item = None
 
     def highlight_transition_item(self, transition_item: 'TransitionItem') -> None:
-        """Highlights the specified TransitionItem and removes the highlight from previously highlighted items.
-
-        :param transition_item: The TransitionItem to highlight.
-        """
+        """Hebt den angegebenen TransitionItem hervor und entfernt das Highlight von zuvor hervorgehobenen Items."""
+        # Entferne vorheriges TransitionItem-Highlight
         if self._highlighted_transition_item and self._highlighted_transition_item != transition_item:
             self.unhighlight_transition_item()
+        # Setze den neuen Highlight
         self._highlighted_transition_item = transition_item
-        self._highlighted_transition_item.highlight()
+        # Beispielhaft wird hier der Pen verändert, um das TransitionItem hervorzuheben.
+        transition_item.setPen(QPen(QColor('red'), transition_item.pen().width() + 2))
 
     def unhighlight_transition_item(self) -> None:
-        """Removes the highlight from the currently highlighted TransitionItem."""
+        """Entfernt das Highlight vom aktuell hervorgehobenen TransitionItem."""
         if self._highlighted_transition_item:
-            self._highlighted_transition_item.unhighlight()
+            # Setze den Pen auf den Standardzustand zurück, hier muss der Standardwert bekannt sein.
+            transition_item = self._highlighted_transition_item
+            transition_item.setPen(QPen(QColor(0, 10, 33), 4))
             self._highlighted_transition_item = None
 
     def reset_all_highlights(self) -> None:
-        """Removes all highlights (StateItem and TransitionItem)."""
+        """Entfernt alle Hervorhebungen (StateItem und TransitionItem)."""
         self.unhighlight_state_item()
         self.unhighlight_transition_item()
 
@@ -481,7 +502,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if token in self.token_list[0]:
             self.token_list[0].remove(token)
 
-    def create_state_from_automaton(self, state: UiState) -> None:
+    def create_state_from_automaton(self, state: UiState):
         color: QColor = state.get_colour()
         position: tuple[float, float] = state.get_position()
         display_text: str = state.get_display_text()
@@ -496,7 +517,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         state_group.update_shadow_effect()
         state_group.update_label_position()
 
-    def create_transition_from_automaton(self, ui_transition: UiTransition) -> None:
+    def create_transition_from_automaton(self, ui_transition: UiTransition):
         from_state: UiState = ui_transition.get_from_state()
         from_connection_point: _ty.Literal['n', 's', 'e', 'w'] = ui_transition.get_from_state_connecting_point()
         to_state: UiState = ui_transition.get_to_state()
@@ -520,15 +541,14 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 if connection_point.get_flow() == 'in' and connection_point.get_direction() == to_connection_point:
                     end_point: StateConnectionGraphicsItem = connection_point
             if start_point and end_point:
-                print(self._automaton_settings['transition_sections'])
-                transition = TransitionItem(self.get_token_list(), self._automaton_settings['transition_sections'], start_point, end_point, end_state)
-                # transition_function = TransitionFunction(self.get_token_list(), self._automaton_settings['transition_sections'], transition)
-                # transition.set_transition_function(transition_function)
-                # transition_function.set_condition(condition)
+                transition = TransitionItem(start_point, end_point, end_state)
+                transition_function = TransitionFunction(self.get_token_list(), self._automaton_settings['transition_sections'], transition)
+                transition.set_transition_function(transition_function)
+                transition_function.set_condition(condition)
                 transition.update_position()
-                self.scene().addItem(transition)
+                self.scene().addItem(transition_function)
 
-    def create_state(self, pos: QPointF, display_text: str=None) -> None:
+    def create_state(self, pos: QPointF, display_text=None) -> None:
         """
         Create a new state at the given position.
 
@@ -550,17 +570,21 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._counter += 1
 
     def create_transition(self, start_point, end_point, state_group):
-        transition: TransitionItem = TransitionItem(self.get_token_list(), self._automaton_settings['transition_sections'], start_point, end_point, state_group)
+        transition: TransitionItem = TransitionItem(start_point, end_point, state_group)
         self.add_transition.emit(transition.get_ui_transition())
+        transition_function: TransitionFunction = TransitionFunction(self.get_token_list(),
+                                                                     self._automaton_settings['transition_sections'],
+                                                                     transition)
+        transition.set_transition_function(transition_function)
         transition.update_position()
-        self.scene().addItem(transition)
+        self.scene().addItem(transition_function)
 
     def empty_scene(self):
         for item in self.scene().items():
-            if not isinstance(item, XGraphicsItem):
-                self.scene().removeItem(item)
+            self.scene().removeItem(item)
 
     def remove_transition(self, transition: 'Transition') -> None:
+        print(transition.__dict__)
         transition.start_state.connected_transitions.remove(transition)
         transition.end_state.connected_transitions.remove(transition)
         self.scene().removeItem(transition)
@@ -578,12 +602,14 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
         elif isinstance(item, StateItem):
             item.deactivate()
+            print(item.get_ui_state())
             for transition in list(item.get_connected_transitions()):
                 self.remove_transition(transition)
             self.scene().removeItem(item)
             self.delete_state.emit(item.get_ui_state())
 
-        elif isinstance(item, TransitionItem):
+        elif isinstance(item, Transition):
+            print(item.get_ui_transition())
             self.remove_transition(item)
             self.delete_transition.emit(item.get_ui_transition())
 
@@ -647,10 +673,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if not isinstance(parent, UserPanel):
             return
 
-        print(item)
-
-        if isinstance(item, TokenButton):
-            pass
+        """if isinstance(item, TokenButton):
+            print('pressed')
+            button_index = item.button_index
+            transition_function: TransitionFunction = item.parentWidget().parentItem()
+            transition_function.token_list_frame.set_visible(True, button_index)
+            return"""
 
         current_parent_item = None
         if isinstance(item, StateGraphicsItem | LabelGraphicsItem):

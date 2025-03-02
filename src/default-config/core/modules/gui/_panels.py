@@ -1,5 +1,4 @@
 """Panels of the gui"""
-from PyQt5.QtWidgets import QScrollBar
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
                                QFormLayout, QLineEdit,
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
@@ -31,7 +30,7 @@ class StateMenu(QFrame):
         super().__init__(parent)
         self.setAutoFillBackground(True)
 
-        self.singleton_observer = SingletonObserver()
+        # self.singleton_observer = SingletonObserver()
 
         self.visible: bool = False
         self.state: StateItem | None = None
@@ -121,7 +120,7 @@ class StateMenu(QFrame):
             target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             target_item.setData(Qt.ItemDataRole.UserRole, transition)
 
-            token_list = self.singleton_observer.get('token_lists')
+            # token_list = self.singleton_observer.get('token_lists')
             condition_edit: QComboBox = QComboBox()
             condition_edit.addItems(token_list[0] if token_list else [])
             condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
@@ -137,8 +136,8 @@ class StateMenu(QFrame):
 
     def change_state_type(self):
         state_type: _ty.Literal['default', 'start', 'end'] = self.type_input.currentText().lower()
-        if state_type == 'start':
-            self.singleton_observer.set('start_state', self.state.get_ui_state())
+        # if state_type == 'start':
+        #     self.singleton_observer.set('start_state', self.state.get_ui_state())
         self.state.set_state_type(state_type)
 
     def on_current_item_changed(self, current: QTableWidgetItem | QComboBox,
@@ -159,8 +158,8 @@ class StateMenu(QFrame):
 class ControlMenu(QFrame):
     def __init__(self, grid_view: 'AutomatonInteractiveGridView', parent=None):
         super().__init__(parent)
-        self.singleton_observer = SingletonObserver()
-        self.singleton_observer.subscribe('token_lists', self.update_token_lists)
+        # self.singleton_observer = SingletonObserver()
+        # self.singleton_observer.subscribe('token_lists', self.update_token_lists)
 
         self.grid_view = grid_view
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = [[], []]
@@ -217,7 +216,7 @@ class ControlMenu(QFrame):
                 self.token_list_box.addItem(token)
             QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
             self.token_lists[0].append(token)
-            self.singleton_observer.set('token_lists', self.token_lists)
+            # self.singleton_observer.set('token_lists', self.token_lists)
         else:
             IOManager().warning('No whitespace or special characters allowed!', '', True, False)
 
@@ -225,7 +224,7 @@ class ControlMenu(QFrame):
         self.token_list_box.removeItem(token_index)
         self.token_lists[0].remove(token)
 
-        self.singleton_observer.set('token_lists', self.token_lists)
+        # self.singleton_observer.set('token_lists', self.token_lists)
 
     def update_token_lists(self, token_lists: _ty.List[_ty.List[str]]):
         self.token_lists = token_lists
@@ -243,12 +242,12 @@ class ControlMenu(QFrame):
 
 class UserPanel(Panel):
     """The main panel to be shown"""
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, ui_automaton: 'UiAutomaton', parent: QWidget | None = None) -> None:
         super().__init__(parent)
         from ._grids import AutomatonInteractiveGridView
         main_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=self)
 
-        self.grid_view = AutomatonInteractiveGridView()  # Get values from settings
+        self.grid_view = AutomatonInteractiveGridView(ui_automaton)  # Get values from settings
         main_layout.addWidget(self.grid_view)
 
         # Info Menu
@@ -408,9 +407,9 @@ class UserPanel(Panel):
         else:
             self.input_frame.setGeometry(self.width() - width - 15, self.control_menu.height() + 10, width, self.hide_button.height() + 20)
 
-        if self.info_menu.x() == 0 and not self.auto_show_info_menu:
+        """if self.info_menu.x() == 0 and not self.auto_show_info_menu:
             self.info_menu.setGeometry(-width, 0, width, height)
-            self.info_menu_button.move(width + 40, 20)  # Update the position of the menu button
+            self.info_menu_button.move(width + 40, 20)  # Update the position of the menu button"""
 
         if self.info_menu.x() < 0:
             self.info_menu.setGeometry(-width, 0, width, height)

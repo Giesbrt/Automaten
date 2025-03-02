@@ -254,13 +254,13 @@ class UiAutomaton(IUiAutomaton):
         super().__init__(automaton_type, author, state_types_with_design, token_lists, changeable_token_lists,
                          transition_pattern)
 
-        self.signal_bus = SignalBus()
+        """self.signal_bus = SignalBus()
         self.signal_bus.request_method.connect(self.call_method)
 
         self.singleton_observer = SingletonObserver()
         self.singleton_observer.subscribe('token_lists', self.set_token_lists)
         self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
-        self.singleton_observer.subscribe('start_state', self.set_start_state)
+        self.singleton_observer.subscribe('start_state', self.set_start_state)"""
 
         self._type: str = automaton_type
 
@@ -274,7 +274,7 @@ class UiAutomaton(IUiAutomaton):
         self._bridge: UiBridge = UiBridge()
         self._input_widget: _ty.Type[QAutomatonInputOutput] | None = None
 
-    def call_method(self, method_name, args, kwargs):
+    """def call_method(self, method_name, args, kwargs):
         if self.signal_bus is None:
             return
 
@@ -287,7 +287,7 @@ class UiAutomaton(IUiAutomaton):
             else:
                 IOManager().warning(f'UiAutomaton: {method_name} is not a callable method!', '', True, True)
         else:
-            IOManager().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)
+            IOManager().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)"""
 
     def __del__(self):
         print("delete")
@@ -728,6 +728,7 @@ class UiAutomaton(IUiAutomaton):
             print(other.get_automaton_type())
         except:
             print(other, 'has no attribute get_automaton_type')
+            return
         return (self._type == other.get_automaton_type()
                 and self._states == other.get_states()
                 and self._transitions == other.get_transitions()

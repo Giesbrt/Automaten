@@ -244,14 +244,16 @@ class AutomatonInteractiveGridView(InteractiveGridView):
     delete_state: Signal = Signal(UiState)
     delete_transition: Signal = Signal(UiTransition)
 
-    def __init__(self, default_color: QColor=QColor('white'), default_selection_color: QColor=QColor('red')) -> None:
+    def __init__(self, ui_automaton: 'UiAutomaton', default_color: QColor=QColor('white'), default_selection_color: QColor=QColor('red')) -> None:
         """Initialize the automaton grid view.
 
         :param default_color (QColor): The default color of the states.
         """
         super().__init__()
-        self.automaton_type: str | None = None
-        self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = [[], ['L', 'R', 'H']]
+        self.ui_automaton: 'UiAutomaton' = ui_automaton
+        # self.automaton_type: str | None = self.ui_automaton.get_automaton_type()
+        # self.token_list: _ty.Tuple[_ty.List[str], _ty.List[str]] = self.ui_automaton.get_token_lists()         # [[], ['L', 'R', 'H']]
+
         self.automaton_is_loaded: bool | None = None
         self._counter: int = 0
         self._last_active: StateGraphicsItem | None = None
@@ -265,19 +267,29 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._default_color: QColor = default_color
         self._default_selection_color: QColor = default_selection_color
 
-        self.signal_bus = SignalBus()
+        if ui_automaton.get_states():
+            self.load_automaton_from_file()
+
+        """self.signal_bus = SignalBus()
         self.signal_bus.send_response.connect(self.handle_response)
 
         self.singleton_observer = SingletonObserver()
         self.singleton_observer.subscribe('is_loaded', self.load_automaton_from_file)
         self.singleton_observer.subscribe('token_lists', self.set_token_lists)
-        self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
+        self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)"""
 
-    def load_automaton_from_file(self, is_loaded):
+    def load_automaton_from_file(self):
         """Loads the UiAutomaton"""
-        if is_loaded:
+        for state in self.ui_automaton.get_states():
+            self.create_state_from_automaton(state)
+        for transition in self.ui_automaton.get_transitions():
+            self.create_transition_from_automaton(transition)
+        self.token_lists = self.ui_automaton.get_token_lists()
+
+
+        """if is_loaded:
             for request in ('get_states', 'get_transitions', 'get_token_lists'):
-                self.request_method(request)
+                self.request_method(request)"""
 
     def request_method(self, method_name, *args, **kwargs) -> None:
         """Sends the Signal to the SignalBus"""

@@ -27,7 +27,7 @@ class AutomatonSelectionDialog(QDialog):
         self.setAutoFillBackground(True)
         self.setPalette(palette)
 
-        self.singleton_observer = SingletonObserver()
+        # self.singleton_observer = SingletonObserver()
 
         layout = QVBoxLayout(self)
 
@@ -50,7 +50,7 @@ class AutomatonSelectionDialog(QDialog):
         button = self.sender()
         if button:
             self.selected_type = _re.findall(r'\((.*?)\)', button.text())
-        self.singleton_observer.set('automaton_type', self.selected_type[0])
+        # self.singleton_observer.set('automaton_type', self.selected_type[0])
         self.accept()
 
 
@@ -73,10 +73,10 @@ class MainWindow(QMainWindow, IMainWindow):
         super().__init__(parent=None)
         self.statusBar().showMessage("Statusbar")
 
-    def setup_gui(self) -> None:
+    def setup_gui(self, ui_automaton: 'UiAutomaton') -> None:
         self.settings_button = QPushButton(parent=self)
         self.menu_bar = self.menuBar()
-        self.user_panel = UserPanel(parent=self)
+        self.user_panel = UserPanel(ui_automaton, parent=self)
         self.settings_panel = SettingsPanel(parent=self)
         # import time
         # time.sleep(10)
@@ -379,13 +379,17 @@ class MainWindow(QMainWindow, IMainWindow):
         return False
 
     def start(self) -> None:
+        print(2.1)
         self.show()
+        print(2.2)
         self.raise_()
+        print(2.3)
 
-        self.singleton_observer = SingletonObserver()
-        if not self.singleton_observer.get('is_loaded'):
-            if not self.show_automaton_selection():
-                self.close()
+        # self.singleton_observer = SingletonObserver()
+        # if not self.singleton_observer.get('is_loaded'):
+        if not self.show_automaton_selection():
+            print('closed')
+            self.close()
 
     def close(self) -> None:
         QMainWindow.close(self)

@@ -21,7 +21,7 @@ import stdlib_list
 import requests
 # PySide6
 from PySide6.QtWidgets import QApplication, QMessageBox, QSizePolicy
-from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtGui import QIcon, QDesktopServices, Qt
 from PySide6.QtCore import QUrl
 # aplustools
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
@@ -172,6 +172,8 @@ class App:
             self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
             self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
 
+            print(1)
+
             # Thread pool
             self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
             self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
@@ -184,12 +186,31 @@ class App:
                              ))
             self.pool.submit(self.check_for_update)
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
+            print(2)
 
-            self.window.setup_gui()
+
+            # Automaton backend init
+            # self.singleton_observer = SingletonObserver()
+            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {}) # Placeholder
+            # self.singleton_observer.set('is_loaded', False)
+            if input_path != "":
+                success: bool = self.load_file(input_path)
+                if not success:
+                    print('Could not load file')
+                    # ErrorCache().error("Could not load file", "", True, True)
+                    """self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
+                    self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
+                    self.singleton_observer.set('is_loaded', True)"""
+
+            print(3)
+
+            self.window.setup_gui(self.ui_automaton)
             # self.window.user_panel.setShowScrollbars(False)
             # self.window.user_panel.setAutoShowInfoMenu(False)
-            # self.grid_view = self.window.user_panel.grid_view
-            # self.control_menu = self.window.user_panel.control_menu
+            self.grid_view = self.window.user_panel.grid_view
+            self.control_menu = self.window.user_panel.control_menu
+
+            print(4)
 
             # Setup IOManager
             self.io_manager: IOManager = IOManager()
@@ -197,6 +218,8 @@ class App:
             self.io_manager.set_logging_level(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
             for exported_line in config.exported_logs.split("\n"):
                 self.io_manager.debug(exported_line)  # Flush config prints
+
+            print(5)
 
             # Settings
             self.settings: AppSettings = AppSettings()
@@ -208,12 +231,16 @@ class App:
                                                                      args=(self.backend_stop_event,))
             self.backend_thread.start()
 
+            print(6)
+
             # Setup window
             self.system: BaseSystemType = get_system()
             self.os_theme: SystemTheme = self.get_os_theme()
             self.load_themes(os.path.join(self.styling_folder, "themes"))
             self.load_styles(os.path.join(self.styling_folder, "styles"))
             # self.window.set_recently_opened_files(list(self.user_settings.retrieve("auto", "recent_files", "tuple")))
+
+            print(7)
 
             x, y, height, width = self.settings.get_window_geometry()
             if not self.settings.get_save_window_dimensions():
@@ -224,26 +251,22 @@ class App:
             else:  # I guess windows does some weird shit with the title bar
                 self.window.set_window_dimensions(height, width)
 
-            assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
+            print(8)
+
+            # assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
             self.apply_theme()
+            print(1.1)
             self.connect_signals()
-            self.timer_tick(0)  # Updates everything
+            print(1.2)
+            # self.timer_tick(0)  # Updates everything
+            print(1.3)
             self.window.start()  # Shows gui
 
-            # Automaton backend init
-            self.singleton_observer = SingletonObserver()
-            self.ui_automaton: UiAutomaton = UiAutomaton()
-            self.singleton_observer.set('is_loaded', False)
-            if input_path != "":
-                success: bool = self.load_file(input_path)
-                if success:
-                    self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
-                    self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
-                    self.singleton_observer.set('is_loaded', True)
+            print(9)
 
             self.timer: QtTimidTimer = QtTimidTimer()
             self.timer.timeout.connect(self.timer_tick)
-            self.timer.start(500, 0)
+            # self.timer.start(500, 0)
             self.timer_number: int = 1
         except Exception as e:
             self.exit()
@@ -678,10 +701,11 @@ class App:
             raise RuntimeError(f"Default light and/or dark style are/is not present")
 
     def apply_theme(self) -> None:
-        theming_str: str = self.user_settings.retrieve("design",
+        theming_str = 'adalfarus::thin/colored_evening_sky'
+        """theming_str: str = self.user_settings.retrieve("design",
                                                        {SystemTheme.LIGHT: "light_theming",
                                                         SystemTheme.DARK: "dark_theming"}[self.os_theme],
-                                                       "string")
+                                                       "string")"""
         theme_str, style_str = theming_str.split("/", maxsplit=1)
         theme: Theme | None = Theme.get_loaded_theme(theme_str)
 

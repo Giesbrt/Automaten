@@ -186,7 +186,7 @@ class App:
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             # Automaton backend init
-            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
+            self.ui_automaton: UiAutomaton = UiAutomaton('dfa', 'TheCodeJak', {})  # Placeholder
             if input_path != "":
                 success: bool = self.load_file(input_path)
                 if not success:
@@ -425,13 +425,6 @@ class App:
         self.window.save_file_signal.connect(partial(self.save_to_file, automaton=self.ui_automaton))
         self.window.open_file_signal.connect(self.open_file)
 
-        self.grid_view.set_transition_pattern.connect(automaton.set_transition_pattern)
-        self.grid_view.set_is_changeable_token_list.connect(automaton.set_is_changeable_token_list)
-
-        self.grid_view.add_state.connect(automaton.add_state)
-        self.grid_view.add_transition.connect(automaton.add_transition)
-        self.grid_view.delete_state.connect(automaton.delete_state)
-        self.grid_view.delete_transition.connect(automaton.delete_transition)
         # self.window.settings_changed.connect(self.set_settings)
 
     def set_settings(self, settings_to_be_changed: dict[str, dict[str, str]]):

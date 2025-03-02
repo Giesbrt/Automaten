@@ -1,6 +1,9 @@
-from PySide6.QtCore import Qt, QPointF, QLineF
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsLineItem
+from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal, QEvent, QSizeF, QMargins
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QFont, QPolygonF, QBrush
+from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem, QGraphicsWidget, \
+    QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, \
+    QGraphicsProxyWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent, QGraphicsRectItem, QGraphicsLinearLayout, \
+    QGraphicsLayoutItem
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -71,3 +74,96 @@ class FrameWidgetItem(QWidget):
         pen = QPen(self._border_color, self._border_width)
         painter.setPen(pen)
         painter.drawPath(path)
+
+
+class _DirectionalLayout:
+    """The default directional layout"""
+    def __init__(self, base_x: float, base_y: float, margins: tuple[int, int, int, int] = (9, 9, 9, 9), spacing: int = 9):
+        self.base_x = base_x
+        self.base_y = base_y
+        self._margins: tuple[int, int, int, int] = margins  # left, top, right, bottom
+        self._spacing: int = spacing
+        self._rect: QRectF = QRectF(0, 0, 0, 0)
+        self._children: list[QGraphicsWidget | _ty.Type[_ty.Self] | None] = []
+        self._children_sizes: list[int] = []
+        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
+
+    @property
+    def margins(self) -> tuple[int, int, int, int]:
+        """The outer margins of the Directional Layout"""
+        return self._margins
+
+    @margins.setter
+    def margins(self, new_margins: tuple[int, int, int, int]):
+        self._margins = new_margins
+        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
+        self.reposition()
+
+    @property
+    def spacing(self) -> int:
+        """The spacing between individual widgets in the layout"""
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, new_spacing: int):
+        self._spacing = new_spacing
+        self.reposition()
+
+    @property
+    def rect(self) -> QRectF:
+        """The rectangle of the current layout"""
+        return self._rect
+
+    def add_widget(self, widget: QGraphicsWidget | None, size: int = 1):
+        """Add a widget with a set size"""
+        if not isinstance(widget, _DirectionalLayout):
+            self._children.append(widget)
+            self._children_sizes.append(size)
+            self.reposition()
+        else:
+            raise ValueError(f"Widget must be a widget, not {widget.__class__.__name__}")
+
+    def add_layout(self, layout: _ty.Type[_ty.Self], size: int = 1):
+        """Add a layout with a set size"""
+        if isinstance(layout, _DirectionalLayout):
+            self._children.append(layout)
+            self._children_sizes.append(size)
+            self.reposition()
+        else:
+            raise ValueError(f"Layout must be a layout, not {layout.__class__.__name__}")
+
+    def add_stretch(self, size: int = 1):
+        """Add an empty widget with a set size"""
+        self._children.append(None)
+        self._children_sizes.append(size)
+        self.reposition()
+
+    def resize(self, rect: QRectF | tuple[int, int, int, int]) -> None:
+        """Resizes the rect of the layout to a new rect and repositions all children within it"""
+        self._rect = rect if not isinstance(rect, tuple) else QRectF(*rect)
+        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
+        self.reposition()
+
+    def reposition(self):
+        """Repositions all widgets within the DirectionalLayout"""
+        pass
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
+        """Draws all widgets within the DirectionalLayout"""
+        for child in self._children:
+            if child is not None:
+                child.paint(painter, option)
+
+
+class HorizontalLayout(_DirectionalLayout):
+    def reposition(self):
+        total_size = sum(self._children_sizes)
+        x_offset = self._working_rect.x()
+        available_width = self._working_rect.width() - (self._spacing * max(0, len(self._children) - 1))
+
+        for child, size in zip(self._children, self._children_sizes):
+            width = (size / total_size) * available_width
+            if child:
+                child_rect = QRectF(x_offset + self.base_x, self._working_rect.y() + self.base_y, width, self._working_rect.height())
+                child.setRect(child_rect)
+            x_offset += width + self._spacing

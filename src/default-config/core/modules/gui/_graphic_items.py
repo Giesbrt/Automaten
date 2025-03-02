@@ -1,12 +1,10 @@
-import numpy as np
-from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal, QEvent, QSizeF, QMargins
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QFont, QPolygonF, QBrush
+from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal, QMargins
+from PySide6.QtGui import QColor, QPainter, QPen, QFont, QPolygonF, QBrush
 from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem, QGraphicsWidget, \
-    QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, \
-    QGraphicsProxyWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent, QGraphicsRectItem, QGraphicsLinearLayout, \
-    QGraphicsLayoutItem
+    QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QVBoxLayout, \
+    QGraphicsProxyWidget, QGraphicsRectItem
 
-from ._graphic_support_items import FrameWidgetItem
+from ._graphic_support_items import FrameWidgetItem, HorizontalLayout
 from painter import PainterStr, StrToPainter
 
 # Standard typing imports for aps
@@ -14,6 +12,7 @@ from functools import partial
 import collections.abc as _a
 import typing as _ty
 import types as _ts
+import numpy as np
 
 
 class StateGraphicsItem(QGraphicsEllipseItem):
@@ -22,26 +21,24 @@ class StateGraphicsItem(QGraphicsEllipseItem):
     This class provides visual and interactive behavior for a state,
     including movement and selection.
     """
-    def __init__(self, x: float, y: float, width: int, height: int, color: QColor,
+    def __init__(self, x: float, y: float, size: int, color: QColor,
                  parent: QGraphicsItem | None = None) -> None:
         """Initializes the state with default properties.
 
         :param x: The x-coordinate of the state.
         :param y: The y-coordinate of the state.
-        :param width: The width of the state.
-        :param height: The height of the state.
+        :param size: The size of the state.
         :param color: The fill color of the state.
         :param parent: The parent graphics item, defaults to None.
         """
-        super().__init__(QRectF(x, y, width, height), parent)
+        super().__init__(QRectF(x, y, size, size), parent)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsWidget.GraphicsItemFlag.ItemIsMovable, True)
         self.x: float = x
         self.y: float = y
-        self.width: int = width
-        self.height: int = height
+        self.width: int = size
+        self.height: int = size
         self.color: QColor = color
-        self.is_active = False
 
         self.setBrush(QColor(self.color))
         self.setPen(Qt.PenStyle.NoPen)
@@ -188,11 +185,10 @@ class LabelGraphicsItem(QGraphicsTextItem):
         :param widget: The widget on which the item is painted, defaults to None.
         """
         super().paint(painter, option, widget)
-        # self.setPlainText(self.parentItem().ui_state.get_display_text())
 
 class TransitionGraphicsItem(QGraphicsLineItem):
     """TBA"""
-    def __init__(self, start_point: 'StateConnectionGraphicsItem', end_point: 'StateConnectionGraphicsItem',
+    def __init__(self, start_point, end_point, start_state, end_state,
                  parent: QGraphicsItem | None = None) -> None:
         """Initializes a Transition between two connection points.
 
@@ -206,18 +202,13 @@ class TransitionGraphicsItem(QGraphicsLineItem):
         self.start_point: 'StateConnectionGraphicsItem' = start_point
         self.end_point: 'StateConnectionGraphicsItem' = end_point
 
-        self.start_state: 'StateItem' = self.start_point.parentItem()
-        self.end_state: 'StateItem' = self.end_point.parentItem()
+        self.start_state: 'StateItem' = start_state
+        self.end_state: 'StateItem' = end_state
 
-        self.start_state.add_transition(self)
-        self.end_state.add_transition(self)
-
-        self.transition_function: 'TransitionFunction' | None = None
         self.arrow_size: int = 10
         self.arrow_head: QPolygonF | None = None
 
         self.setPen(QPen(QColor(0, 10, 33), 4))
-        self.update_position()
 
     def set_transition(self, condition: _ty.List[str]):
         """Sets the condition of the transition.
@@ -236,7 +227,7 @@ class TransitionGraphicsItem(QGraphicsLineItem):
     def set_ui_transition(self, ui_transition):
         self.ui_transition = ui_transition
 
-    def get_transition_function(self) -> 'TransitionFunction':
+    def get_transition_function(self) -> 'TransitionFunctionItem':
         """Retrieves the transition function associated with this transition.
 
         :return: The transition function.
@@ -282,42 +273,6 @@ class TransitionGraphicsItem(QGraphicsLineItem):
             self.mapFromScene(arrow_p2)
         ])
 
-    def update_position(self) -> None:
-        """Updates the position of the transition line and arrow head.
-
-        This method recalculates the start and end points, updates the connecting line,
-        computes the angle for the arrow head, and centers the transition function if set.
-        """
-        start_scene_pos = self.start_point.mapToScene(self.start_point.boundingRect().center())
-        end_scene_pos = self.end_point.mapToScene(self.end_point.boundingRect().center())
-
-        start_local = self.mapFromScene(start_scene_pos)
-        end_local = self.mapFromScene(end_scene_pos)
-
-        self.setLine(QLineF(start_local, end_local))
-
-        line = QLineF(start_scene_pos, end_scene_pos)
-        self.setPos(0, 0)
-
-        angle = np.arctan2(line.dy(), line.dx())
-        self.arrow_head = self.calculate_arrow_head(end_scene_pos, angle)
-
-        if self.transition_function:
-            center = self.get_center(start_scene_pos, end_scene_pos)
-
-            button_size = self.transition_function.token_button_frame.size()
-            token_list_size = self.transition_function.token_list_frame.size()
-
-            button_x = center.x() - button_size.width() / 2
-            button_y = center.y() - button_size.height() / 2
-            self.transition_function.token_button_frame.setPos(button_x, button_y)
-
-            gap = 5
-
-            token_list_x = center.x() - token_list_size.width() / 2
-            token_list_y = button_y + button_size.height() + gap
-            self.transition_function.token_list_frame.setPos(token_list_x, token_list_y)
-
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         """Renders the transition line and arrow head.
 
@@ -329,146 +284,6 @@ class TransitionGraphicsItem(QGraphicsLineItem):
         if self.arrow_head:
             painter.setBrush(QColor(0, 10, 33))
             painter.drawPolygon(self.arrow_head)
-
-
-class ConditionGraphicsItem(QGraphicsWidget):
-    """Zwischeninstanz für die Verwaltung der Token-UI-Elemente einer Transition."""
-
-    def __init__(self, token_lists: tuple[list[str], list[str]], sections: int, parent: 'TransitionItem') -> None:
-        """Initialisiert die Condition-Komponente für eine Transition.
-
-        :param token_lists: Tuple mit verfügbaren Tokens (input_tokens, tape_tokens)
-        :param parent: Die übergeordnete TransitionItem-Instanz
-        """
-        super().__init__(parent)
-        self.transition = parent
-
-        # UI-Komponenten erstellen
-        self.token_list_frame = TokenListFrame(token_lists, parent=self)
-        self.token_button_frame = TokenButtonFrame(self.token_list_frame, sections, parent=self)
-
-        # Signale verbinden
-        self._setup_signals()
-
-    def _setup_signals(self) -> None:
-        """Verbindet die Signale der UI-Komponenten."""
-        self.token_list_frame.token_selected.connect(self.token_button_frame.set_token)
-        self.token_button_frame.all_token_set.connect(self._on_condition_changed)
-
-    def _on_condition_changed(self, condition: list[str]) -> None:
-        """Handler für Änderungen der Bedingung.
-
-        :param condition: Liste der ausgewählten Tokens
-        """
-        self.token_button_frame.set_condition(condition)
-        self.transition.get_ui_transition().set_condition(condition)
-
-    def set_condition(self, condition: _ty.List[str]) -> None:
-        """Sets the condition for the transition.
-
-        :param condition: A list of tokens representing the transition condition.
-        """
-        self.token_button_frame.set_condition(condition)
-
-    def set_token_lists(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
-        """Aktualisiert die verfügbaren Token-Listen.
-
-        :param token_lists: Neue Token-Listen (input_tokens, tape_tokens)
-        """
-        self.token_list_frame.update_token_lists(token_lists)
-
-
-class _DirectionalLayout:
-    """The default directional layout"""
-    def __init__(self, base_x: float, base_y: float, margins: tuple[int, int, int, int] = (9, 9, 9, 9), spacing: int = 9):
-        self.base_x = base_x
-        self.base_y = base_y
-        self._margins: tuple[int, int, int, int] = margins  # left, top, right, bottom
-        self._spacing: int = spacing
-        self._rect: QRectF = QRectF(0, 0, 0, 0)
-        self._children: list[QGraphicsWidget | _ty.Type[_ty.Self] | None] = []
-        self._children_sizes: list[int] = []
-        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
-
-    @property
-    def margins(self) -> tuple[int, int, int, int]:
-        """The outer margins of the Directional Layout"""
-        return self._margins
-
-    @margins.setter
-    def margins(self, new_margins: tuple[int, int, int, int]):
-        self._margins = new_margins
-        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
-        self.reposition()
-
-    @property
-    def spacing(self) -> int:
-        """The spacing between individual widgets in the layout"""
-        return self._spacing
-
-    @spacing.setter
-    def spacing(self, new_spacing: int):
-        self._spacing = new_spacing
-        self.reposition()
-
-    @property
-    def rect(self) -> QRectF:
-        """The rectangle of the current layout"""
-        return self._rect
-
-    def add_widget(self, widget: QGraphicsWidget | None, size: int = 1):
-        """Add a widget with a set size"""
-        if not isinstance(widget, _DirectionalLayout):
-            self._children.append(widget)
-            self._children_sizes.append(size)
-            self.reposition()
-        else:
-            raise ValueError(f"Widget must be a widget, not {widget.__class__.__name__}")
-
-    def add_layout(self, layout: _ty.Type[_ty.Self], size: int = 1):
-        """Add a layout with a set size"""
-        if isinstance(layout, _DirectionalLayout):
-            self._children.append(layout)
-            self._children_sizes.append(size)
-            self.reposition()
-        else:
-            raise ValueError(f"Layout must be a layout, not {layout.__class__.__name__}")
-
-    def add_stretch(self, size: int = 1):
-        """Add an empty widget with a set size"""
-        self._children.append(None)
-        self._children_sizes.append(size)
-        self.reposition()
-
-    def resize(self, rect: QRectF | tuple[int, int, int, int]) -> None:
-        """Resizes the rect of the layout to a new rect and repositions all children within it"""
-        self._rect = rect if not isinstance(rect, tuple) else QRectF(*rect)
-        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
-        self.reposition()
-
-    def reposition(self):
-        """Repositions all widgets within the DirectionalLayout"""
-        pass
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
-        """Draws all widgets within the DirectionalLayout"""
-        for child in self._children:
-            if child is not None:
-                child.paint(painter, option)
-
-
-class HorizontalLayout(_DirectionalLayout):
-    def reposition(self):
-        total_size = sum(self._children_sizes)
-        x_offset = self._working_rect.x()
-        available_width = self._working_rect.width() - (self._spacing * max(0, len(self._children) - 1))
-
-        for child, size in zip(self._children, self._children_sizes):
-            width = (size / total_size) * available_width
-            if child:
-                child_rect = QRectF(x_offset + self.base_x, self._working_rect.y() + self.base_y, width, self._working_rect.height())
-                child.setRect(child_rect)
-            x_offset += width + self._spacing
 
 
 class TokenButton(QGraphicsRectItem):
@@ -527,8 +342,9 @@ class TokenButtonFrame(QGraphicsWidget):
         self.sections = sections
         self.token_buttons: _ty.List[TokenButton] = []
 
-        container = self._create_container()
+        self.setGeometry(QRectF(0, 0, 100, 50))
 
+        # container = self._create_container()
 
         for i in range(self.sections):
             token_button = TokenButton('...', i, parent=self)
@@ -721,8 +537,8 @@ class TokenListFrame(QGraphicsProxyWidget):
         self.token_selected.emit((self.button_index, token))
 
 
-class TransitionFunction(QGraphicsProxyWidget):
-    def __init__(self, tokens, sections, transition, parent=None) -> None:
+class TransitionFunctionItem(QGraphicsProxyWidget):
+    def __init__(self, ui_automaton: 'UiAutomaton', transition_line_item, sections, parent=None) -> None:
         """Initializes the transition function widget.
 
         :param tokens: A list of tokens for the transition function.
@@ -731,8 +547,11 @@ class TransitionFunction(QGraphicsProxyWidget):
         :param parent: The parent graphics item, defaults to None.
         """
         super().__init__(parent)
-        self.token_lists = tokens
-        self.transition = transition
+
+        self.ui_automaton = ui_automaton
+        self.token_lists = self.ui_automaton.get_token_lists()
+
+        self.transition_line_item = transition_line_item
 
         self.token_list_frame = TokenListFrame(self.token_lists, self)
         self.token_button_frame = TokenButtonFrame(self.token_list_frame, sections, self)
@@ -750,10 +569,10 @@ class TransitionFunction(QGraphicsProxyWidget):
         :param condition: A list of the currently selected tokens.
         """
         # traceback.print_stack()
-        print(f'Vor condition set: {self.transition.get_ui_transition()}')
+        print(f'Vor condition set: {self.transition_line_item.get_ui_transition()}')
         self.token_button_frame.set_condition(condition)
-        self.transition.get_ui_transition().set_condition(condition)
-        print(f'Nach condition set: {self.transition.get_ui_transition()}')
+        self.transition_line_item.get_ui_transition().set_condition(condition)
+        print(f'Nach condition set: {self.transition_line_item.get_ui_transition()}')
 
     def update_token_list(self, token_lists: tuple[list[str], list[str]]) -> None:
         """Updates the token list and replaces invalid tokens in the condition."""

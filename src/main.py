@@ -298,7 +298,7 @@ class App:
                                                                 default_button, checkbox)
             retval_func(retval)
             if checkbox is not None and checkbox_checked:
-                self.user_settings.store(*checkbox_setting, value=False, value_type="bool")
+                getattr(self.settings, f"set_{checkbox_setting[1]}")(False)
 
     def check_for_update(self) -> None:
         """TBA"""

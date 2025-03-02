@@ -239,6 +239,7 @@ class AppSettings(QObject):
     """TBA"""
     _instance: _ty.Self | None = None
     _settings: MultiUserDBStorage
+    _initialized: bool = False
     setup: bool = False
 
     # general
@@ -291,13 +292,14 @@ class AppSettings(QObject):
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(AppSettings, cls).__new__(cls)
-            cls._instance._initialized = False  # Track initialization state
+            # cls._instance._initialized = False  # Track initialization state
         return cls._instance
 
     def __init__(self) -> None:
-        if self.setup:  # Prevent reinitialization
+        if self._initialized:  # Prevent reinitialization
             return
         super().__init__()
+        self._initialized = True
 
     def init(self, config, settings_folder_path: str) -> None:
         """Initializes the AppSettings"""

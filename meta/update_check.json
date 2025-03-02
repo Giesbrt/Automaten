@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "newestVersion": "100",
+    "newestVersion": "1300a3",
     "authors": "adalfarus; Giesbrt; TheCodeJak; Fa4953",
     "lastUpdated": "2024-12-09",
     "sorryUrl": "https://github.com/adalfarus/update_check/blob/main/sorry.md"
@@ -15,6 +15,12 @@
     {
       "versionNumber": "1000a3",
       "description": "[Stable Release]\nInitial release with basic functionality, no known bugs.",
+      "updateUrl": "None",
+      "push": "True"
+    },
+    {
+      "versionNumber": "1300a3",
+      "description": "[Stable Release]\nImplemented nearly everything.",
       "updateUrl": "None",
       "push": "True"
     }

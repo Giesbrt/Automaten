@@ -78,9 +78,7 @@ class FrameWidgetItem(QWidget):
 
 class _DirectionalLayout:
     """The default directional layout"""
-    def __init__(self, base_x: float, base_y: float, margins: tuple[int, int, int, int] = (9, 9, 9, 9), spacing: int = 9):
-        self.base_x = base_x
-        self.base_y = base_y
+    def __init__(self, margins: tuple[int, int, int, int] = (9, 9, 9, 9), spacing: int = 9):
         self._margins: tuple[int, int, int, int] = margins  # left, top, right, bottom
         self._spacing: int = spacing
         self._rect: QRectF = QRectF(0, 0, 0, 0)

@@ -339,7 +339,11 @@ class TokenButtonFrame(QGraphicsWidget):
 
     def __init__(self, token_list_frame, sections: int, parent: QWidget = None) -> None:
         super().__init__(parent)
-        self.widget_layout = HorizontalLayout(self.x(), self.y())
+        self.vertical_layout = VerticalLayout((0, 0, 0, 0), 0)
+        self.widget_layout = HorizontalLayout((0, 0, 0, 0), 0)
+        self.vertical_layout.add_stretch(2)
+        self.vertical_layout.add_layout(self.widget_layout, 3)
+        self.vertical_layout.add_stretch(2)
 
         self.token_list_frame = token_list_frame
         self.sections = sections
@@ -354,7 +358,7 @@ class TokenButtonFrame(QGraphicsWidget):
             # if i < self.sections - 1:
             #     layout.addWidget(self._create_separator(container))
 
-        self.widget_layout.setRect(self.rect())
+        self.vertical_layout.setRect(self.rect())
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         # super().paint(painter, option, widget)
@@ -421,7 +425,7 @@ class TokenButtonFrame(QGraphicsWidget):
             self.all_token_set.emit(tokens)
 
     def moveEvent(self, event):
-        self.widget_layout.setRect(self.rect())
+        self.vertical_layout.setRect(self.rect())
 
 
 class TokenListFrame(QGraphicsProxyWidget):

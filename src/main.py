@@ -97,9 +97,9 @@ class AppSettings(IAppSettings):
         })
         self._settings.set_default_settings("design", {
             "light_theming": "adalfarus::thin/thin_light_green",  # thin_light_dark, colored_summer_sky
-            "dark_theming": "adalfarus::high_contrast/base",
+            # "dark_theming": "adalfarus::high_contrast/base",
             # "dark_theming": "adalfarus::thin/high_contrast",
-            # "dark_theming": "adalfarus::thin/colored_evening_sky",
+            "dark_theming": "adalfarus::thin/colored_evening_sky",
             # "dark_theming": "adalfarus::thick/thick_light",
             # "dark_theming": "adalfarus::chisled/base",
             # "dark_theming": "adalfarus::modern/base",

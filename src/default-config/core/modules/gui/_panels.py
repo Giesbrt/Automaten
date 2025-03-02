@@ -1,14 +1,17 @@
 """Panels of the gui"""
+import os
+
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
-                               QFormLayout, QLineEdit,
+                               QFormLayout, QLineEdit, QFontComboBox, QKeySequenceEdit, QCheckBox,
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
-                               QHBoxLayout, QColorDialog, QComboBox, QMenu)
-from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QEvent, Signal, QParallelAnimationGroup, QTimer
+                               QHBoxLayout, QColorDialog, QComboBox, QMenu, QSpinBox, QDoubleSpinBox)
+from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QLocale, Signal, QParallelAnimationGroup, QTimer
 from PySide6.QtGui import QColor, QIcon, QPen, QAction
 from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
+from pyside import QFlowLayout
 from utils.IOManager import IOManager
 from ._grid_items import StateItem
 
@@ -433,95 +436,312 @@ class UserPanel(Panel):
         super().resizeEvent(event)
 
 
+class LanguageDropdown(QComboBox):
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent=parent)
+        # Get available locales
+        locales = QLocale.matchingLocales(QLocale.AnyLanguage, QLocale.AnyScript, QLocale.AnyCountry)
+
+        # Create a set to store unique language names
+        unique_languages = {}
+
+        for locale in locales:
+            language_name = locale.nativeLanguageName().capitalize().strip()
+
+            if language_name and language_name not in unique_languages:
+                unique_languages[language_name] = locale  # Store the first occurrence
+
+        # Sort languages alphabetically
+        sorted_languages = sorted(unique_languages.items(), key=lambda x: x[0])
+
+        # Populate the combo box
+        for name, locale in sorted_languages:
+            self.addItem(name, locale)
+
+
 class SettingsPanel(Panel):
     """The settings panel"""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        # self.setStyleSheet("background-color: rgba(0, 40, 158, 0.33); font-size: 16pt;")
-
         self.setLayout(QQuickBoxLayout(QBoxDirection.TopToBottom))
-
-        # Top bar with back button
-        top_bar = QQuickBoxLayout(QBoxDirection.LeftToRight)
-        self.back_button = QPushButton("Back")
-        self.back_button.setFixedSize(80, 30)  # Example size
-        top_bar.addWidget(self.back_button)
-        top_bar.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-        self.layout().addLayout(top_bar)
 
         # Main content layout
         main_content = QQuickBoxLayout(QBoxDirection.LeftToRight)
         self.list_widget = QListWidget()
-        self.list_widget.setFixedWidth(200)  # Example width, ~1/5 of the width
-        self.list_widget.addItems(["General", "Design", "Security", "Privacy"])
+        self.list_widget.setStyleSheet("font-size: 14pt;")
+        self.list_widget.setFixedWidth(200)
+        self.list_widget.addItems(["General", "Design", "Performance", "Security", "Advanced"])
         main_content.addWidget(self.list_widget)
 
         # Stacked layout for settings pages
-        self.stacked_layout = QStackedLayout()
+        self.stacked_layout = QStackedLayout(self)
 
         # Create pages with titles and vertical layouts (slots)
         # [Reset to Defaults on every page]
-        self.general_panel = self.create_settings_page("General")
-        #  - Clear Automaton testing cache
-        # Shortcuts:
-        #  - Change shortcuts
-        #  - Enable/Disable shortcuts
-        # Updates:
-        #  - Check for updates manually/ automatically
-        # Language and Localization:
-        #  - Select app language
-        # Startup options:
-        #  - Open last used file on startup
-        #  - Launch at system startup
-        self.design_panel = self.create_settings_page("Design", extra_widgets=self.create_display_page_widgets())
-        # Themes:
-        #  - Select light, dark theme
-        #  - User created styles through gui with example of finished product visible as the color picker window
-        # Accessibility:
-        #  - High-contrast mode?
-        #  - Automaton scaling
-        #  - Ui Scaling (Font too)
-        #  - Larger icons?
-        # Font Options:
-        #  - Font Family
-        # Animations:
-        #  - Enable/Disable animations
-        # Tutorials:
-        #  - Auto open tutorials tab (default "on")
-        # Scaling
-        #  - enable/disable automatic scaling
-        # Defaults:
-        #  - Default state background color
-        #  - Transition func seperator (default "/")
-        self.security_panel = self.create_settings_page("Security")
-        #  - Warn of new plugins
-        #  - Run plugin only in a separate process (Not as efficient)
-        # Save files:
-        #  - Use safe file access to prevent corruption
-        self.advanced_panel = self.create_settings_page("Advanced")
-        # Debugging:
-        #  - Set logging mode
-        #  - Open logs folder
-        # Developer Options:
-        #  - Load selected plugin
-        #  -> Install plugins from e.g. Github for now no!
-
-        # Add panels to the stacked layout
-        # import time
-        # time.sleep(10)
-        # self.stacked_layout.addWidget(self.general_panel)
-        self.stacked_layout.addWidget(self.design_panel)
-        # self.stacked_layout.addWidget(self.security_panel)
-        # self.stacked_layout.addWidget(self.privacy_panel)
-        # import time
-        # time.sleep(10)
+        self.general_panel = self.create_general_page()
+        self.design_panel = self.create_design_page()
+        self.performance_panel = self.create_performance_page()
+        self.security_panel = self.create_security_page()
+        self.advanced_panel = self.create_advanced_page()
 
         main_content.addLayout(self.stacked_layout)
         self.layout().addLayout(main_content)
 
-        self.list_widget.currentRowChanged.connect(self.stacked_layout.setCurrentIndex)
-        self.list_widget.setCurrentRow(0)  # So an item is selected by default
+    def create_general_page(self) -> QWidget:
+        general_panel = QWidget()
+        layout = QQuickBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=general_panel)
+
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        title_label = QLabel("General")
+        title_label.setStyleSheet("font-size: 18pt;")
+        layout.addWidget(title_label)
+
+        rows: list[tuple[str, QWidget | None]] = []
+
+        self.language_dropdown = LanguageDropdown()
+        rows.append(("Language and Localization", self.language_dropdown))
+
+        rows.append(("Shortcuts: ", None))
+        shortcuts_frame = QFrame()
+        sc_frame = QQuickBoxLayout(QBoxDirection.TopToBottom, 4, (9, 0, 0, 0), apply_layout_to=shortcuts_frame)
+        shortcuts_layout = QFlowLayout()
+        sc_frame.addLayout(shortcuts_layout)
+
+        shortcuts: dict[str, str] = {
+            "file_open": "Ctrl+O",
+            "file_save": "Ctrl+S",
+            "file_close": "Ctrl+Q",
+            "simulation_start": "Ctrl+G",
+            "simulation_step": "Ctrl+T",
+            "simulation_halt": "Ctrl+H",
+            "simulation_end": "Ctrl+Y",
+            "states_cut": "Ctrl+X",
+            "states_copy": "Ctrl+C",
+            "states_paste": "Ctrl+V",
+        }
+        shortcut_widgets: list[tuple[str, QKeySequenceEdit, QCheckBox]] = []
+
+        def _create_lambda(shortcut_key_sequence_edit):
+            return lambda: shortcut_key_sequence_edit.setEnabled(not shortcut_key_sequence_edit.isEnabled())
+
+        for name, current_shortcut in shortcuts.items():
+            formatted_name = name.replace("_", " ").title()
+            shortcut_frame = QFrame()
+            shortcut_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0),
+                                              apply_layout_to=shortcut_frame)
+            shortcut_layout.addWidget(QLabel(f"{formatted_name}: "))
+            shortcut_key_sequence_edit = QKeySequenceEdit(parent=self, maximumSequenceLength=1)
+            shortcut_layout.addWidget(shortcut_key_sequence_edit)
+            shortcut_checkbox = QCheckBox(parent=self)
+            shortcut_checkbox.setChecked(True)
+            shortcut_checkbox.checkStateChanged.connect(_create_lambda(shortcut_key_sequence_edit))
+            shortcut_layout.addWidget(shortcut_checkbox)
+            shortcut_widgets.append((name, shortcut_key_sequence_edit, shortcut_checkbox))
+            shortcuts_layout.addWidget(shortcut_frame)
+
+        rows.append(("", shortcuts_frame))
+
+        update_frame = QFrame()
+        update_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0), apply_layout_to=update_frame)
+        check_for_update_button = QPushButton("Check for update")
+        update_layout.addWidget(check_for_update_button)
+        self.check_for_updates_checkbox = QCheckBox("Autocheck")
+        self.check_for_updates_checkbox.setChecked(True)
+        update_layout.addWidget(self.check_for_updates_checkbox)
+        rows.append(("Updates: ", update_frame))
+
+        rows.append(("Show no update info: ", QCheckBox()))
+        rows.append(("Show update info: ", QCheckBox()))
+        rows.append(("Show update timeout: ", QCheckBox()))
+        rows.append(("Ask to reopen last file: ", QCheckBox()))
+        auto_open_tutorial_tab = QCheckBox()
+        auto_open_tutorial_tab.setChecked(True)
+        rows.append(("Auto open tutorial tab: ", auto_open_tutorial_tab))
+
+        for name, widget in rows:
+            frame = QFrame()
+            frame_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (9, 0, 0, 0))
+            if name != "":
+                frame_layout.addWidget(QLabel(name))
+            if widget is not None:
+                frame_layout.addWidget(widget)
+            frame.setLayout(frame_layout)
+            layout.addWidget(frame)
+        return general_panel
+
+    def create_design_page(self) -> QWidget:
+        design_panel = QWidget()
+        layout = QQuickBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=design_panel)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        title_label = QLabel("Design")
+        title_label.setStyleSheet("font-size: 18pt;")
+        layout.addWidget(title_label)
+
+        rows: list[tuple[str, QWidget | None]] = []
+
+        self.window_icon_set_dropdown = QComboBox()
+        base_icon_set_dir = os.path.join(os.getcwd(), "data", "assets", "app_icons")
+        for sub in os.listdir(base_icon_set_dir):
+            subpath = os.path.join(base_icon_set_dir, sub)
+            if os.path.isdir(subpath):
+                icon_path: str = os.path.join(subpath, "logo-nobg.png")
+                if os.path.exists(icon_path):
+                    name: str = os.path.basename(subpath)
+                    self.window_icon_set_dropdown.addItem(QIcon(icon_path), name.title())
+                    if name == "shelline":
+                        self.window_icon_set_dropdown.setCurrentIndex(self.window_icon_set_dropdown.count() - 1)
+        rows.append(("Window Icon: ", self.window_icon_set_dropdown))
+
+        self.window_title_template_edit = QLineEdit("E.F.S $version$version_add $title [INDEV]")
+        rows.append(("Window Title Template: ", self.window_title_template_edit))
+
+        self.font_edit = QFontComboBox()
+        rows.append(("Font: ", self.font_edit))
+
+        rows.append(("Theming: ", None))
+        theming_frame = QFrame()
+        theming_layout = QQuickBoxLayout(QBoxDirection.TopToBottom, 9, (9, 0, 0, 0), apply_layout_to=theming_frame)
+        light_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0))
+        light_layout.addWidget(QLabel("Light: "))
+        self.light_theme_dropdown = QComboBox()
+        self.light_style_dropdown = QComboBox()
+        light_layout.addWidget(self.light_theme_dropdown, stretch=7)
+        light_layout.addWidget(QLabel("/"))
+        light_layout.addWidget(self.light_style_dropdown, stretch=5)
+        theming_layout.addLayout(light_layout)
+
+        dark_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0))
+        dark_layout.addWidget(QLabel("Dark: "))
+        self.dark_theme_dropdown = QComboBox()
+        self.dark_style_dropdown = QComboBox()
+        dark_layout.addWidget(self.dark_theme_dropdown, stretch=7)
+        dark_layout.addWidget(QLabel("/"))
+        dark_layout.addWidget(self.dark_style_dropdown, stretch=5)
+        theming_layout.addLayout(dark_layout)
+        rows.append(("", theming_frame))
+
+        self.state_bg_color_button: QPushButton = QPushButton("Choose Color", self)
+        self.state_bg_color_button.clicked.connect(self.open_color_dialog)
+        rows.append(("Default state background: ", self.state_bg_color_button))
+
+        rows.append(("Hide scrollbars: ", QCheckBox()))
+
+        for name, widget in rows:
+            frame = QFrame()
+            frame_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (9, 0, 0, 0))
+            if name != "":
+                frame_layout.addWidget(QLabel(name))
+            if widget is not None:
+                frame_layout.addWidget(widget)
+            frame.setLayout(frame_layout)
+            layout.addWidget(frame)
+        return design_panel
+
+    def open_color_dialog(self):
+        color: QColor = QColorDialog.getColor(initial=Qt.GlobalColor.white, parent=self, title="Choose a color")
+        if color.isValid():
+            self.selected_color = color
+
+    def create_performance_page(self) -> QWidget:
+        performance_panel = QWidget()
+        layout = QQuickBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=performance_panel)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        title_label = QLabel("Performance")
+        title_label.setStyleSheet("font-size: 18pt;")
+        layout.addWidget(title_label)
+
+        rows: list[tuple[str, QWidget | None]] = []
+
+        rows.append(("Option: ", QCheckBox()))
+
+        for name, widget in rows:
+            frame = QFrame()
+            frame_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (9, 0, 0, 0))
+            if name != "":
+                frame_layout.addWidget(QLabel(name))
+            if widget is not None:
+                frame_layout.addWidget(widget)
+            frame.setLayout(frame_layout)
+            layout.addWidget(frame)
+        return performance_panel
+
+    def create_security_page(self) -> QWidget:
+        security_panel = QWidget()
+        layout = QQuickBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=security_panel)
+
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        title_label = QLabel("Security")
+        title_label.setStyleSheet("font-size: 18pt;")
+        layout.addWidget(title_label)
+
+        rows: list[tuple[str, QWidget | None]] = []
+
+        rows.append(("Warn of new plugins: ", QCheckBox()))
+        auto_open_tutorial_tab = QCheckBox()
+        auto_open_tutorial_tab.setChecked(False)
+        auto_open_tutorial_tab.setEnabled(False)
+        rows.append(("Run plugins in separate process (not as efficient): ", auto_open_tutorial_tab))
+        rows.append(("Use safe file access: ", QCheckBox()))
+
+        for name, widget in rows:
+            frame = QFrame()
+            frame_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (9, 0, 0, 0))
+            if name != "":
+                frame_layout.addWidget(QLabel(name))
+            if widget is not None:
+                frame_layout.addWidget(widget)
+            frame.setLayout(frame_layout)
+            layout.addWidget(frame)
+        return security_panel
+
+    def create_advanced_page(self) -> QWidget:
+        advanced_panel = QWidget()
+        layout = QQuickBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=advanced_panel)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        title_label = QLabel("Advanced")
+        title_label.setStyleSheet("font-size: 18pt;")
+        layout.addWidget(title_label)
+
+        rows: list[tuple[str, QWidget | None]] = []
+
+        rows.append(("Automaton testing cache: ", QPushButton("Clear")))
+        rows.append(("Hide titlebar: ", QCheckBox()))
+        rows.append(("Stay on top: ", QCheckBox()))
+        rows.append(("Save window dimensions: ", QCheckBox()))
+        rows.append(("Save window position: ", QCheckBox()))
+        rows.append(("Update check request timeout: ", QDoubleSpinBox(decimals=1, minimum=0.0, maximum=10.0, singleStep=0.1, value=2.0)))
+        rows.append(("Max timer tick handled events: ", QSpinBox(minimum=0, maximum=20, singleStep=1, value=5)))
+
+        rows.append(("Developer Options: ", None))
+        dev_ops_frame = QFrame()
+        dev_ops_layout = QQuickBoxLayout(QBoxDirection.TopToBottom, 9, (9, 0, 0, 0), apply_layout_to=dev_ops_frame)
+        logging_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0))
+        logging_layout.addWidget(QLabel("Logging mode: "))
+        logging_layout.addWidget(QComboBox())
+        dev_ops_layout.addLayout(logging_layout)
+        dev_ops_layout.addWidget(QPushButton("Open logs folder"))
+        dev_ops_layout.addWidget(QPushButton("Open config folder"))
+
+        plugins_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (0, 0, 0, 0))
+        plugins_layout.addWidget(QLabel("Plugins: "))
+        plugins_layout.addWidget(QPushButton("Load from disk"))
+        load_from_github_button = QPushButton("Load from GitHub")
+        load_from_github_button.setEnabled(False)
+        plugins_layout.addWidget(load_from_github_button)
+        dev_ops_layout.addLayout(plugins_layout)
+        rows.append(("", dev_ops_frame))
+
+        for name, widget in rows:
+            frame = QFrame()
+            frame_layout = QQuickBoxLayout(QBoxDirection.LeftToRight, 9, (9, 0, 0, 0))
+            if name != "":
+                frame_layout.addWidget(QLabel(name))
+            if widget is not None:
+                frame_layout.addWidget(widget)
+            frame.setLayout(frame_layout)
+            layout.addWidget(frame)
+        return advanced_panel
 
     def create_settings_page(self, title: str, extra_widgets: list[QWidget] = None) -> QWidget:
         """Creates a settings page with a title and vertical layout."""
@@ -531,22 +751,22 @@ class SettingsPanel(Panel):
 
         # Add title
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 18pt;")
+        # title_label.setStyleSheet("font-size: 18pt;")
         layout.addWidget(title_label)
 
         # Add extra widgets if provided
         if extra_widgets:
             for widget in extra_widgets:
                 frame = QFrame()
-                frame.setStyleSheet("""
-                    QFrame {
-                        border: 2px solid #00289E;
-                        border-radius: 8px;
-                        margin: 10px;
-                        padding: 10px;
-                        background-color: white;
-                    }
-                """)
+                # frame.setStyleSheet("""
+                #     QFrame {
+                #         border: 2px solid #00289E;
+                #         border-radius: 8px;
+                #         margin: 10px;
+                #         padding: 10px;
+                #         background-color: white;
+                #     }
+                # """)
                 frame_layout = QQuickBoxLayout(QBoxDirection.TopToBottom)
                 frame_layout.addWidget(widget)
                 frame.setLayout(frame_layout)
@@ -588,3 +808,13 @@ class SettingsPanel(Panel):
         widgets.append(item_scale_widget)
 
         return widgets
+
+    def showEvent(self, event, /):
+        # Add panels to the stacked layout
+        self.stacked_layout.addWidget(self.general_panel)
+        self.stacked_layout.addWidget(self.design_panel)
+        self.stacked_layout.addWidget(self.performance_panel)
+        self.stacked_layout.addWidget(self.security_panel)
+        self.stacked_layout.addWidget(self.advanced_panel)
+        self.list_widget.currentRowChanged.connect(self.stacked_layout.setCurrentIndex)
+        self.list_widget.setCurrentRow(0)  # So an item is selected by default

@@ -49,7 +49,6 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 
-
 hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
 
@@ -70,6 +69,10 @@ class AppSettings(IAppSettings):
         self._configure_settings()
 
     def _configure_settings(self) -> None:
+        self._settings.set_default_settings("general", {
+            "app_language": "enUS",
+            "auto_open_tutorial_tab": "True"
+        })
         self._settings.set_default_settings("auto", {
             "geometry": "(100, 100, 1050, 640)",
             "show_no_update_info": "False",
@@ -79,45 +82,6 @@ class AppSettings(IAppSettings):
             # "scrolling_sensitivity": "4.0",
             "ask_to_reopen_last_opened_file": "True",
             "recent_files": "()"
-        })
-        self._settings.set_default_settings("design", {
-            "light_theming": "adalfarus::thin/thin_light_green",  # thin_light_dark, colored_summer_sky
-            "dark_theming": "adalfarus::thin/colored_evening_sky",
-            # "dark_theming": "adalfarus::thick/thick_light",
-            # "dark_theming": "adalfarus::chisled/base",
-            # "dark_theming": "adalfarus::modern/base",
-            # "dark_theming": "adalfarus::default/base",
-            "window_icon_set": ":/data/assets/app_icons/shelline",
-            "font": "Segoe UI",
-            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (
-                " [INDEV]" if config.INDEV else ""),
-            "high_contrast_mode": "NO",  # Just make a high contrast theme
-            "automaton_scaling": "NO",  # Why? We could manipulate the scroll max and mins
-            "automatic_scaling": "True",  # Would enable / disable next two options
-            "larger_icons": "FORNOWNO",  # Would require theme loader mods
-            "font_size": "automatic",  # idk, also mods to theme loader
-            "enable_animations": "True",
-            "auto_open_tutorial_tab": "True",
-            "default_state_background_color": "#FFFFFFFF",
-            "transition_func_seperator": "/"
-        })
-        self._settings.set_default_settings("security", {
-            "warn_of_unsigned_plugins": "True",
-            "run_plugin_in_seperate_process": "False",
-            "user_safe_file_access": "True"
-        })
-        self._settings.set_default_settings("advanced", {
-            "hide_titlebar": "False",
-            # "hide_scrollbar": "True",
-            "stay_on_top": "False",
-            "settings_backup_file_path": "",
-            "settings_backup_file_mode": "overwrite",
-            "settings_backup_auto_export": "False",
-            "save_window_dimensions": "True",
-            "save_window_position": "False",
-            "update_check_request_timeout": "2.0",
-            "max_timer_tick_handled_events": "5",
-            "logging_mode": "DEBUG" if config.INDEV else "INFO",
         })
         self._settings.set_default_settings("shortcuts", {
             "file_open": "Ctrl+O",  # "" means disabled
@@ -131,11 +95,43 @@ class AppSettings(IAppSettings):
             "states_copy": "Ctrl+C",
             "states_paste": "Ctrl+V",
         })
-        self._settings.set_default_settings("general", {
-            "app_language": "enUS",
-            "open_last_file_on_startup": "True",
-            "launch_at_system_startup": "False"
+        self._settings.set_default_settings("design", {
+            "light_theming": "adalfarus::thin/thin_light_green",  # thin_light_dark, colored_summer_sky
+            "dark_theming": "adalfarus::high_contrast/base",
+            # "dark_theming": "adalfarus::thin/high_contrast",
+            # "dark_theming": "adalfarus::thin/colored_evening_sky",
+            # "dark_theming": "adalfarus::thick/thick_light",
+            # "dark_theming": "adalfarus::chisled/base",
+            # "dark_theming": "adalfarus::modern/base",
+            # "dark_theming": "adalfarus::default/base",
+            "window_icon_sets_path": ":/data/assets/app_icons",
+            "window_icon_set": "shelline",
+            "font": "Segoe UI",
+            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (
+                " [INDEV]" if config.INDEV else ""),
+            "enable_animations": "True",
+            "default_state_background_color": "#FFFFFFFF",
+            "hide_scrollbars": "True"
         })
+        # self._settings.set_default_settings("performance", "")
+        self._settings.set_default_settings("security", {
+            "warn_of_new_plugins": "True",
+            "run_plugin_in_separate_process": "False",
+            "use_safe_file_access": "True"
+        })
+        self._settings.set_default_settings("advanced", {
+            "hide_titlebar": "False",
+            "stay_on_top": "False",
+            "save_window_dimensions": "True",
+            "save_window_position": "False",
+            "update_check_request_timeout": "2.0",
+            "max_timer_tick_handled_events": "5",
+            "logging_mode": "DEBUG" if config.INDEV else "INFO",
+        })
+        # Debugging:
+        # Developer Options:
+        #  - Load selected plugin from disk
+        #  -> Install plugins from e.g. Github for now no!
 
     def get_window_geometry(self) -> tuple[int, int, int, int]:
         return self._settings.retrieve("auto", "geometry", "tuple")  # type: ignore
@@ -154,6 +150,46 @@ class AppSettings(IAppSettings):
 
     def set_save_window_position(self, flag: bool) -> None:
         self._settings.store("advanced", "save_window_position", flag, "bool")
+
+    def get_window_icon_set(self) -> str:
+        return self._settings.retrieve("design", "window_icon_set", "string")
+
+    def set_window_icon_set(self, icon_set: str) -> None:
+        self._settings.store("design", "window_icon_set", icon_set, "string")
+
+    def get_window_title_template(self) -> str:
+        return self._settings.retrieve("design", "window_title_template", "string")
+
+    def set_window_title_template(self, title_template: str) -> None:
+        self._settings.store("design", "window_title_template", title_template, "string")
+
+    def get_font(self) -> str:
+        return self._settings.retrieve("design", "font", "string")
+
+    def set_font(self, font: str) -> None:
+        self._settings.store("design", "font", font, "string")
+
+    def get_theming(self, mode: SystemTheme) -> str:
+        theming_type: str = {SystemTheme.LIGHT: "light_theming",
+                             SystemTheme.DARK: "dark_theming"}[mode]
+        return self._settings.retrieve("design", theming_type, "string")
+
+    def set_theming(self, mode: SystemTheme, theming: str) -> None:
+        theming_type: str = {SystemTheme.LIGHT: "light_theming",
+                             SystemTheme.DARK: "dark_theming"}[mode]
+        self._settings.store("design", theming_type, theming, "string")
+
+    def get_window_icon_sets_path(self) -> str:
+        return self._settings.retrieve("design", "window_icon_sets_path", "string")
+
+    def set_window_icon_sets_path(self, window_icon_sets_path: str) -> None:
+        self._settings.store("design", "window_icon_sets_path", window_icon_sets_path, "string")
+
+    def get_window_icon_set(self) -> str:
+        return self._settings.retrieve("design", "window_icon_set", "string")
+
+    def set_window_icon_set(self, window_icon_set: str) -> None:
+        self._settings.store("design", "window_icon_set", window_icon_set, "string")
 
 
 class App:
@@ -644,24 +680,20 @@ class App:
 
     def update_icon(self) -> None:
         """Updates the window icon with data from the settings"""
-        return
-        window_icon_set_path: str = self.user_settings.retrieve("design", "window_icon_set", "string")
+        window_icon_set_path: str = self.settings.get_window_icon_set()
         if window_icon_set_path.startswith(":"):
             window_icon_set_path = window_icon_set_path.replace(":", self.base_app_dir, 1)
         self.window.set_window_icon(os.path.join(window_icon_set_path, "logo-nobg.png"))
 
     def update_title(self) -> None:
         """Updates the window title with data from the settings"""
-        return
-        raw_title: Template = Template(
-            self.user_settings.retrieve("design", "window_title_template", "string"))
+        raw_title: Template = Template(self.settings.get_window_title_template())
         formatted_title: str = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
         self.window.set_window_title(formatted_title)
 
     def update_font(self) -> None:
         """Updates the window font with data from the settings. This is an expensive operation."""
-        return
-        self.window.set_font(self.user_settings.retrieve("design", "font", "string"))
+        self.window.set_font(self.settings.get_font())
 
     def load_themes(self, theme_folder: str, clear: bool = False) -> None:
         """Loads all theme files from styling/themes"""
@@ -689,11 +721,7 @@ class App:
             raise RuntimeError(f"Default light and/or dark style are/is not present")
 
     def apply_theme(self) -> None:
-        theming_str = 'adalfarus::thin/colored_evening_sky'
-        """theming_str: str = self.user_settings.retrieve("design",
-                                                       {SystemTheme.LIGHT: "light_theming",
-                                                        SystemTheme.DARK: "dark_theming"}[self.os_theme],
-                                                       "string")"""
+        theming_str: str = self.settings.get_theming(self.os_theme)
         theme_str, style_str = theming_str.split("/", maxsplit=1)
         theme: Theme | None = Theme.get_loaded_theme(theme_str)
 
@@ -721,7 +749,8 @@ class App:
         if index == 0:  # Default 500ms timer
             self.update_icon()
             self.update_title()
-            # self.update_font()
+            if self.timer_number & 0 == 1:
+                self.update_font()
             self.check_theme_change()
             self.timer_number += 1
             if self.timer_number > 999:

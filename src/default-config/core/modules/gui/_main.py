@@ -78,8 +78,6 @@ class MainWindow(QMainWindow, IMainWindow):
         self.menu_bar = self.menuBar()
         self.user_panel = UserPanel(ui_automaton, parent=self)
         self.settings_panel = SettingsPanel(parent=self)
-        # import time
-        # time.sleep(10)
 
         # Animation for Panels
         self.user_panel_animation = QPropertyAnimation(self.user_panel, b"geometry")
@@ -91,7 +89,6 @@ class MainWindow(QMainWindow, IMainWindow):
         self.panel_animation_group.addAnimation(self.user_panel_animation)
         self.panel_animation_group.addAnimation(self.settings_panel_animation)
 
-        self.settings_panel.back_button.clicked.connect(self.switch_panel)
         self.switch_panel_simple()  # So they are ordered correctly
 
         file_menu = self.menuBar().addMenu("File")

@@ -379,16 +379,12 @@ class MainWindow(QMainWindow, IMainWindow):
         return False
 
     def start(self) -> None:
-        print(2.1)
         self.show()
-        print(2.2)
         self.raise_()
-        print(2.3)
 
         # self.singleton_observer = SingletonObserver()
         # if not self.singleton_observer.get('is_loaded'):
         if not self.show_automaton_selection():
-            print('closed')
             self.close()
 
     def close(self) -> None:

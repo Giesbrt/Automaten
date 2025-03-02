@@ -266,6 +266,11 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._highlighted_transition_item: TransitionItem | None = None
         self._default_color: QColor = default_color
         self._default_selection_color: QColor = default_selection_color
+        self.token_list = None
+        self._automaton_settings: dict = {
+            'transition_sections': 1,
+            'transition_pattern': [0]
+        }
 
         if ui_automaton.get_states():
             self.load_automaton_from_file()

@@ -1,13 +1,13 @@
 import numpy as np
-from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QFont, QPolygonF
+from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal, QEvent, QSizeF, QMargins
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QFont, QPolygonF, QBrush
 from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem, QGraphicsWidget, \
     QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, \
-    QGraphicsProxyWidget
+    QGraphicsProxyWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent, QGraphicsRectItem, QGraphicsLinearLayout, \
+    QGraphicsLayoutItem
 
 from ._graphic_support_items import FrameWidgetItem
-# from ._new_grid_items import StateItem, TransitionItem
-from painter import PainterStr, PainterColor, PainterToStr, StrToPainter
+from painter import PainterStr, StrToPainter
 
 # Standard typing imports for aps
 from functools import partial
@@ -51,13 +51,18 @@ class StateGraphicsItem(QGraphicsEllipseItem):
         self.end_painter_str: PainterStr = PainterStr(
             "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
         self.start_painter_str: PainterStr = PainterStr(
-            "Text: (195.62833599002374, 91.36730222890128), 'MyText', 13#0000ff;Polygon: ((211.25667198004749, 2.7346044578025612), (179.99999999999997, 360.0), (0.0, 179.99999999999997)), 0#000000##00000000;Rect: ((205.005337584038, 38.18768356624204), (179.99999999999997, 324.0)), 0#000000##00000000;Arc: ((360.0, 360.0), 162.0, 162.0), (270, 360), 2#00ff00##00ff00;Arc: ((180.0, 180.0), 162.0, 162.0), (0, 90), 2#00ff00##00ff00;")
+            "Polygon: ((80.0, 160.0), (230.0, 160.0), (230.0, 130.0), (280.0, 180.0), (230.0, 230.0), (230.0, 200.0), (80.0, 200.0)), 0#ff0000##ff0000;")
 
-        obj = PainterToStr()
-        obj.ellipse((obj.coord().load_from_cartesian(0, 0), 180.0, 180.0), border_color=PainterColor(255, 0, 0),
-                    border_thickness=6, fill_color=PainterColor(a=0))
-        is_active_str = obj.clean_out_style_str()
-        self.is_active_str: PainterStr = PainterStr(is_active_str)
+        """arrow = PainterToStr()
+        arrow.polygon([arrow.coord().load_from_cartesian(-100, -20),
+                       arrow.coord().load_from_cartesian(50, -20),
+                       arrow.coord().load_from_cartesian(50, -50),
+                       arrow.coord().load_from_cartesian(100, 0),
+                       arrow.coord().load_from_cartesian(50, 50),
+                       arrow.coord().load_from_cartesian(50, 20),
+                       arrow.coord().load_from_cartesian(-100, 20)], fill_color=PainterColor(255, 0, 0))
+        arrow_str = arrow.clean_out_style_str()
+        self.start_painter_str = PainterStr(arrow_str)"""
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """Paints the state as an ellipse and adds an inner circle if the state type is 'end'.
@@ -81,8 +86,6 @@ class StateGraphicsItem(QGraphicsEllipseItem):
             str_painter.draw_painter_str(self.end_painter_str)
         elif state_type == "start":
             str_painter.draw_painter_str(self.start_painter_str)
-        """if self.is_active:
-            str_painter.draw_painter_str(self.is_active_str)"""
         painter.restore()
 
 
@@ -206,14 +209,6 @@ class TransitionGraphicsItem(QGraphicsLineItem):
         self.start_state: 'StateItem' = self.start_point.parentItem()
         self.end_state: 'StateItem' = self.end_point.parentItem()
 
-        """self.ui_transition = UiTransition(
-            from_state=self.start_state.get_ui_state(),
-            from_state_connecting_point=start_point.get_direction(),
-            to_state=self.end_state.get_ui_state(),
-            to_state_connecting_point=end_point.get_direction(),
-            condition=[]
-        )"""
-
         self.start_state.add_transition(self)
         self.end_state.add_transition(self)
 
@@ -336,63 +331,215 @@ class TransitionGraphicsItem(QGraphicsLineItem):
             painter.drawPolygon(self.arrow_head)
 
 
-class ConditionGraphicsItem(QGraphicsProxyWidget):
-    pass
+class ConditionGraphicsItem(QGraphicsWidget):
+    """Zwischeninstanz für die Verwaltung der Token-UI-Elemente einer Transition."""
 
+    def __init__(self, token_lists: tuple[list[str], list[str]], sections: int, parent: 'TransitionItem') -> None:
+        """Initialisiert die Condition-Komponente für eine Transition.
 
-class TokenButton(QPushButton):
-    def __init__(self, text: str, toggle_token_selection_list, button_index: int, parent: QWidget = None) -> None:
-        """Initializes the token button.
-
-        :param text: The initial text of the button.
-        :param toggle_token_selection_list: The callback to toggle the token selection list.
-        :param button_index: The index of the button.
-        :param parent: The parent widget, defaults to None.
+        :param token_lists: Tuple mit verfügbaren Tokens (input_tokens, tape_tokens)
+        :param parent: Die übergeordnete TransitionItem-Instanz
         """
-        super().__init__(text, parent)
-        self.button_index = button_index
-        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
-        self.clicked.connect(partial(toggle_token_selection_list, self.button_index))
-        self.setStyleSheet('''
-            QPushButton {
-                color: black; 
-                padding: 8px;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: yellow;
-            }
-        ''')
+        super().__init__(parent)
+        self.transition = parent
 
-class TokenButtonFrame(QGraphicsProxyWidget):
+        # UI-Komponenten erstellen
+        self.token_list_frame = TokenListFrame(token_lists, parent=self)
+        self.token_button_frame = TokenButtonFrame(self.token_list_frame, sections, parent=self)
+
+        # Signale verbinden
+        self._setup_signals()
+
+    def _setup_signals(self) -> None:
+        """Verbindet die Signale der UI-Komponenten."""
+        self.token_list_frame.token_selected.connect(self.token_button_frame.set_token)
+        self.token_button_frame.all_token_set.connect(self._on_condition_changed)
+
+    def _on_condition_changed(self, condition: list[str]) -> None:
+        """Handler für Änderungen der Bedingung.
+
+        :param condition: Liste der ausgewählten Tokens
+        """
+        self.token_button_frame.set_condition(condition)
+        self.transition.get_ui_transition().set_condition(condition)
+
+    def set_condition(self, condition: _ty.List[str]) -> None:
+        """Sets the condition for the transition.
+
+        :param condition: A list of tokens representing the transition condition.
+        """
+        self.token_button_frame.set_condition(condition)
+
+    def set_token_lists(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
+        """Aktualisiert die verfügbaren Token-Listen.
+
+        :param token_lists: Neue Token-Listen (input_tokens, tape_tokens)
+        """
+        self.token_list_frame.update_token_lists(token_lists)
+
+
+class _DirectionalLayout:
+    """The default directional layout"""
+    def __init__(self, base_x: float, base_y: float, margins: tuple[int, int, int, int] = (9, 9, 9, 9), spacing: int = 9):
+        self.base_x = base_x
+        self.base_y = base_y
+        self._margins: tuple[int, int, int, int] = margins  # left, top, right, bottom
+        self._spacing: int = spacing
+        self._rect: QRectF = QRectF(0, 0, 0, 0)
+        self._children: list[QGraphicsWidget | _ty.Type[_ty.Self] | None] = []
+        self._children_sizes: list[int] = []
+        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
+
+    @property
+    def margins(self) -> tuple[int, int, int, int]:
+        """The outer margins of the Directional Layout"""
+        return self._margins
+
+    @margins.setter
+    def margins(self, new_margins: tuple[int, int, int, int]):
+        self._margins = new_margins
+        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
+        self.reposition()
+
+    @property
+    def spacing(self) -> int:
+        """The spacing between individual widgets in the layout"""
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, new_spacing: int):
+        self._spacing = new_spacing
+        self.reposition()
+
+    @property
+    def rect(self) -> QRectF:
+        """The rectangle of the current layout"""
+        return self._rect
+
+    def add_widget(self, widget: QGraphicsWidget | None, size: int = 1):
+        """Add a widget with a set size"""
+        if not isinstance(widget, _DirectionalLayout):
+            self._children.append(widget)
+            self._children_sizes.append(size)
+            self.reposition()
+        else:
+            raise ValueError(f"Widget must be a widget, not {widget.__class__.__name__}")
+
+    def add_layout(self, layout: _ty.Type[_ty.Self], size: int = 1):
+        """Add a layout with a set size"""
+        if isinstance(layout, _DirectionalLayout):
+            self._children.append(layout)
+            self._children_sizes.append(size)
+            self.reposition()
+        else:
+            raise ValueError(f"Layout must be a layout, not {layout.__class__.__name__}")
+
+    def add_stretch(self, size: int = 1):
+        """Add an empty widget with a set size"""
+        self._children.append(None)
+        self._children_sizes.append(size)
+        self.reposition()
+
+    def resize(self, rect: QRectF | tuple[int, int, int, int]) -> None:
+        """Resizes the rect of the layout to a new rect and repositions all children within it"""
+        self._rect = rect if not isinstance(rect, tuple) else QRectF(*rect)
+        self._working_rect = self._rect.marginsRemoved(QMargins(*self._margins))
+        self.reposition()
+
+    def reposition(self):
+        """Repositions all widgets within the DirectionalLayout"""
+        pass
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
+        """Draws all widgets within the DirectionalLayout"""
+        for child in self._children:
+            if child is not None:
+                child.paint(painter, option)
+
+
+class HorizontalLayout(_DirectionalLayout):
+    def reposition(self):
+        total_size = sum(self._children_sizes)
+        x_offset = self._working_rect.x()
+        available_width = self._working_rect.width() - (self._spacing * max(0, len(self._children) - 1))
+
+        for child, size in zip(self._children, self._children_sizes):
+            width = (size / total_size) * available_width
+            if child:
+                child_rect = QRectF(x_offset + self.base_x, self._working_rect.y() + self.base_y, width, self._working_rect.height())
+                child.setRect(child_rect)
+            x_offset += width + self._spacing
+
+
+class TokenButton(QGraphicsRectItem):
+    clicked: Signal(str) = Signal(str)
+
+    def __init__(self, text: str, button_index: int, parent: QWidget = None) -> None:
+        super().__init__(parent)  # Define button rectangle
+        self.button_index = button_index
+        # self.token_button_frame = token_button_frame
+        # self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+
+        self.setBrush(QBrush(Qt.GlobalColor.lightGray))  # Default background
+        self.setPen(QPen(Qt.GlobalColor.black, 2))  # Border
+
+        # Button label
+        self.text = text
+
+        # Enable mouse events
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
+
+    def paint(self, painter, option, widget=None):
+        """Custom rendering of the button."""
+        super().paint(painter, option, widget)  # Draw default rectangle
+        painter.drawText(self.boundingRect(), Qt.AlignmentFlag.AlignCenter, self.text)  # Draw text
+
+    def mousePressEvent(self, event):
+        """Change color on click."""
+        self.setBrush(QBrush(Qt.GlobalColor.gray))  # Pressed effect
+        print("Pressed")
+        event.accept()  # Ensure event is handled
+        # super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Emit signal when released and reset color."""
+        self.setBrush(QBrush(Qt.GlobalColor.lightGray))  # Reset color
+        # self.clicked.emit("")  # Emit clicked signal
+        event.accept()  # Ensure event is handled
+        # super().mouseReleaseEvent(event)
+
+
+class TokenButtonFrame(QGraphicsWidget):
     """Initializes the token selection button container.
 
-    :param token_list_box: The associated token selection list.
+    :param token_list_frame: The associated token selection list.
     :param sections: The number of token sections/buttons.
     :param parent: The parent graphics item, defaults to None.
     """
     all_token_set: Signal = Signal(list)
 
-    def __init__(self, token_list_box, sections: int, parent: QWidget = None) -> None:
+    def __init__(self, token_list_frame, sections: int, parent: QWidget = None) -> None:
         super().__init__(parent)
-        self.token_list_box = token_list_box
+        self.widget_layout = HorizontalLayout(self.x(), self.y())
+        self.token_list_frame = token_list_frame
         self.sections = sections
         self.token_buttons: _ty.List[TokenButton] = []
 
         container = self._create_container()
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(2, 2, 2, 2)
-        layout.setSpacing(0)
+
 
         for i in range(self.sections):
-            token_button = TokenButton('...', self.toggle_token_selection_list, i, container)
-            layout.addWidget(token_button)
+            token_button = TokenButton('...', i, parent=self)
+            self.widget_layout.add_widget(token_button, 1)
             self.token_buttons.append(token_button)
-            if i < self.sections - 1:
-                layout.addWidget(self._create_separator(container))
+            # if i < self.sections - 1:
+            #     layout.addWidget(self._create_separator(container))
 
-        container.setLayout(layout)
-        self.setWidget(container)
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
+        # super().paint(painter, option, widget)
+        self.widget_layout.paint(painter, option)
 
     def _create_container(self) -> QWidget:
         """Creates the container widget for token buttons.
@@ -435,21 +582,24 @@ class TokenButtonFrame(QGraphicsProxyWidget):
             if i < len(self.token_buttons):
                 self.token_buttons[i].setText(token)
 
-    def toggle_token_selection_list(self, button_index: int) -> None:
+    def show_list(self, button_index: int) -> None:
         """Toggles the visibility of the token selection list for the given button.
 
         :param button_index: The index of the token button.
         """
-        self.token_list_box.set_visible(
-            not self.token_list_box.isVisible(),
-            button_index
-        )
+        self.token_list_frame.set_visible(not self.token_list_frame.isVisible(), button_index)
+        return self.token_list_frame
 
     def check_all_tokens_filled(self) -> None:
         """Checks if all token buttons have a non-placeholder token and emits a signal if so."""
         if all(button.text() != '...' for button in self.token_buttons):
             tokens = [button.text() for button in self.token_buttons]
             self.all_token_set.emit(tokens)
+
+    def moveEvent(self, event):
+        self.widget_layout.base_x = event.newPos().x()
+        self.widget_layout.base_y = event.newPos().y()
+
 
 class TokenListFrame(QGraphicsProxyWidget):
 
@@ -465,10 +615,7 @@ class TokenListFrame(QGraphicsProxyWidget):
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = token_list
         self.button_index: _ty.Union[int, None] = None
 
-        container = FrameWidgetItem(bg_color=QColor("white"),
-                                       border_color=QColor("white"),
-                                       border_radius=10,
-                                       border_width=0)
+        container = FrameWidgetItem(bg_color=QColor("white"), border_color=QColor("white"), border_radius=10, border_width=0)
         container.setFixedSize(100, 150)
 
         layout = QVBoxLayout(container)
@@ -494,7 +641,6 @@ class TokenListFrame(QGraphicsProxyWidget):
         layout.addWidget(self.search_separator)
 
         self.list_widget = QListWidget(container)
-        # self.list_widget.addItems(self.token_list)
         self.list_widget.setStyleSheet('''
             QListWidget { 
                 border: none; 
@@ -528,9 +674,18 @@ class TokenListFrame(QGraphicsProxyWidget):
         self.setVisible(visible)
         self.button_index = button_index
         if self.token_lists:
-            self.update_token_list(self.token_lists)
+            self.update_token_lists(self.token_lists)
 
-    def update_token_list(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
+    def show_list(self, button_index: int) -> None:
+        self.setVisible(True)
+        self.button_index = button_index
+        if self.token_lists:
+            self.update_token_lists(self.token_lists)
+
+    def hide_list(self):
+        self.setVisible(False)
+
+    def update_token_lists(self, token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]]) -> None:
         """Updates the token list with view on the automaton type
 
         :param token_lists: The new token list
@@ -561,8 +716,10 @@ class TokenListFrame(QGraphicsProxyWidget):
 
         :param item: The clicked list item.
         """
+        print(item.text())
         token = item.text()
         self.token_selected.emit((self.button_index, token))
+
 
 class TransitionFunction(QGraphicsProxyWidget):
     def __init__(self, tokens, sections, transition, parent=None) -> None:
@@ -592,24 +749,15 @@ class TransitionFunction(QGraphicsProxyWidget):
 
         :param condition: A list of the currently selected tokens.
         """
-        print(condition)
+        # traceback.print_stack()
+        print(f'Vor condition set: {self.transition.get_ui_transition()}')
         self.token_button_frame.set_condition(condition)
         self.transition.get_ui_transition().set_condition(condition)
-
-    def _validate_condition(self, condition: _ty.List[str]) -> _ty.List[str]:
-        """Checks and replaces invalid tokens in the condition."""
-        valid_condition = []
-        for token in condition:
-            if token in self.token_lists[0]:
-                valid_condition.append(token)
-        return valid_condition
+        print(f'Nach condition set: {self.transition.get_ui_transition()}')
 
     def update_token_list(self, token_lists: tuple[list[str], list[str]]) -> None:
         """Updates the token list and replaces invalid tokens in the condition."""
         self.token_lists = token_lists
-        self.token_list_frame.update_token_list(token_lists)
+        self.token_list_frame.update_token_lists(token_lists)
 
-        current_condition = self.token_button_frame.token_buttons
-        new_condition = self._validate_condition([btn.text() for btn in current_condition])
-
-        self.set_condition(new_condition)
+        # self.set_condition(token_lists[0])

@@ -172,8 +172,6 @@ class App:
             self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
             self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
 
-            print(1)
-
             # Thread pool
             self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
             self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
@@ -186,21 +184,37 @@ class App:
                              ))
             self.pool.submit(self.check_for_update)
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
-            print(2)
-
 
             # Automaton backend init
             self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
             if input_path != "":
                 success: bool = self.load_file(input_path)
                 if not success:
+                    self.ui_automaton.unload()
                     print('Could not load file')
+                    # apply settings
+                    # settings_loader: UiSettingsProvider = UiSettingsProvider()
+                    # automaton_type: str = self.ui_automaton.get_automaton_type()  # TODO: This may not be loaded yet ...
+                    # automaton_settings = settings_loader.get_settings(automaton_type)
+                    # if automaton_settings is not None:
+                    #     settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
                     # ErrorCache().error("Could not load file", "", True, True)
                     """self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
                     self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
                     self.singleton_observer.set('is_loaded', True)"""
-
-            print(3)
+            # else:
+            #     # apply settings
+            #     settings_loader: UiSettingsProvider = UiSettingsProvider()
+            #     automaton_type: str = self.ui_automaton.get_automaton_type()  # TODO: This may not be loaded yet ...
+            #     automaton_settings = settings_loader.get_settings(automaton_type)
+            #     if automaton_settings is not None:
+            #         settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
+                    # widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()
+                    # self.window.user_panel.position_input_widget(widget)
+                #
+                #     self.io_manager.debug(f"Applied settings to {automaton_type}-automaton", "")
+                # else:
+                #     self.io_manager.error(f"Could not load and apply settings of {automaton_type}", "", True)
 
             self.window.setup_gui(self.ui_automaton)
             # self.window.user_panel.setShowScrollbars(False)
@@ -208,16 +222,12 @@ class App:
             self.grid_view = self.window.user_panel.grid_view
             self.control_menu = self.window.user_panel.control_menu
 
-            print(4)
-
             # Setup IOManager
             self.io_manager: IOManager = IOManager()
             self.io_manager.init(self.window.button_popup, f"{self.data_folder}/logs", config.INDEV)
             self.io_manager.set_logging_level(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
             for exported_line in config.exported_logs.split("\n"):
                 self.io_manager.debug(exported_line)  # Flush config prints
-
-            print(5)
 
             # Settings
             self.settings: AppSettings = AppSettings()
@@ -229,16 +239,12 @@ class App:
                                                                      args=(self.backend_stop_event,))
             self.backend_thread.start()
 
-            print(6)
-
             # Setup window
             self.system: BaseSystemType = get_system()
             self.os_theme: SystemTheme = self.get_os_theme()
             self.load_themes(os.path.join(self.styling_folder, "themes"))
             self.load_styles(os.path.join(self.styling_folder, "styles"))
             # self.window.set_recently_opened_files(list(self.user_settings.retrieve("auto", "recent_files", "tuple")))
-
-            print(7)
 
             x, y, height, width = self.settings.get_window_geometry()
             if not self.settings.get_save_window_dimensions():
@@ -249,23 +255,17 @@ class App:
             else:  # I guess windows does some weird shit with the title bar
                 self.window.set_window_dimensions(height, width)
 
-            print(8)
-
-            # assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
+            assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
             self.apply_theme()
-            print(1.1)
             self.connect_signals()
-            print(1.2)
-            # self.timer_tick(0)  # Updates everything
-            print(1.3)
-            self.window.start()  # Shows gui
 
-            print(9)
-
+            self.timer_number: int = 1
+            self.timer_tick(0)  # Updates everything
             self.timer: QtTimidTimer = QtTimidTimer()
             self.timer.timeout.connect(self.timer_tick)
-            # self.timer.start(500, 0)
-            self.timer_number: int = 1
+            self.timer.start(500, 0)
+
+            self.window.start()  # Shows gui
         except Exception as e:
             self.exit()
             raise Exception("Exception occurred during initialization of the App class") from e
@@ -549,19 +549,6 @@ class App:
         AutomatonProvider(None).load_from_dict(extensions)
         UiSettingsProvider().load_from_incoherent_mess(self.extensions)
 
-        # apply settings
-        settings_loader: UiSettingsProvider = UiSettingsProvider()
-        automaton_type: str = self.ui_automaton.get_automaton_type()  # TODO: This may not be loaded yet ...
-        automaton_settings = settings_loader.get_settings(automaton_type)
-        if automaton_settings is not None:
-            settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
-            # widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()
-            # self.window.user_panel.position_input_widget(widget)
-
-            self.io_manager.debug(f"Applied settings to {automaton_type}-automaton", "")
-        else:
-            self.io_manager.error(f"Could not load and apply settings of {automaton_type}", "", True)
-
     def open_file(self, filepath: str) -> None:
         """Opens a file and notifies the GUI to update"""
         success: bool = self.load_file(filepath)
@@ -657,6 +644,7 @@ class App:
 
     def update_icon(self) -> None:
         """Updates the window icon with data from the settings"""
+        return
         window_icon_set_path: str = self.user_settings.retrieve("design", "window_icon_set", "string")
         if window_icon_set_path.startswith(":"):
             window_icon_set_path = window_icon_set_path.replace(":", self.base_app_dir, 1)
@@ -664,6 +652,7 @@ class App:
 
     def update_title(self) -> None:
         """Updates the window title with data from the settings"""
+        return
         raw_title: Template = Template(
             self.user_settings.retrieve("design", "window_title_template", "string"))
         formatted_title: str = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
@@ -671,6 +660,7 @@ class App:
 
     def update_font(self) -> None:
         """Updates the window font with data from the settings. This is an expensive operation."""
+        return
         self.window.set_font(self.user_settings.retrieve("design", "font", "string"))
 
     def load_themes(self, theme_folder: str, clear: bool = False) -> None:
@@ -803,27 +793,10 @@ if __name__ == "__main__":
             config.exported_logs += f"Reading {input_path}\n"
 
     try:
-        import cProfile
-        import pstats
-
-        with cProfile.Profile() as pr:
-            qapp = QApplication(sys.argv)
-            qgui = MainWindow()
-            dp_app = App(qgui, qapp, input_path, logging_level)  # Shows gui
-            current_exit_code = qapp.exec()
-        stats = pstats.Stats(pr)
-        stats.sort_stats(pstats.SortKey.TIME)
-        stats.print_stats()
-        stats.dump_stats(filename="needs_profiling.prof")
-        import os
-
-        os.system("py -3.12 -m pip install snakeviz")
-        os.system("py -3.12 -m snakeviz ./needs_profiling.prof")
-
-        """qapp = QApplication(sys.argv)
+        qapp = QApplication(sys.argv)
         qgui = MainWindow()
         dp_app = App(qgui, qapp, input_path, logging_level)  # Shows gui
-        current_exit_code = qapp.exec()"""
+        current_exit_code = qapp.exec()
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

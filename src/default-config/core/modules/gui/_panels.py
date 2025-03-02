@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QIcon, QPen, QKeySequence, QFont
 from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
+from aplustools.io.env import SystemTheme
 
 from pyside import QFlowLayout
 from storage import AppSettings
@@ -643,6 +644,7 @@ class SettingsPanel(Panel):
         return general_panel
 
     def create_design_page(self) -> QWidget:
+        from . import Style, Theme
         design_panel = QWidget()
         layout = QQuickBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=design_panel)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -696,20 +698,44 @@ class SettingsPanel(Panel):
         theming_layout.addLayout(dark_layout)
         rows.append(("", theming_frame))
 
+        light_theme, light_style = self.settings.get_theming(SystemTheme.LIGHT).split("/", maxsplit=1)
+        dark_theme, dark_style = self.settings.get_theming(SystemTheme.DARK).split("/", maxsplit=1)
+
+        self.name_to_theme: dict[str, Theme] = {}
+        self.theme_styles: dict[Theme, list[Style]] = {}
         for file in os.listdir(os.path.join(os.getcwd(), "data", "styling", "themes")):
             if not file.endswith(".th"):
                 continue
             author, name = file.removesuffix(".th").split("_", maxsplit=1)
-            self.light_theme_dropdown.addItem(f"{author}::{name}")
-            self.dark_theme_dropdown.addItem(f"{author}::{name}")
-
-        for file in os.listdir(os.path.join(os.getcwd(), "data", "styling", "styles")):
-            if not file.endswith(".st"):
+            theme_name = f"{author}::{name}"
+            theme = Theme.get_loaded_theme(theme_name)
+            if theme is None:  # Theme isn't loaded due to error
                 continue
-            # TODO: How to identify the correct styles for the themes?
-            self.light_style_dropdown.addItem(file.removesuffix(".st"))
-            self.dark_style_dropdown.addItem(file.removesuffix(".st"))
-        # TODO: Get current light & dark theming from settings
+            self.light_theme_dropdown.addItem(theme_name)
+            self.dark_theme_dropdown.addItem(theme_name)
+            self.name_to_theme[theme_name] = theme
+            self.theme_styles[theme] = Style.get_loaded_styles(theme)
+            # if theme_name == light_theme:
+            #     self.light_theme_dropdown.setCurrentIndex(self.light_theme_dropdown.count() - 1)
+            # elif theme_name == dark_theme:
+            #     self.dark_theme_dropdown.setCurrentIndex(self.dark_theme_dropdown.count() - 1)
+
+        self.light_theme_dropdown.currentTextChanged.connect(lambda: (
+            self.populate_style_dropdown(self.light_theme_dropdown.currentText(), light_style, self.light_style_dropdown),
+            # self.settings.set_theming(SystemTheme.LIGHT, f"{self.light_theme_dropdown.currentText()}/{self.light_style_dropdown.currentText()}")
+        ))
+        self.light_style_dropdown.currentTextChanged.connect(
+            lambda: self.settings.set_theming(SystemTheme.LIGHT, f"{self.light_theme_dropdown.currentText()}/{self.light_style_dropdown.currentText().lower().replace(' ', '_')}")
+        )
+        self.dark_theme_dropdown.currentTextChanged.connect(lambda: (
+            self.populate_style_dropdown(self.dark_theme_dropdown.currentText(), dark_style, self.dark_style_dropdown),
+            # self.settings.set_theming(SystemTheme.DARK, f"{self.dark_theme_dropdown.currentText()}/{self.dark_style_dropdown.currentText()}")
+        ))
+        self.dark_style_dropdown.currentTextChanged.connect(
+            lambda: self.settings.set_theming(SystemTheme.DARK, f"{self.dark_theme_dropdown.currentText()}/{self.dark_style_dropdown.currentText().lower().replace(' ', '_')}")
+        )
+        self.light_theme_dropdown.setCurrentText(light_theme)
+        self.dark_theme_dropdown.setCurrentText(dark_theme)
 
         self.state_bg_color_button: QPushButton = QPushButton("Choose Color", self)
         self.state_bg_color_button.clicked.connect(self.open_color_dialog)
@@ -735,6 +761,14 @@ class SettingsPanel(Panel):
         color: QColor = QColorDialog.getColor(initial=QColor(self.settings.get_default_state_background_color()), parent=self, title="Choose a color")
         if color.isValid():
             self.settings.set_default_state_background_color(color.name(QColor.NameFormat.HexArgb))
+
+    def populate_style_dropdown(self, theme_name: str, wanted_style: str, dropdown: QComboBox):
+        dropdown.clear()
+        for style in self.theme_styles[self.name_to_theme[theme_name]]:
+            style_name = style.get_style_name()
+            dropdown.addItem(style_name)
+            if style_name.lower().replace(" ", "_") == wanted_style:
+                dropdown.setCurrentIndex(dropdown.count() - 1)
 
     def create_performance_page(self) -> QWidget:
         performance_panel = QWidget()

@@ -477,7 +477,7 @@ class AppSettings(QObject):
         theming_type: str = {SystemTheme.LIGHT: "light_theming",
                              SystemTheme.DARK: "dark_theming"}[mode]
         return self._settings.retrieve("design", theming_type, "string")
-    def set_theming(self, theming: str, mode: SystemTheme) -> None:
+    def set_theming(self, mode: SystemTheme, theming: str) -> None:
         theming_type: str = {SystemTheme.LIGHT: "light_theming",
                              SystemTheme.DARK: "dark_theming"}[mode]
         getattr(self, f"{theming_type}_changed").emit(theming)

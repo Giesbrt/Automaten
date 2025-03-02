@@ -125,6 +125,13 @@ class App:
                 # else:
                 #     self.io_manager.error(f"Could not load and apply settings of {automaton_type}", "", True)
 
+            # Setup window
+            self.system: BaseSystemType = get_system()
+            self.os_theme: SystemTheme = self.get_os_theme()
+            self.current_theming: str = ""
+            self.load_themes(os.path.join(self.styling_folder, "themes"))
+            self.load_styles(os.path.join(self.styling_folder, "styles"))
+
             self.window.setup_gui(self.ui_automaton)
             # self.window.user_panel.setShowScrollbars(False)
             # self.window.user_panel.setAutoShowInfoMenu(False)
@@ -136,12 +143,6 @@ class App:
             self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                      args=(self.backend_stop_event,))
             self.backend_thread.start()
-
-            # Setup window
-            self.system: BaseSystemType = get_system()
-            self.os_theme: SystemTheme = self.get_os_theme()
-            self.load_themes(os.path.join(self.styling_folder, "themes"))
-            self.load_styles(os.path.join(self.styling_folder, "styles"))
             # self.window.set_recently_opened_files(list(self.user_settings.retrieve("auto", "recent_files", "tuple")))
 
             x, y, height, width = self.settings.get_window_geometry()
@@ -580,6 +581,7 @@ class App:
 
     def apply_theme(self) -> None:
         theming_str: str = self.settings.get_theming(self.os_theme)
+        self.current_theming = theming_str
         theme_str, style_str = theming_str.split("/", maxsplit=1)
         theme: Theme | None = Theme.get_loaded_theme(theme_str)
 
@@ -599,7 +601,7 @@ class App:
     def check_theme_change(self):
         if self.timer_number & 1 == 1:
             current_os_theme = self.get_os_theme()
-            if current_os_theme != self.os_theme:
+            if current_os_theme != self.os_theme or self.settings.get_theming(current_os_theme) != self.current_theming:
                 self.os_theme = current_os_theme
                 self.apply_theme()
 

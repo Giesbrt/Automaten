@@ -86,6 +86,7 @@ class Style:
         for possible_style in possible_styles:
             if for_theme.is_compatible(possible_style):
                 found_styles.append(possible_style)
+        return found_styles
 
     @classmethod
     def load_from_file(cls, filepath: str) -> _ty.Self:

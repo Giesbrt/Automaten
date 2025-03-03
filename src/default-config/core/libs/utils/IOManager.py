@@ -9,6 +9,7 @@ from queue import Queue
 from utils.staticContainer import StaticContainer
 from logging import ERROR, WARNING, INFO, DEBUG
 # import src.config as configg
+from utils.singleton import singleton
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -16,7 +17,7 @@ import abc as _abc
 import typing as _ty
 import types as _ts
 
-
+@singleton
 class IOManager:
     """TBA"""
     _do_not_show_again: OrderedSet[str] = OrderedSet()

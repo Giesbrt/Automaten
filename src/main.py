@@ -232,13 +232,13 @@ class App:
             self.control_menu.stop_button.setEnabled(False)
 
     def start_simulation(self, automaton_input: _ty.List[str]) -> None:
-        print('start_simulation')
+        print(f'{self.ui_automaton=}')
         self.simulation_mode = 'auto'
         if not self.ui_automaton:
             ErrorCache().warning('No Automaton loaded!', '', True, True)
             return
         else:
-            # automaton_input = self.ui_automaton.get_input_widget().
+            # automaton_input = self.ui_automaton.get_input_widget() # TODO: make work!
             try:
                 result = self.ui_automaton.simulate(automaton_input, self.handle_simulation)
                 if isinstance(result, _result.Success):
@@ -254,26 +254,16 @@ class App:
             self.ui_automaton.stop_simulation()
             self.simulation_mode = None
             self.update_simulation_controls(running=False)
-            ErrorCache().info('Finished Simulation!', '', True, False)
+            ErrorCache().info(self.simulation_result, '', True, False)
 
     def handle_simulation(self) -> None:
-        print('handle_simulation')
         self.simulation_timer = QtTimidTimer()
         self.simulation_timer.timeout.connect(self.start_simulation_visualisation)
         self.simulation_timer.start(500, 0)
 
     def start_simulation_visualisation(self):
-        print('start_simulation_visualisation')
         if self.ui_automaton.has_simulation_data():
-            simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
-            active_state: 'UiState' = self.ui_automaton.get_active_state()
-            active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
-            # print(f'active_state: {active_state}, \nactive_transition: {active_transition}')
-            state_item = self.grid_view.get_active_state(active_state)
-            self.grid_view.highlight_state_item(state_item)
-            if active_transition:
-                transition_item = self.grid_view.get_active_transition(active_transition)
-                self.grid_view.highlight_transition_item(transition_item)
+            self.show_simulation_result()
         else:
             self.simulation_timer.stop(0)
             self.stop_simulation()
@@ -297,17 +287,20 @@ class App:
                 self.control_menu.play_button.setEnabled(True)
                 self.control_menu.next_button.setEnabled(True)
                 self.control_menu.stop_button.setEnabled(True)
-            simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
-            active_state: 'UiState' = self.ui_automaton.get_active_state()
-            active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
-
-            state_item = self.grid_view.get_active_state(active_state)
-            self.grid_view.highlight_state_item(state_item)
-            if active_transition:
-                transition_item = self.grid_view.get_active_transition(active_transition)
-                self.grid_view.highlight_transition_item(transition_item)
+            self.show_simulation_result()
         else:
             self.stop_simulation()
+
+    def show_simulation_result(self) -> None:
+        self.simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
+        active_state: 'UiState' = self.ui_automaton.get_active_state()
+        active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
+
+        state_item = self.grid_view.get_active_state(active_state)
+        self.grid_view.highlight_state_item(state_item)
+        if active_transition:
+            transition_item = self.grid_view.get_active_transition(active_transition)
+            self.grid_view.highlight_transition_item(transition_item)
 
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
@@ -404,7 +397,6 @@ class App:
         lst.append(filepath)
         self.window.set_recently_opened_files(lst)
         self.window.update_recent_files_menu()
-        # self.singleton_observer.reset_instance()
         self.ui_automaton = self.load_file(filepath)
         if self.ui_automaton:
             self.grid_view.empty_scene()

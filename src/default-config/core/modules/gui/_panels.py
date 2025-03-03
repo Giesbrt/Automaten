@@ -10,7 +10,7 @@ from core.modules.automaton.base.QAutomatonInputWidget import QAutomatonInputOut
 from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 
 from utils.errorCache import ErrorCache
-from ._grid_items import StateItem
+from ._old_grid_items import StateItem
 from ..signal_bus import SingletonObserver
 
 # Standard typing imports for aps
@@ -87,7 +87,7 @@ class StateMenu(QFrame):
         self.transitions_table.setHorizontalHeaderLabels(["From-To", "Condition"])
         self.transitions_table.horizontalHeader().setStretchLastSection(True)
         self.transitions_table.verticalHeader().setVisible(False)
-        self.transitions_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.transitions_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.transitions_table.setMinimumHeight(120)
         self.transitions_table.currentItemChanged.connect(self.on_current_item_changed)
         main_layout.addWidget(self.transitions_table)
@@ -306,7 +306,7 @@ class UserPanel(Panel):
         # Ändere die Geometrie des Widgets
         input_widget.setGeometry(x, y, width, height)
         print(input_widget.x(), input_widget.y(), input_widget.width(), input_widget.height())
-        self.layout().addWidget(input_widget)
+        self.widget_layout().addWidget(input_widget)
         input_widget.repaint()
 
 

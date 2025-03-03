@@ -160,6 +160,8 @@ class StateMenu(QFrame):
 
 
 class ControlMenu(QFrame):
+    token_update_signal: Signal = Signal(list)
+
     def __init__(self, grid_view: 'AutomatonInteractiveGridView', parent=None):
         super().__init__(parent)
         # self.singleton_observer = SingletonObserver()
@@ -221,6 +223,7 @@ class ControlMenu(QFrame):
             QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
             self.token_lists[0].append(token)
             # self.singleton_observer.set('token_lists', self.token_lists)
+            self.token_update_signal.emit(self.token_lists[0])
         else:
             IOManager().warning('No whitespace or special characters allowed!', '', True, False)
 
@@ -228,7 +231,7 @@ class ControlMenu(QFrame):
         self.token_list_box.removeItem(token_index)
         self.token_lists[0].remove(token)
 
-        # self.singleton_observer.set('token_lists', self.token_lists)
+        self.token_update_signal.emit(self.token_lists[0])
 
     def update_token_lists(self, token_lists: _ty.List[_ty.List[str]]):
         self.token_lists = token_lists
@@ -320,22 +323,10 @@ class UserPanel(Panel):
     def position_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput]):
         self.input_widget = input_widget(parent=self)
         self.input_frame.layout().addWidget(self.input_widget)
-        #self.input_widget.raise_()
-        #if True:  # Disabled
-        #    return
-        # print(input_widget.x(), input_widget.y(), input_widget.width(), input_widget.height())
 
-        # width = 200
-        # height = 100
-        # x = self.width() - width
-        # y = self.height()
-        #
-        # # Ändere die Geometrie des Widgets
-        # self.input_widget.setGeometry(x, y, width, height)
-        # print(self.input_widget.x(), self.input_widget.y(), self.input_widget.width(), self.input_widget.height())
-        # self.layout().addWidget(input_widget)
-        # input_widget.repaint()
-
+        self.control_menu.token_update_signal.connect(self.input_widget.set_input_tokens)
+        # Update existing tokens
+        self.input_widget.set_input_tokens(self.control_menu.token_lists[0])
 
     def set_token_list(self, token_list: _ty.List[str]):
         self.token_list = token_list

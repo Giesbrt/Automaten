@@ -112,29 +112,9 @@ class App:
                 if not success:
                     self.ui_automaton.unload()
                     print('Could not load file')
-                    # apply settings
-                    # settings_loader: UiSettingsProvider = UiSettingsProvider()
-                    # automaton_type: str = self.ui_automaton.get_automaton_type()  # TODO: This may not be loaded yet ...
-                    # automaton_settings = settings_loader.get_settings(automaton_type)
-                    # if automaton_settings is not None:
-                    #     settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
-                    # ErrorCache().error("Could not load file", "", True, True)
                     """self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
                     self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
                     self.singleton_observer.set('is_loaded', True)"""
-            # else:
-            #     # apply settings
-            #     settings_loader: UiSettingsProvider = UiSettingsProvider()
-            #     automaton_type: str = self.ui_automaton.get_automaton_type()  # TODO: This may not be loaded yet ...
-            #     automaton_settings = settings_loader.get_settings(automaton_type)
-            #     if automaton_settings is not None:
-            #         settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
-                    # widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()
-                    # self.window.user_panel.position_input_widget(widget)
-                #
-                #     self.io_manager.debug(f"Applied settings to {automaton_type}-automaton", "")
-                # else:
-                #     self.io_manager.error(f"Could not load and apply settings of {automaton_type}", "", True)
 
             # Setup window
             self.system: BaseSystemType = get_system()
@@ -450,7 +430,7 @@ class App:
     def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
         self.extensions = extensions
         if not self.extensions:
-            self.io_manager.error('No extensions loaded!', '', True, True, error_severity=ErrorSeverity.FATAL)
+            self.io_manager.fatal_error('No extensions loaded!', '', True, True)
 
         AutomatonProvider(None).load_from_dict(extensions)
         UiSettingsProvider().load_from_incoherent_mess(self.extensions)

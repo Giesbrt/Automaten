@@ -51,6 +51,10 @@ class AutomatonSelectionDialog(QDialog):
         if button:
             self.selected_type = _re.findall(r'\((.*?)\)', button.text())
         self.parent().ui_automaton.set_automaton_type(self.selected_type[0])
+
+        widget = self.parent().ui_automaton.get_input_widget()
+        self.parent().user_panel.position_input_widget(widget)
+
         self.accept()
 
 

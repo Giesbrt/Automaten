@@ -277,7 +277,7 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
             self._error = error + "\n" + self._error
         else:
             self._error += error + "\n"
-        print("ADDED ERRORS", error)
+        # print("ADDED ERRORS", error)
 
     def get_error(self) -> str:
         return self._error
@@ -286,18 +286,21 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         self._error = ""
 
     def set_input_tokens(self, tokens: list[str]) -> None:
-        if self._input_tokens == tokens:
-            return
+        # if self._input_tokens == tokens:
+        #     return
 
         self._input_tokens = tokens
 
         # clear existing token buttons
-        for i in range(self.token_selector_layout.count()):
-            self.token_selector_layout.itemAt(i).widget().deleteLater()
+        while self.token_selector_layout.count():
+            item = self.token_selector_layout.takeAt(0)  # Take the first item from the layout
+            widget = item.widget()  # Get the widget
+            if widget:
+                widget.deleteLater()  # Delete the widget
 
         # add new token buttons
         for token in tokens:
-            print(token)
+            # print(token)
             token_button: QPushButton = QPushButton()
             token_button.setText(token)
             token_button.clicked.connect(lambda checked, tok=token: self.add_input_token(tok))
@@ -313,7 +316,7 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
 
     def set_separator(self, separator: str) -> None:
         if separator not in self._separators:
-            print(separator)
+            # print(separator)
             raise ValueError(f"Separator {separator} not in separators")
 
         if separator in self._regulated_separators:
@@ -356,7 +359,7 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         self._check_for_errors()
 
     def _separator_changed(self):
-        print("separator changed", self._active_separator, self._previous_separator)
+        # print("separator changed", self._active_separator, self._previous_separator)
         # input:
         input_text = self.input_edit.text()
 

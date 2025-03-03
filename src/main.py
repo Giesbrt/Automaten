@@ -1,4 +1,6 @@
 """TBA"""
+import time
+
 import config
 config.check()
 config.setup()
@@ -95,6 +97,14 @@ class App:
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             # Automaton backend init
+
+            while self.extensions is None:
+                time.sleep(0.1)
+                if self.for_loop_list:
+                    entry = self.for_loop_list.pop()
+                    func, args = entry
+                    func(*args)
+
             self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
             print(f'{input_path=}')
             if input_path != "":
@@ -451,9 +461,9 @@ class App:
         if not success:
             return
 
-        self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
-        self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
-        self.singleton_observer.set('is_loaded', True)
+        # self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
+        # self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
+        # self.singleton_observer.set('is_loaded', True)
 
     def load_file(self, filepath: str) -> bool:
         """Loads a UIAutomaton from a serialized file.
@@ -478,20 +488,8 @@ class App:
             self.ui_automaton.unload()
             custom_python: str = deserialize(self.ui_automaton, content, filetype)
 
-            # apply settings
-            if self.extensions:
-                settings_loader: UiSettingsProvider = UiSettingsProvider()
-                automaton_type: str = self.ui_automaton.get_automaton_type()
-                automaton_settings = settings_loader.get_settings(automaton_type)
-                if automaton_settings is not None:
-                    settings_loader.apply_to_automaton(self.ui_automaton, None, automaton_settings)
-
-                    widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()()
-                    self.window.user_panel.position_input_widget(widget)
-
-                    self.io_manager.debug(f"Applied settings to {automaton_type}-automaton", "")
-                else:
-                    self.io_manager.error(f"Could not load and apply settings of {automaton_type}", "", True)
+            widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()
+            self.window.user_panel.position_input_widget(widget)
 
             # Custom python
             extension_folder: str = self.extensions_folder

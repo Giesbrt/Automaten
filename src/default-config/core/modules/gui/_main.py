@@ -8,7 +8,7 @@ from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QPara
 
 from aplustools.io.qtquick import QQuickMessageBox
 
-from abstractions import IMainWindow
+from core.modules.abstractions import IMainWindow
 from ._panels import UserPanel, SettingsPanel
 
 # Standard typing imports for aps
@@ -50,7 +50,7 @@ class AutomatonSelectionDialog(QDialog):
         button = self.sender()
         if button:
             self.selected_type = _re.findall(r'\((.*?)\)', button.text())
-        # self.singleton_observer.set('automaton_type', self.selected_type[0])
+        self.parent().ui_automaton.set_automaton_type(self.selected_type[0])
         self.accept()
 
 
@@ -74,6 +74,8 @@ class MainWindow(QMainWindow, IMainWindow):
         self.statusBar().showMessage("Statusbar")
 
     def setup_gui(self, ui_automaton: 'UiAutomaton') -> None:
+        self.ui_automaton = ui_automaton
+
         self.settings_button = QPushButton(parent=self)
         self.menu_bar = self.menuBar()
         self.user_panel = UserPanel(ui_automaton, parent=self)
@@ -381,8 +383,10 @@ class MainWindow(QMainWindow, IMainWindow):
 
         # self.singleton_observer = SingletonObserver()
         # if not self.singleton_observer.get('is_loaded'):
-        if not self.show_automaton_selection():
-            self.close()
+        print(self.ui_automaton.get_states() and self.ui_automaton.get_transitions())
+        if not (self.ui_automaton.get_states() and self.ui_automaton.get_transitions()):
+            if not self.show_automaton_selection():
+                self.close()
 
     def close(self) -> None:
         QMainWindow.close(self)

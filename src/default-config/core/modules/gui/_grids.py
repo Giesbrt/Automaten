@@ -219,7 +219,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         """
         super().__init__()
         self.ui_automaton: 'UiAutomaton' = ui_automaton
-        print(self.ui_automaton.get_automaton_type())
         self.automaton_type: str | None = self.ui_automaton.get_automaton_type()
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = self.ui_automaton.get_token_lists()
 
@@ -270,6 +269,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         Configure settings based on the selected automaton type.
         This method sets the number of sections required in a transition function.
         """
+        print(self.automaton_type)
         if self.automaton_type == 'dfa':
             self._automaton_settings: dict = {
                 'transition_sections': 1,
@@ -285,6 +285,9 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 'transition_sections': 3,
                 'transition_pattern': [0, 0, 1]
             }
+
+    def set_automaton_type(self, automaton_type: str):
+        self.automaton_type = self.get_ui_automaton().get_automaton_type()
 
     def update_transition_functions(self):
         """Updates all TransitionFunction to the new token_list"""
@@ -581,8 +584,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         parent: QWidget = self.parent()
         if not isinstance(parent, UserPanel):
             return
-
-        print(item)
 
         current_parent_item = None
         if isinstance(item, StateGraphicsItem | LabelGraphicsItem):

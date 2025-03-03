@@ -95,7 +95,8 @@ class App:
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             # Automaton backend init
-            self.ui_automaton: UiAutomaton = UiAutomaton('dfa', 'TheCodeJak', {})  # Placeholder
+            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
+            print(f'{input_path=}')
             if input_path != "":
                 success: bool = self.load_file(input_path)
                 if not success:

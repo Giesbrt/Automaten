@@ -2,7 +2,8 @@ from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, Signal, QMargins
 from PySide6.QtGui import QColor, QPainter, QPen, QFont, QPolygonF, QBrush
 from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem, QGraphicsWidget, \
     QStyleOptionGraphicsItem, QGraphicsLineItem, QListWidget, QLineEdit, QVBoxLayout, \
-    QGraphicsProxyWidget, QGraphicsRectItem
+    QGraphicsProxyWidget, QGraphicsRectItem, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent, QPushButton, \
+    QHBoxLayout
 
 from ._graphic_support_items import FrameWidgetItem, HorizontalLayout, VerticalLayout
 from painter import PainterStr, StrToPainter
@@ -286,49 +287,28 @@ class TransitionGraphicsItem(QGraphicsLineItem):
             painter.drawPolygon(self.arrow_head)
 
 
-class TokenButton(QGraphicsRectItem):
-    clicked: Signal(str) = Signal(str)
+class TokenButton(QPushButton):
+    def __init__(self, text: str, toggle_token_selection_list, button_index: int, parent: QWidget = None) -> None:
+        """Initializes the token button.
 
-    def __init__(self, text: str, button_index: int, parent: QWidget = None) -> None:
-        super().__init__(parent)  # Define button rectangle
+        :param text: The initial text of the button.
+        :param toggle_token_selection_list: The callback to toggle the token selection list.
+        :param button_index: The index of the button.
+        :param parent: The parent widget, defaults to None.
+        """
+        super().__init__(text, parent)
         self.button_index = button_index
-        # self.token_button_frame = token_button_frame
-        # self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self.clicked.connect(partial(toggle_token_selection_list, self.button_index))
+        self.setStyleSheet('''
+            QPushButton {
+                color: black; 
+                padding: 8px;
+                border: none;
+            }
+        ''')
 
-        self.setBrush(QBrush(Qt.GlobalColor.lightGray))  # Default background
-        self.setPen(QPen(Qt.GlobalColor.black, 2))  # Border
-
-        # Button label
-        self.text = text
-
-        # Enable mouse events
-        self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsFocusable, True)
-
-    def paint(self, painter, option, widget=None):
-        """Custom rendering of the button."""
-
-
-        super().paint(painter, option, widget)  # Draw default rectangle
-        painter.drawText(self.boundingRect(), Qt.AlignmentFlag.AlignCenter, self.text)  # Draw text
-
-    def mousePressEvent(self, event):
-        """Change color on click."""
-        self.setBrush(QBrush(Qt.GlobalColor.gray))  # Pressed effect
-        print("Pressed")
-        event.accept()  # Ensure event is handled
-        # super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        """Emit signal when released and reset color."""
-        self.setBrush(QBrush(Qt.GlobalColor.lightGray))  # Reset color
-        # self.clicked.emit("")  # Emit clicked signal
-        event.accept()  # Ensure event is handled
-        # super().mouseReleaseEvent(event)
-
-
-class TokenButtonFrame(QGraphicsWidget):
+class TokenButtonFrame(QGraphicsProxyWidget):
     """Initializes the token selection button container.
 
     :param token_list_frame: The associated token selection list.
@@ -339,35 +319,24 @@ class TokenButtonFrame(QGraphicsWidget):
 
     def __init__(self, token_list_frame, sections: int, parent: QWidget = None) -> None:
         super().__init__(parent)
-        self.vertical_layout = VerticalLayout((0, 0, 0, 0), 0)
-        self.widget_layout = HorizontalLayout((0, 0, 0, 0), 0)
-        self.vertical_layout.add_stretch(2)
-        self.vertical_layout.add_layout(self.widget_layout, 3)
-        self.vertical_layout.add_stretch(2)
-
         self.token_list_frame = token_list_frame
         self.sections = sections
         self.token_buttons: _ty.List[TokenButton] = []
 
-        # container = self._create_container()
+        container = self._create_container()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(0)
 
         for i in range(self.sections):
-            token_button = TokenButton('...', i, parent=self)
-            self.widget_layout.add_widget(token_button, 1)
+            token_button = TokenButton('...', self.toggle_token_selection_list, i, container)
+            layout.addWidget(token_button)
             self.token_buttons.append(token_button)
-            # if i < self.sections - 1:
-            #     layout.addWidget(self._create_separator(container))
+            if i < self.sections - 1:
+                layout.addWidget(self._create_separator(container))
 
-        self.vertical_layout.setRect(self.rect())
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
-        # super().paint(painter, option, widget)
-        painter.save()
-        painter.setPen(QPen(Qt.GlobalColor.black))
-        painter.setBrush(Qt.GlobalColor.transparent)
-        painter.drawRect(self.boundingRect())
-        painter.restore()
-        self.widget_layout.paint(painter, option)
+        container.setLayout(layout)
+        self.setWidget(container)
 
     def _create_container(self) -> QWidget:
         """Creates the container widget for token buttons.
@@ -410,11 +379,12 @@ class TokenButtonFrame(QGraphicsWidget):
             if i < len(self.token_buttons):
                 self.token_buttons[i].setText(token)
 
-    def show_list(self, button_index: int) -> None:
+    def toggle_token_selection_list(self, button_index: int) -> None:
         """Toggles the visibility of the token selection list for the given button.
 
         :param button_index: The index of the token button.
         """
+        print('button clicked')
         self.token_list_frame.set_visible(not self.token_list_frame.isVisible(), button_index)
         return self.token_list_frame
 
@@ -423,10 +393,6 @@ class TokenButtonFrame(QGraphicsWidget):
         if all(button.text() != '...' for button in self.token_buttons):
             tokens = [button.text() for button in self.token_buttons]
             self.all_token_set.emit(tokens)
-
-    def moveEvent(self, event):
-        self.vertical_layout.setRect(self.rect())
-
 
 class TokenListFrame(QGraphicsProxyWidget):
 
@@ -543,13 +509,12 @@ class TokenListFrame(QGraphicsProxyWidget):
 
         :param item: The clicked list item.
         """
-        print(item.text())
         token = item.text()
         self.token_selected.emit((self.button_index, token))
 
 
 class TransitionFunctionItem(QGraphicsProxyWidget):
-    def __init__(self, ui_automaton: 'UiAutomaton', transition_line_item, sections, parent=None) -> None:
+    def __init__(self, ui_automaton, transition, sections, parent=None) -> None:
         """Initializes the transition function widget.
 
         :param tokens: A list of tokens for the transition function.
@@ -562,7 +527,7 @@ class TransitionFunctionItem(QGraphicsProxyWidget):
         self.ui_automaton = ui_automaton
         self.token_lists = self.ui_automaton.get_token_lists()
 
-        self.transition_line_item = transition_line_item
+        self.transition = transition
 
         self.token_list_frame = TokenListFrame(self.token_lists, self)
         self.token_button_frame = TokenButtonFrame(self.token_list_frame, sections, self)
@@ -580,10 +545,10 @@ class TransitionFunctionItem(QGraphicsProxyWidget):
         :param condition: A list of the currently selected tokens.
         """
         # traceback.print_stack()
-        print(f'Vor condition set: {self.transition_line_item.get_ui_transition()}')
+        print(f'Vor condition set: {self.transition.get_ui_transition()}')
         self.token_button_frame.set_condition(condition)
-        self.transition_line_item.get_ui_transition().set_condition(condition)
-        print(f'Nach condition set: {self.transition_line_item.get_ui_transition()}')
+        self.transition.get_ui_transition().set_condition(condition)
+        print(f'Nach condition set: {self.transition.get_ui_transition()}')
 
     def update_token_list(self, token_lists: tuple[list[str], list[str]]) -> None:
         """Updates the token list and replaces invalid tokens in the condition."""

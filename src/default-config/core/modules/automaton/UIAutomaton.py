@@ -1,5 +1,6 @@
 """TBA"""
 from PySide6.QtGui import QColor
+from PySide6.QtCore import Signal as QSignal
 
 from returns import result as _result
 
@@ -18,7 +19,6 @@ from utils.staticSignal import Signal
 
 # Standard typing imports for aps
 import typing as _ty
-
 
 # Docs generated with Github Copilot
 
@@ -246,21 +246,12 @@ class UiTransition(IUiTransition):
 
 @auto_repr_with_privates
 class UiAutomaton(IUiAutomaton):
-
     def __init__(self, automaton_type: str | None, author: str, state_types_with_design: _ty.Dict[str, _ty.Any],
                  token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
                  transition_pattern: _ty.List[int] = []):
         # state_types_with_design = {"end": {"design": "Line x",  future}, "default": {"design": "Line y", future}}
         super().__init__(automaton_type, author, state_types_with_design, token_lists, changeable_token_lists,
                          transition_pattern)
-
-        """self.signal_bus = SignalBus()
-        self.signal_bus.request_method.connect(self.call_method)
-
-        self.singleton_observer = SingletonObserver()
-        self.singleton_observer.subscribe('token_lists', self.set_token_lists)
-        self.singleton_observer.subscribe('automaton_type', self.set_automaton_type)
-        self.singleton_observer.subscribe('start_state', self.set_start_state)"""
 
         self._type: str = automaton_type
 
@@ -273,25 +264,6 @@ class UiAutomaton(IUiAutomaton):
 
         self._bridge: UiBridge = UiBridge()
         self._input_widget: _ty.Type[QAutomatonInputOutput] | None = None
-
-    """def call_method(self, method_name, args, kwargs):
-        if self.signal_bus is None:
-            return
-
-        if hasattr(self, method_name):
-            method = getattr(self, method_name)
-            if callable(method):
-                result = method(*args, **kwargs)
-                # print(f'UiAutomaton: {method_name} -> {result}')
-                self.signal_bus.send_response.emit(method_name, result)
-            else:
-                IOManager().warning(f'UiAutomaton: {method_name} is not a callable method!', '', True, True)
-        else:
-            IOManager().warning(f'UiAutomaton: Method {method_name} does not exist', '', True, True)"""
-
-    def __del__(self):
-        print("delete")
-        self.signal_bus = None
 
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)

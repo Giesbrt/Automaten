@@ -1,8 +1,9 @@
 import numpy as np
+from PyQt5.QtWidgets import QGraphicsProxyWidget
 from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, QTimer
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsItemGroup, QGraphicsDropShadowEffect, QStyle, \
-    QGraphicsLineItem, QStyleOptionGraphicsItem
+    QGraphicsLineItem, QStyleOptionGraphicsItem, QGraphicsSceneMouseEvent
 
 from automaton.UIAutomaton import UiState, UiTransition
 from ._graphic_items import StateGraphicsItem, LabelGraphicsItem, TransitionGraphicsItem, \
@@ -261,9 +262,9 @@ class StateItem(QGraphicsItemGroup):
         super().paint(painter, option, widget)
 
 
-class TransitionItem(QGraphicsItemGroup):
+class TransitionItem(QGraphicsItem):
     def __init__(self, ui_transition: 'UiTransition', ui_automaton: 'UiAutomaton', transition_sections: int,
-                 start_point, end_point, start_state, end_state, parent: QGraphicsItem | None = None) -> None:
+                 start_point, end_point, start_state, end_state, parent=None) -> None:
         super().__init__(parent)
 
         self.ui_transition: 'UiTransition' = ui_transition
@@ -275,10 +276,21 @@ class TransitionItem(QGraphicsItemGroup):
         start_state.add_transition(self)
         end_state.add_transition(self)
 
-        self.addToGroup(self.transition_line_item)
-        self.addToGroup(self.transition_function_item)
-
         self.update_position()
+
+        # Für QGraphicsItem musst du mindestens boundingRect und paint implementieren.
+    def boundingRect(self) -> QRectF:
+        # Hier solltest du den Bereich berechnen, der beide Kinder abdeckt.
+        # Dies ist nur ein Beispiel:
+        return self.transition_line_item.boundingRect()
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
+        # super().paint(painter, option, widget)
+        painter.save()
+        painter.setPen(QPen(Qt.GlobalColor.black))
+        painter.setBrush(Qt.GlobalColor.transparent)
+        painter.drawRect(self.boundingRect())
+        painter.restore()
 
     def get_ui_automaton(self) -> 'UiAutomaton':
         """Retrieves the UI automaton object associated with this transition.
@@ -309,8 +321,6 @@ class TransitionItem(QGraphicsItemGroup):
         self.get_ui_transition().set_condition(condition)
 
     def update_position(self) -> None:
-
-        print('udpate position')
         # transition_line_item
         start_scene = self.transition_line_item.start_point.mapToScene(self.transition_line_item.start_point.boundingRect().center())
         end_scene = self.transition_line_item.end_point.mapToScene(self.transition_line_item.end_point.boundingRect().center())

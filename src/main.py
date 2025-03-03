@@ -502,6 +502,8 @@ class App:
             self.ui_automaton.unload()
             custom_python: str = deserialize(self.ui_automaton, content, filetype)
 
+            self.window.user_panel.input_widget.reset()
+            self.window.user_panel.deposition_input_widget()
             widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()
             self.window.user_panel.position_input_widget(widget)
 

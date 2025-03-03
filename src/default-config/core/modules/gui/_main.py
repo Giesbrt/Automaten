@@ -8,7 +8,7 @@ from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QPara
 
 from aplustools.io.qtquick import QQuickMessageBox
 
-from core.modules.abstractions import IMainWindow
+from modules.abstractions import IMainWindow
 from ._panels import UserPanel, SettingsPanel
 
 # Standard typing imports for aps

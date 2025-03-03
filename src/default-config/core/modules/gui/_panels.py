@@ -404,6 +404,11 @@ class UserPanel(Panel):
             self.input_frame.setFixedHeight(self.input_widget.sizeHint().height() + self.hide_button.height())
             self.hide_button.setText("Hide Input/Output")
 
+    def deposition_input_widget(self):
+        self.input_frame.layout().removeWidget(self.input_widget)
+        self.input_widget.deleteLater()
+        self.input_widget = None
+
     def position_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput]):
         self.input_widget = input_widget(parent=self)
         self.input_frame.layout().addWidget(self.input_widget)

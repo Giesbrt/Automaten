@@ -1,5 +1,4 @@
 import numpy as np
-from PyQt5.QtWidgets import QGraphicsProxyWidget
 from PySide6.QtCore import Qt, QPointF, QLineF, QRectF, QTimer
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsItemGroup, QGraphicsDropShadowEffect, QStyle, \

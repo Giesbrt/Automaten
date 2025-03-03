@@ -75,7 +75,7 @@ class MainWindow(QMainWindow, IMainWindow):
         self.automaton_type: str | None = None
         self.recent_files = []
         super().__init__(parent=None)
-        self.statusBar().showMessage("Statusbar")
+        # self.statusBar().showMessage("Statusbar")
 
     def setup_gui(self, ui_automaton: 'UiAutomaton') -> None:
         self.ui_automaton = ui_automaton
@@ -156,9 +156,9 @@ class MainWindow(QMainWindow, IMainWindow):
         restore_default_zoom_action = QAction("Restore default zoom", self)
         restore_default_zoom_action.setShortcut("Ctrl+0")
         view_menu.addAction(restore_default_zoom_action)
-        status_bar_action = QAction("Status bar", self)
-        status_bar_action.setCheckable(True)
-        view_menu.addAction(status_bar_action)
+        # status_bar_action = QAction("Status bar", self)
+        # status_bar_action.setCheckable(True)
+        # view_menu.addAction(status_bar_action)
 
         help_menu = self.menuBar().addMenu("Help")
         report_action = QAction("Report Issue", self)
@@ -274,7 +274,7 @@ class MainWindow(QMainWindow, IMainWindow):
     def reload_panels(self) -> None:
         menubar_bottom = self.menuBar().height()
         width = self.width()
-        height = self.height() - menubar_bottom - self.statusBar().height()
+        height = self.height() - menubar_bottom  # - self.statusBar().height()
         top = menubar_bottom
 
         user_panel_hidden_value = QRect(-width, top, width, height)

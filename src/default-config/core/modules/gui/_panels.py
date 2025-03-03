@@ -4,7 +4,7 @@ import os
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
                                QFormLayout, QLineEdit, QFontComboBox, QKeySequenceEdit, QCheckBox,
                                QSlider, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
-                               QHBoxLayout, QColorDialog, QComboBox, QMenu, QSpinBox, QDoubleSpinBox)
+                               QHBoxLayout, QColorDialog, QComboBox, QMenu, QSpinBox, QDoubleSpinBox, QListWidgetItem)
 from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QLocale, Signal, QParallelAnimationGroup, QTimer
 from PySide6.QtGui import QColor, QIcon, QPen, QKeySequence, QFont
 from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
@@ -266,6 +266,16 @@ class UserPanel(Panel):
         self.info_menu_animation = QPropertyAnimation(self.info_menu, b'geometry')
         self.info_menu_animation.setDuration(500)
 
+        self.info_menu_layout = QVBoxLayout(self.info_menu)
+        search_label = QLabel("Suchen:", self.info_menu)
+        search_field = QLineEdit(self.info_menu)
+        search_field.textChanged.connect(self.search_items)
+        self.info_menu_layout.addWidget(search_label)
+        self.info_menu_layout.addWidget(search_field)
+        self.items_list = QListWidget(self)
+        self.populate_items_list()
+        self.info_menu_layout.addWidget(self.items_list)
+
         # Input/Output
         self.input_frame: QFrame = QFrame(self)
         self.input_frame.setFrameShape(QFrame.Shape.StyledPanel)
@@ -294,6 +304,64 @@ class UserPanel(Panel):
 
         # TODO: SETTINGS
         # - Automaton loader settings
+
+    def search_items(self, text):
+        """Search items in the list"""
+        for i in range(self.items_list.count()):
+            item = self.items_list.item(i)
+            widget = self.items_list.itemWidget(item)
+            button = widget.findChild(QPushButton) if widget else None
+            if button:
+                title = button.text().split("▼")[0].strip()
+                item.setHidden(text.lower() not in title.lower())
+
+
+    def populate_items_list(self):
+        """Populate the list with example items"""
+        example_items = [
+            {"title": "Zustand einfügen", "description": "Doppelklick auf die Oberfläche mit der linken Maustaste"},
+            {"title": "Zustand anpassen", "description": "Klicke den anzupassenden Zustand an. Auf dem rechts aufgehendem \n Sideboard kannst du:\n - Name \n- Farbe und Größe ändern"},
+            {"title": "Zustände verbinden", "description": "Klicke auf den grünen Punkt am Zustand den du verbinden möchtest. Klicke dann auf den Punkt mit dem du die Verbindung machen möchtest. Der grüne Kreis ist Ausgang und der rote Eingang."},
+            {"title": "Automatentyp wählen", "description": "Du kannst den Typ des Automaten wählen."},
+            {"title": "Design ändern", "description": "Gehe in die settings (oben rechts) und klicke auf Design. Hier kannst du zwischen den zur Verfügung stehenden Designs wählen"},
+            {"title": "Datei laden", "description": "Gehe auf File und wähle Load, oder benutze den Shortcut: "},
+            {"title": "Datei speichern", "description": "Gehe auf File und wähle save, oder benutze den Schortcut: "},
+            {"title": "Schriftart ändern", "description": "Gehe in die settings (Oben rechts) und klcike auf Deign. Wähle eine beliebige Schriftart aus"},
+            {"title": "", "description": ""}
+        ]
+
+        for item_data in example_items:
+            title = item_data["title"]
+            description = item_data["description"]
+            widget = QWidget()
+            layout = QVBoxLayout(widget)
+
+            button = QPushButton(f"{title} ▼", self.info_menu)
+            button.setCheckable(True)
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # Dynamic width
+
+            description_label = QLabel(description)
+            description_label.setWordWrap(True)
+            description_label.setVisible(False)
+            description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)  # Adapts itself
+
+            layout.addWidget(button)
+            layout.addWidget(description_label)
+            widget.setLayout(layout)
+
+            def toggle_description(checked):
+                description_label.setVisible(checked)
+                list_item.setSizeHint(widget.sizeHint())  # Update the size of the list element
+
+            button.toggled.connect(toggle_description)
+
+            list_item = QListWidgetItem(self.items_list)
+            list_item.setSizeHint(widget.sizeHint())
+            self.items_list.addItem(list_item)
+            self.items_list.setItemWidget(list_item, widget)
+
+            # Saves the widget for later updating of the width
+            list_item.widget_ref = widget
 
     def setShowScrollbars(self, flag: bool) -> None:
         if flag:

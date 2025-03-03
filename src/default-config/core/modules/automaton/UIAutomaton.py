@@ -6,6 +6,7 @@ from returns import result as _result
 
 # Bridge Import
 from automaton.UiBridge import UiBridge
+from automaton.UiSettingsProvider import UiSettingsProvider
 from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 # abstract imports
@@ -54,7 +55,7 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
 
     def set_position(self, position: _ty.Tuple[float, float]) -> None:
         """Sets the position of the state.
-        
+
         :param position: The position of the state.
         :return: None
         """
@@ -62,7 +63,7 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
 
     def set_display_text(self, display_text: str) -> None:
         """Sets the display text of the state.
-        
+
         :param display_text: The display text of the state.
         :return: None
         """
@@ -76,32 +77,32 @@ class UiState(IUiState):  # TODO: mypy does not like that IUiState is of type An
 
     def get_colour(self) -> QColor:
         """Gets the colour of the state.
-        
+
         :return: The colour of the state.
         """
         return self._colour
 
     def get_position(self) -> _ty.Tuple[float, float]:
         """Gets the position of the state.
-        
+
         :return: The position of the state."""
         return self._position
 
     def get_display_text(self) -> str:
         """Gets the display text of the state.
-        
+
         :return: The display text of the state."""
         return self._display_text
 
     def get_type(self) -> str:  # TODO: add docu to IUiState
         """Gets the node type of the state.
-        
+
         :return: The type of the state."""
         return self._type
 
     def is_active(self) -> bool:
         """Checks if the state is active.
-        
+
         :return: True if the state is active, False otherwise."""
         return self._is_active
 
@@ -144,7 +145,7 @@ class UiTransition(IUiTransition):
 
     def set_from_state(self, from_state: UiState) -> None:
         """Sets the state from which the transition originates.
-        
+
         :param from_state: The state from which the transition originates.
         :return: None
         """
@@ -152,7 +153,7 @@ class UiTransition(IUiTransition):
 
     def set_from_state_connecting_point(self, connecting_point: _ty.Literal['n', 's', 'e', 'w']) -> None:
         """Sets the connecting point of the from state.
-        
+
         :param connecting_point: The connecting point of the from state.
         :return: None
         """
@@ -160,7 +161,7 @@ class UiTransition(IUiTransition):
 
     def set_to_state(self, to_state: UiState) -> None:
         """Sets the state to which the transition leads.
-        
+
         :param to_state: The state to which the transition leads.
         :return: None
         """
@@ -168,7 +169,7 @@ class UiTransition(IUiTransition):
 
     def set_to_state_connecting_point(self, connecting_point: _ty.Literal['n', 's', 'e', 'w']) -> None:
         """Sets the connecting point of the to state.
-        
+
         :param connecting_point: The connecting point of the to state.
         :return: None
         """
@@ -176,7 +177,7 @@ class UiTransition(IUiTransition):
 
     def get_from_state(self) -> UiState:
         """Gets the state from which the transition originates.
-        
+
         :return: The state from which the transition originates.
         """
         return self._from_state
@@ -185,13 +186,13 @@ class UiTransition(IUiTransition):
         """Gets the connecting point of the from state.
 
         n = North, s = South, e = East, w = West
-        
+
         :return: The connecting point of the from state."""
         return self._from_state_connecting_point
 
     def get_to_state(self) -> UiState:
         """Gets the state to which the transition leads.
-        
+
         :return: The state to which the transition leads."""
         return self._to_state
 
@@ -199,13 +200,13 @@ class UiTransition(IUiTransition):
         """Gets the connecting point of the to state.
 
         n = North, s = South, e = East, w = West
-        
+
         :return: The connecting point of the to state."""
         return self._to_state_connecting_point
 
     def is_active(self) -> bool:
         """Checks if the transition is active.
-        
+
         :return: True if the transition is active, False otherwise."""
         return self._is_active
 
@@ -219,7 +220,7 @@ class UiTransition(IUiTransition):
 
     def set_condition(self, condition: _ty.List[str]) -> None:
         """Sets the condition of the transition.
-        
+
         :param condition: The condition of the transition.
         :return: None
         """
@@ -227,7 +228,7 @@ class UiTransition(IUiTransition):
 
     def get_condition(self) -> _ty.List[str]:
         """Gets the condition of the transition.
-        
+
         :return: The condition of the transition.
         """
         return self._condition
@@ -270,28 +271,28 @@ class UiAutomaton(IUiAutomaton):
 
     def get_start_state(self) -> UiState | None:
         """Gets the start state of the automaton.
-        
+
         :return: The start state of the automaton.
         """
         return self._start_state
 
     def get_states(self) -> OrderedSet[UiState]:
         """Gets the states of the automaton.
-        
+
         :return: The states of the automaton.
         """
         return self._states
 
     def get_transitions(self) -> OrderedSet[UiTransition]:
         """Gets the transitions of the automaton.
-        
+
         :return: The transitions of the automaton.
         """
         return self._transitions
 
     def add_state(self, state: UiState) -> None:
         """Adds a state to the automaton.
-        
+
         :param state: The state to be added.
         :return: None
         """
@@ -299,7 +300,7 @@ class UiAutomaton(IUiAutomaton):
 
     def add_transition(self, transition: UiTransition) -> None:
         """Adds a transition to the automaton.
-        
+
         :param transition: The transition to be added.
         :return: None
         """
@@ -312,9 +313,22 @@ class UiAutomaton(IUiAutomaton):
         """
         return self._type
 
-    def set_automaton_type(self, automaton_type: str) -> None:
+    def set_automaton_type(self, automaton_type: str, load_settings: bool = True) -> None:
         """Sets the type of the Automaton"""
         self._type = automaton_type
+
+        if load_settings:
+            settings_loader: UiSettingsProvider = UiSettingsProvider()
+            automaton_type: str = self.get_automaton_type()
+            automaton_settings = settings_loader.get_settings(automaton_type)
+            io_manager: IOManager = IOManager()
+
+            if automaton_settings is not None:
+                settings_loader.apply_to_automaton(self, None, automaton_settings)
+
+                io_manager.debug(f"Applied settings to {automaton_type}-automaton", "")
+            else:
+                io_manager.error(f"Could not load and apply settings of {automaton_type}", "", True)
 
     def set_start_state(self, state: UiState) -> None:
         """Sets the start state of the automaton.

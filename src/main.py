@@ -21,7 +21,7 @@ import stdlib_list
 import requests
 # PySide6
 from PySide6.QtWidgets import QApplication, QMessageBox, QSizePolicy
-from PySide6.QtGui import QIcon, QDesktopServices, Qt
+from PySide6.QtGui import QIcon, QDesktopServices, Qt, QPalette
 from PySide6.QtCore import QUrl
 # aplustools
 from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
@@ -593,8 +593,10 @@ class App:
             IOManager().warning(f"Couldn't find specified style {style_str} for theme {theme_str}", "",
                                 show_dialog=True)
             return
-        theme_str, palette = theme.apply_style(style, self.qapp.palette(),
+        print(theme, style)
+        theme_str, palette = theme.apply_style(style, QPalette(),
                                                transparency_mode="none")  # TODO: Get from settings
+        print("PAL", palette)
         self.qapp.setPalette(palette)
         self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base_styling()))
 

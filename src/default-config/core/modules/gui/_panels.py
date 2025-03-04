@@ -340,13 +340,16 @@ class UserPanel(Panel):
         """Populate the list with example items"""
         example_items = [
             {"title": "Zustand einfügen", "description": "Doppelklick auf die Oberfläche mit der linken Maustaste"},
-            {"title": "Zustand anpassen", "description": "Klicke den anzupassenden Zustand an. Auf dem rechts aufgehendem \nSideboard kannst du:\n- Name \n- Farbe und Größe ändern"},
-            {"title": "Zustände verbinden", "description": "Klicke auf den grünen Punkt am Zustand den du verbinden möchtest. Klicke dann auf den Punkt mit dem du die Verbindung machen möchtest. Der grüne Kreis ist Ausgang und der rote Eingang."},
-            {"title": "Automatentyp wählen", "description": "Du kannst den Typ des Automaten wählen."},
+            {"title": "Zustand anpassen", "description": "Klicke den anzupassenden Zustand an. Auf dem rechts aufgehendem Seiten Panel kannst du:\n- Name \n- Farbe und Größe ändern"},
+            {"title": "Zustände verbinden", "description": "Klicke auf den grünen Punkt am Zustand den du verbinden möchtest. Klicke dann auf einer der Roten Punkte des zu verbinden Zustands."},
             {"title": "Design ändern", "description": "Gehe in die Settings (oben rechts) und klicke auf Design. Hier kannst du zwischen den zur Verfügung stehenden Designs wählen."},
-            {"title": "Datei laden", "description": "Gehe auf File und wähle Load, oder benutze den Shortcut."},
-            {"title": "Datei speichern", "description": "Gehe auf File und wähle Save, oder benutze den Shortcut."},
+            {"title": "Datei laden", "description": "Gehe auf File und wähle Open, oder benutze den Shortcut: Ctrl+O."},
+            {"title": "Datei speichern", "description": "Gehe auf File und wähle Save, oder benutze den Shortcut: Ctrl+S."},
             {"title": "Schriftart ändern", "description": "Gehe in die Settings (oben rechts) und klicke auf Design. Wähle eine beliebige Schriftart aus."},
+            {"title": "Zoom in/ out", "description": "Gehe auf View oder benutze die Shortcuts Ctrl++/ Ctrl--."},
+            {"title": "Shortcuts ändern", "description": "Gehe in die Settings und in General können die Shorcuts geändert werden."},
+            {"title": "Sartzustand", "description": "Auf den Zustand klicken der Startzustand werden soll, wähle bei Type im Seiten Panel: Start"},
+            {"title": "Endzustand", "description": "Auf den Zustand klicken der Endzustand werden soll, wähle bei Type im Seitenpanel: End"},
         ]
 
         for item_data in example_items:

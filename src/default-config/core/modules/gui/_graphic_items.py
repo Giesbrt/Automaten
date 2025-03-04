@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphi
 
 from ._graphic_support_items import FrameWidgetItem, HorizontalLayout, VerticalLayout
 from painter import PainterStr, StrToPainter
+from storage import AppSettings
 
 # Standard typing imports for aps
 from functools import partial
@@ -176,7 +177,9 @@ class LabelGraphicsItem(QGraphicsTextItem):
         super().__init__(parent)
         self.setPlainText(text)
         self.setDefaultTextColor(QColor('black'))
-        self.setFont(QFont('Arial', 24, QFont.Weight.Bold))  # Needs to be changeable, idk yet how
+        self.settings = AppSettings()
+        self.setFont(QFont(self.settings.get_font(), 24, QFont.Weight.Bold))  # Needs to be changeable, idk yet how
+        self.settings.font_changed.connect(lambda: self.setFont(QFont(self.settings.get_font(), 24, QFont.Weight.Bold)))
 
     def paint(self, painter, option, widget=None):
         """Paints the label and updates its text from the parent's UI state.

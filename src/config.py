@@ -1,4 +1,5 @@
 """TBA"""
+import os.path
 import sys as _sys
 import os as _os
 import shutil as _shutil
@@ -6,9 +7,9 @@ import platform as _platform
 
 
 INDEV: bool = True
-INDEV_KEEP_SETTINGS: bool = True
+INDEV_KEEP_RUNTIME_FILES: bool = True
 OLD_CWD: str = _os.getcwd()
-PROGRAM_NAME: str = "E.F.S Simulator"
+PROGRAM_NAME: str = "N.E.F.S Simulator"
 PROGRAM_NAME_NORMALIZED: str = "efs_simulator"
 VERSION: int = 1300
 VERSION_ADD: str = "a0"
@@ -49,17 +50,17 @@ def _configure() -> dict[str, str]:
     base_app_dir = _os.path.join(_os.environ.get("LOCALAPPDATA", "."), PROGRAM_NAME_NORMALIZED)
 
     if INDEV and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
-        if not INDEV_KEEP_SETTINGS:
+        if not INDEV_KEEP_RUNTIME_FILES:
             _shutil.rmtree(base_app_dir)
             _os.mkdir(base_app_dir)
-        else:  # Skip only .db files
+        else:  # Skip only .db or .log files
             for root, dirs, files in _os.walk(base_app_dir, topdown=False):
                 for file in files:
-                    if not file.endswith(".db"):
+                    if not file.endswith((".db", ".log")):
                         _os.remove(_os.path.join(root, file))
                 for directory in dirs:
                     dir_path = _os.path.join(root, directory)
-                    if not any(f.endswith(".db") for f in _os.listdir(dir_path)):
+                    if not any(f.endswith((".db", ".log")) or _os.path.isdir(_os.path.join(dir_path, f)) for f in _os.listdir(dir_path)):
                         _shutil.rmtree(dir_path)
 
     dirs_to_create = []

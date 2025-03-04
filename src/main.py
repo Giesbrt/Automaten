@@ -74,13 +74,18 @@ class App:
             # Setup IOManager
             self.io_manager: IOManager = IOManager()
             self.io_manager.init(self.window.button_popup, f"{self.data_folder}/logs", config.INDEV)
-            self.io_manager.set_logging_level(logging_level or (logging.DEBUG if config.INDEV else logging.INFO))
-            for exported_line in config.exported_logs.split("\n"):
-                self.io_manager.debug(exported_line)  # Flush config prints
 
             # Settings
             self.settings: AppSettings = AppSettings()
             self.settings.init(config, self.config_folder)
+            if logging_level:
+                self.settings.set_logging_mode(logging.getLevelName(logging_level))
+            mode = getattr(logging, self.settings.get_logging_mode().upper())
+            if mode is not None:
+                self.io_manager.set_logging_level(mode)
+            self.settings.logging_mode_changed.connect(lambda x: self.io_manager.set_logging_level(getattr(logging, x.upper())))
+            for exported_line in config.exported_logs.split("\n"):
+                self.io_manager.debug(exported_line)  # Flush config prints
 
             # Thread pool
             self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
@@ -92,8 +97,6 @@ class App:
                                      (Extensions_Loader(self.base_app_dir).load_content(),)
                                  )
                              ))
-            if self.settings.get_auto_check_for_updates():
-                self.pool.submit(self.check_for_update)
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             # Automaton backend init
@@ -105,16 +108,10 @@ class App:
                     func, args = entry
                     func(*args)
 
+            if self.settings.get_auto_check_for_updates():
+                self.pool.submit(self.check_for_update)
+
             self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
-            print(f'{input_path=}')
-            if input_path != "":
-                success: bool = self.load_file(input_path)
-                if not success:
-                    self.ui_automaton.unload()
-                    print('Could not load file')
-                    """self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
-                    self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
-                    self.singleton_observer.set('is_loaded', True)"""
 
             # Setup window
             self.system: BaseSystemType = get_system()
@@ -124,6 +121,17 @@ class App:
             self.load_styles(os.path.join(self.styling_folder, "styles"))
 
             self.window.setup_gui(self.ui_automaton)
+            self.window.manual_update_check.connect(lambda: self.pool.submit(self.check_for_update))
+
+            if input_path != "":
+                success: bool = self.load_file(input_path)
+                if not success:
+                    self.ui_automaton.unload()
+                    print('Could not load file')
+                    """self.singleton_observer.set('automaton_type', self.ui_automaton.get_automaton_type())
+                    self.singleton_observer.set('token_lists', self.ui_automaton.get_token_lists())
+                    self.singleton_observer.set('is_loaded', True)"""
+
             # self.window.user_panel.setShowScrollbars(False)
             # self.window.user_panel.setAutoShowInfoMenu(False)
             self.grid_view = self.window.user_panel.grid_view
@@ -151,9 +159,13 @@ class App:
 
             self.update_icon()
             self.update_title()
-            self.update_font()
+            self.settings.window_icon_sets_path_changed.connect(lambda _: self.update_icon())
+            self.settings.window_icon_set_changed.connect(lambda _: self.update_icon())
+            self.settings.window_title_template_changed.connect(lambda _: self.update_title())
+            self.settings.font_changed.connect(lambda _: self.update_font())
 
             self.window.start()  # Shows gui
+            self.update_font()  # So that everything gets updated
 
             self.timer_number: int = 1
             self.timer: QtTimidTimer = QtTimidTimer()
@@ -178,10 +190,15 @@ class App:
         retval_func: _a.Callable[[str], _ty.Any] = lambda button: None
         do_popup: bool = True
 
+        print(1)
+
         try:  # Get update content
+            print(1)
+            print(type(self.settings.get_update_check_request_timeout()))
             response: requests.Response = requests.get(
                 "https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
-                timeout=self.settings.get_update_check_request_timeout())
+                timeout=float(self.settings.get_update_check_request_timeout()))
+            print(2)
         except requests.exceptions.Timeout:
             title, text, description = "Update Info", ("The request timed out.\n"
                                                        "Please check your internet connection, "
@@ -204,6 +221,12 @@ class App:
                     (icon, title, text, description),
                     (checkbox, checkbox_setting),
                     (standard_buttons, default_button), retval_func)
+        except Exception as e:
+            return (True,
+                    ("Warning", "Update check failed", "Due to an internal error,\nthe operation could not be completed.", format_exc()),
+                    (None, ("", "")),
+                    (["Ok"], "Ok"), lambda button: None)
+        print("Response", response)
 
         try:  # Parse update content
             update_json: dict = response.json()
@@ -294,7 +317,9 @@ class App:
 
     def check_for_update(self) -> None:
         """TBA"""
+        print("Checking for update")
         update_result = self.get_update_result()
+        print("Result", update_result)
         self.for_loop_list.append((self.show_update_result, (update_result,)))
 
     def get_os_theme(self) -> SystemTheme:
@@ -481,6 +506,12 @@ class App:
                 f"The loading of the file '{os.path.basename(filepath)}' has failed.\nThe file may be corrupted.",
                 format_exc(), True, True)
             return False
+        recent_files = []
+        for file in self.settings.get_recent_files():
+            if file != filepath:
+                recent_files.append(file)
+        recent_files.append(filepath)
+        self.settings.set_recent_files(tuple(recent_files))
         return True
 
     def save_to_file(self, filepath: str, automaton: UiAutomaton) -> str | None:
@@ -518,10 +549,11 @@ class App:
 
     def update_icon(self) -> None:
         """Updates the window icon with data from the settings"""
-        window_icon_set_path: str = self.settings.get_window_icon_set()
-        if window_icon_set_path.startswith(":"):
-            window_icon_set_path = window_icon_set_path.replace(":", self.base_app_dir, 1)
-        self.window.set_window_icon(os.path.join(window_icon_set_path, "logo-nobg.png"))
+        window_icon_sets_path: str = self.settings.get_window_icon_sets_path()
+        window_icon_set: str = self.settings.get_window_icon_set()
+        if window_icon_sets_path.startswith(":"):
+            window_icon_sets_path = window_icon_sets_path.replace(":", self.base_app_dir, 1)
+        self.window.set_window_icon(os.path.join(window_icon_sets_path, window_icon_set, "logo-nobg.png"))
 
     def update_title(self) -> None:
         """Updates the window title with data from the settings"""
@@ -588,10 +620,6 @@ class App:
 
     def timer_tick(self, index: int) -> None:
         if index == 0:  # Default 500ms timer
-            self.update_icon()
-            self.update_title()
-            if self.timer_number & 0 == 1:
-                self.update_font()
             self.check_theme_change()
             self.timer_number += 1
             if self.timer_number > 999:
@@ -607,7 +635,6 @@ class App:
                 func, args = entry
                 func(*args)
                 num_handled += 1
-            # print(self.extensions)
 
     def exit(self) -> None:
         """Cleans up resources"""
@@ -636,7 +663,7 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description=f"{config.PROGRAM_NAME}")
     parser.add_argument("input", nargs="?", default="", help="Path to the input file.")
-    parser.add_argument("--logging-mode", choices=["DEBUG", "INFO", "WARN", "ERROR"], default=None,
+    parser.add_argument("--logging-mode", choices=["DEBUG", "INFO", "WARN", "WARNING", "ERROR"], default=None,
                         help="Logging mode (default: None)")
     args = parser.parse_args()
 

@@ -245,6 +245,7 @@ class AppSettings(QObject):
     # general
     app_language_changed = Signal(str)
     auto_open_tutorial_tab_changed = Signal(bool)
+    auto_hide_input_widget_changed = Signal(bool)
     auto_check_for_updates_changed = Signal(bool)
     # auto
     geometry_changed = Signal(tuple[int, int, int, int])
@@ -252,10 +253,12 @@ class AppSettings(QObject):
     show_update_info_changed = Signal(bool)
     show_update_timeout_changed = Signal(bool)
     ask_to_reopen_last_file_changed = Signal(bool)
-    recent_files_changed = Signal(tuple[str, ...])
+    recent_files_changed = Signal(tuple)  # tuple[str, ...]
     # shortcuts
+    file_new_shortcut_changed = Signal(str)
     file_open_shortcut_changed = Signal(str)
     file_save_shortcut_changed = Signal(str)
+    file_save_as_shortcut_changed = Signal(str)
     file_close_shortcut_changed = Signal(str)
     simulation_start_shortcut_changed = Signal(str)
     simulation_step_shortcut_changed = Signal(str)
@@ -264,6 +267,10 @@ class AppSettings(QObject):
     states_cut_shortcut_changed = Signal(str)
     states_copy_shortcut_changed = Signal(str)
     states_paste_shortcut_changed = Signal(str)
+    states_delete_shortcut_changed = Signal(str)
+    zoom_in_shortcut_changed = Signal(str)
+    zoom_out_shortcut_changed = Signal(str)
+    zoom_reset_shortcut_changed = Signal(str)
     # design
     light_theming_changed = Signal(str)
     dark_theming_changed = Signal(str)
@@ -316,6 +323,7 @@ class AppSettings(QObject):
         self._settings.set_default_settings("general", {
             "app_language": "enUS",
             "auto_open_tutorial_tab": "True",
+            "auto_hide_input_widget": "False",
             "auto_check_for_updates": "True"
         })
         self._settings.set_default_settings("auto", {
@@ -327,8 +335,10 @@ class AppSettings(QObject):
             "recent_files": "()"
         })
         self._settings.set_default_settings("shortcuts", {
-            "file_open": "Ctrl+O",  # "" means disabled
+            "file_new": "",  # "" means disabled
+            "file_open": "Ctrl+O",
             "file_save": "Ctrl+S",
+            "file_save_as": "",
             "file_close": "Ctrl+Q",
             "simulation_start": "Ctrl+G",
             "simulation_step": "Ctrl+T",
@@ -337,6 +347,10 @@ class AppSettings(QObject):
             "states_cut": "Ctrl+X",
             "states_copy": "Ctrl+C",
             "states_paste": "Ctrl+V",
+            "states_delete": "del",
+            "zoom_in": "Ctrl++",
+            "zoom_out": "Ctrl+-",
+            "zoom_reset": "Ctrl+0",
         })
         self._settings.set_default_settings("design", {
             "light_theming": "adalfarus::thin/thin_light_green",  # thin_light_dark, colored_summer_sky
@@ -378,100 +392,135 @@ class AppSettings(QObject):
     def get_app_language(self) -> str:
         return self._settings.retrieve("general", "app_language", "string")
     def set_app_language(self, app_language: str) -> None:
-        self.app_language_changed.emit(app_language)
         self._settings.store("general", "app_language", app_language, "string")
+        self.app_language_changed.emit(app_language)
     def get_auto_open_tutorial_tab(self) -> bool:
         return self._settings.retrieve("general", "auto_open_tutorial_tab", "bool")
     def set_auto_open_tutorial_tab(self, flag: bool) -> None:
-        self.auto_open_tutorial_tab_changed.emit(flag)
         self._settings.store("general", "auto_open_tutorial_tab", flag, "bool")
+        self.auto_open_tutorial_tab_changed.emit(flag)
+    def get_auto_hide_input_widget(self) -> bool:
+        return self._settings.retrieve("general", "auto_hide_input_widget", "bool")
+    def set_auto_hide_input_widget(self, flag: bool) -> None:
+        self._settings.store("general", "auto_hide_input_widget", flag, "bool")
+        self.auto_hide_input_widget_changed.emit(flag)
     def get_auto_check_for_updates(self) -> bool:
         return self._settings.retrieve("general", "auto_check_for_updates", "bool")
     def set_auto_check_for_updates(self, flag: bool) -> None:
-        self.auto_check_for_updates_changed.emit(flag)
         self._settings.store("general", "auto_check_for_updates", flag, "bool")
+        self.auto_check_for_updates_changed.emit(flag)
     # auto
     def get_window_geometry(self) -> tuple[int, int, int, int]:
         return self._settings.retrieve("auto", "geometry", "tuple")  # type: ignore
     def set_window_geometry(self, window_geometry: tuple[int, int, int, int]) -> None:
-        self.geometry_changed.emit(window_geometry)
         self._settings.store("auto", "geometry", window_geometry, "tuple")
+        self.geometry_changed.emit(window_geometry)
     def get_show_no_update_info(self) -> bool:
         return self._settings.retrieve("auto", "show_no_update_info", "bool")  # type: ignore
     def set_show_no_update_info(self, flag: bool) -> None:
-        self.show_no_update_info_changed.emit(flag)
         self._settings.store("auto", "show_no_update_info", flag, "bool")
+        self.show_no_update_info_changed.emit(flag)
     def get_show_update_info(self) -> bool:
         return self._settings.retrieve("auto", "show_update_info", "bool")  # type: ignore
     def set_show_update_info(self, flag: bool) -> None:
-        self.show_update_info_changed.emit(flag)
         self._settings.store("auto", "show_update_info", flag, "bool")
+        self.show_update_info_changed.emit(flag)
     def get_show_update_timeout(self) -> bool:
         return self._settings.retrieve("auto", "show_update_timeout", "bool")  # type: ignore
     def set_show_update_timeout(self, flag: bool) -> None:
-        self.show_update_timeout_changed.emit(flag)
         self._settings.store("auto", "show_update_timeout", flag, "bool")
+        self.show_update_timeout_changed.emit(flag)
     def get_ask_to_reopen_last_file(self) -> bool:
         return self._settings.retrieve("auto", "ask_to_reopen_last_file", "bool")  # type: ignore
     def set_ask_to_reopen_last_file(self, flag: bool) -> None:
-        self.ask_to_reopen_last_file_changed.emit(flag)
         self._settings.store("auto", "ask_to_reopen_last_file", flag, "bool")
+        self.ask_to_reopen_last_file_changed.emit(flag)
     def get_recent_files(self) -> tuple[str, ...]:
         return self._settings.retrieve("auto", "recent_files", "tuple")  # type: ignore
     def set_recent_files(self, recent_files: tuple[str, ...]) -> None:
-        self.recent_files_changed.emit(recent_files)
         self._settings.store("auto", "recent_files", recent_files, "tuple")
+        self.recent_files_changed.emit(recent_files)
     # shortcuts
+    def get_file_new_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "file_new", "string")
+    def set_file_new_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "file_new", shortcut_str, "string")
+        self.file_new_shortcut_changed.emit(shortcut_str)
     def get_file_open_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "file_open", "string")
     def set_file_open_shortcut(self, shortcut_str: str) -> None:
-        self.file_open_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "file_open", shortcut_str, "string")
+        self.file_open_shortcut_changed.emit(shortcut_str)
     def get_file_save_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "file_save", "string")
     def set_file_save_shortcut(self, shortcut_str: str) -> None:
-        self.file_save_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "file_save", shortcut_str, "string")
+        self.file_save_shortcut_changed.emit(shortcut_str)
+    def get_file_save_as_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "file_save_as", "string")
+    def set_file_save_as_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "file_save_as", shortcut_str, "string")
+        self.file_save_as_shortcut_changed.emit(shortcut_str)
     def get_file_close_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "file_close", "string")
     def set_file_close_shortcut(self, shortcut_str: str) -> None:
-        self.file_close_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "file_close", shortcut_str, "string")
+        self.file_close_shortcut_changed.emit(shortcut_str)
     def get_simulation_start_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "simulation_start", "string")
     def set_simulation_start_shortcut(self, shortcut_str: str) -> None:
-        self.simulation_start_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "simulation_start", shortcut_str, "string")
+        self.simulation_start_shortcut_changed.emit(shortcut_str)
     def get_simulation_step_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "simulation_step", "string")
     def set_simulation_step_shortcut(self, shortcut_str: str) -> None:
-        self.simulation_step_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "simulation_step", shortcut_str, "string")
+        self.simulation_step_shortcut_changed.emit(shortcut_str)
     def get_simulation_halt_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "simulation_halt", "string")
     def set_simulation_halt_shortcut(self, shortcut_str: str) -> None:
-        self.simulation_halt_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "simulation_halt", shortcut_str, "string")
+        self.simulation_halt_shortcut_changed.emit(shortcut_str)
     def get_simulation_end_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "simulation_end", "string")
     def set_simulation_end_shortcut(self, shortcut_str: str) -> None:
-        self.simulation_end_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "simulation_end", shortcut_str, "string")
+        self.simulation_end_shortcut_changed.emit(shortcut_str)
     def get_states_cut_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "states_cut", "string")
     def set_states_cut_shortcut(self, shortcut_str: str) -> None:
-        self.states_cut_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "states_cut", shortcut_str, "string")
+        self.states_cut_shortcut_changed.emit(shortcut_str)
     def get_states_copy_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "states_copy", "string")
     def set_states_copy_shortcut(self, shortcut_str: str) -> None:
-        self.states_copy_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "states_copy", shortcut_str, "string")
+        self.states_copy_shortcut_changed.emit(shortcut_str)
     def get_states_paste_shortcut(self) -> str:
         return self._settings.retrieve("shortcuts", "states_paste", "string")
     def set_states_paste_shortcut(self, shortcut_str: str) -> None:
-        self.states_paste_shortcut_changed.emit(shortcut_str)
         self._settings.store("shortcuts", "states_paste", shortcut_str, "string")
+        self.states_paste_shortcut_changed.emit(shortcut_str)
+    def get_states_delete_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "states_delete", "string")
+    def set_states_delete_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "states_delete", shortcut_str, "string")
+        self.states_delete_shortcut_changed.emit(shortcut_str)
+    def get_zoom_in_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "zoom_in", "string")
+    def set_zoom_in_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "zoom_in", shortcut_str, "string")
+        self.zoom_in_shortcut_changed.emit(shortcut_str)
+    def get_zoom_out_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "zoom_out", "string")
+    def set_zoom_out_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "zoom_out", shortcut_str, "string")
+        self.zoom_out_shortcut_changed.emit(shortcut_str)
+    def get_zoom_reset_shortcut(self) -> str:
+        return self._settings.retrieve("shortcuts", "zoom_reset", "string")
+    def set_zoom_reset_shortcut(self, shortcut_str: str) -> None:
+        self._settings.store("shortcuts", "zoom_reset", shortcut_str, "string")
+        self.zoom_reset_shortcut_changed.emit(shortcut_str)
     # design
     def get_theming(self, mode: SystemTheme) -> str:
         theming_type: str = {SystemTheme.LIGHT: "light_theming",
@@ -480,98 +529,98 @@ class AppSettings(QObject):
     def set_theming(self, mode: SystemTheme, theming: str) -> None:
         theming_type: str = {SystemTheme.LIGHT: "light_theming",
                              SystemTheme.DARK: "dark_theming"}[mode]
-        getattr(self, f"{theming_type}_changed").emit(theming)
         self._settings.store("design", theming_type, theming, "string")
+        getattr(self, f"{theming_type}_changed").emit(theming)
     def get_window_icon_sets_path(self) -> str:
         return self._settings.retrieve("design", "window_icon_sets_path", "string")
     def set_window_icon_sets_path(self, icon_sets_path: str) -> None:
-        self.window_icon_sets_path_changed.emit(icon_sets_path)
         self._settings.store("design", "window_icon_sets_path", icon_sets_path, "string")
+        self.window_icon_sets_path_changed.emit(icon_sets_path)
     def get_window_icon_set(self) -> str:
         return self._settings.retrieve("design", "window_icon_set", "string")
     def set_window_icon_set(self, icon_set: str) -> None:
-        self.window_icon_set_changed.emit(icon_set)
         self._settings.store("design", "window_icon_set", icon_set, "string")
+        self.window_icon_set_changed.emit(icon_set)
     def get_font(self) -> str:
         return self._settings.retrieve("design", "font", "string")
     def set_font(self, font: str) -> None:
-        self.font_changed.emit(font)
         self._settings.store("design", "font", font, "string")
+        self.font_changed.emit(font)
     def get_window_title_template(self) -> str:
         return self._settings.retrieve("design", "window_title_template", "string")
     def set_window_title_template(self, title_template: str) -> None:
-        self.window_title_template_changed.emit(title_template)
         self._settings.store("design", "window_title_template", title_template, "string")
+        self.window_title_template_changed.emit(title_template)
     def get_enable_animations(self) -> bool:
         return self._settings.retrieve("design", "enable_animations", "bool")  # type: ignore
     def set_enable_animations(self, flag: bool) -> None:
-        self.enable_animations_changed.emit(flag)
         self._settings.store("design", "enable_animations", flag, "bool")
+        self.enable_animations_changed.emit(flag)
     def get_default_state_background_color(self) -> str:
         return self._settings.retrieve("design", "default_state_background_color", "string")
     def set_default_state_background_color(self, default_state_background_color: str) -> None:
-        self.default_state_background_color_changed.emit(default_state_background_color)
         self._settings.store("design", "default_state_background_color", default_state_background_color, "string")
+        self.default_state_background_color_changed.emit(default_state_background_color)
     def get_hide_scrollbars(self) -> bool:
         return self._settings.retrieve("design", "hide_scrollbars", "bool")  # type: ignore
     def set_hide_scrollbars(self, flag: bool) -> None:
-        self.hide_scrollbars_changed.emit(flag)
         self._settings.store("design", "hide_scrollbars", flag, "bool")
+        self.hide_scrollbars_changed.emit(flag)
     # performance
     def get_option(self) -> bool:
         return self._settings.retrieve("performance", "option", "bool")  # type: ignore
     def set_option(self, flag: bool) -> None:
-        self.option_changed.emit(flag)
         self._settings.store("performance", "option", flag, "bool")
+        self.option_changed.emit(flag)
     # security
     def get_warn_of_new_plugins(self) -> bool:
         return self._settings.retrieve("security", "warn_of_new_plugins", "bool")  # type: ignore
     def set_warn_of_new_plugins(self, flag: bool) -> None:
-        self.warn_of_new_plugins_changed.emit(flag)
         self._settings.store("security", "warn_of_new_plugins", flag, "bool")
+        self.warn_of_new_plugins_changed.emit(flag)
     def get_run_plugin_in_separate_process(self) -> bool:
         return self._settings.retrieve("security", "run_plugin_in_separate_process", "bool")  # type: ignore
     def set_run_plugin_in_separate_process(self, flag: bool) -> None:
-        self.run_plugin_in_separate_process_changed.emit(flag)
         self._settings.store("security", "run_plugin_in_separate_process", flag, "bool")
+        self.run_plugin_in_separate_process_changed.emit(flag)
     def get_use_safe_file_access(self) -> bool:
         return self._settings.retrieve("security", "use_safe_file_access", "bool")  # type: ignore
     def set_use_safe_file_access(self, flag: bool) -> None:
-        self.use_safe_file_access_changed.emit(flag)
         self._settings.store("security", "use_safe_file_access", flag, "bool")
+        self.use_safe_file_access_changed.emit(flag)
     # advanced
     def get_hide_titlebar(self) -> bool:
         return self._settings.retrieve("advanced", "hide_titlebar", "bool")  # type: ignore
     def set_hide_titlebar(self, flag: bool) -> None:
-        self.hide_titlebar_changed.emit(flag)
         self._settings.store("advanced", "hide_titlebar", flag, "bool")
+        self.hide_titlebar_changed.emit(flag)
     def get_stay_on_top(self) -> bool:
         return self._settings.retrieve("advanced", "stay_on_top", "bool")  # type: ignore
     def set_stay_on_top(self, flag: bool) -> None:
-        self.stay_on_top_changed.emit(flag)
         self._settings.store("advanced", "stay_on_top", flag, "bool")
+        self.stay_on_top_changed.emit(flag)
     def get_save_window_dimensions(self) -> bool:
         return self._settings.retrieve("advanced", "save_window_dimensions", "bool")  # type: ignore
     def set_save_window_dimensions(self, flag: bool) -> None:
-        self.save_window_dimensions_changed.emit(flag)
         self._settings.store("advanced", "save_window_dimensions", flag, "bool")
+        self.save_window_dimensions_changed.emit(flag)
     def get_save_window_position(self) -> bool:
         return self._settings.retrieve("advanced", "save_window_position", "bool")  # type: ignore
     def set_save_window_position(self, flag: bool) -> None:
-        self.save_window_position_changed.emit(flag)
         self._settings.store("advanced", "save_window_position", flag, "bool")
+        self.save_window_position_changed.emit(flag)
     def get_update_check_request_timeout(self) -> float:
         return self._settings.retrieve("advanced", "update_check_request_timeout", "float")
     def set_update_check_request_timeout(self, request_timeout: float) -> None:
-        self.update_check_request_timeout_changed.emit(request_timeout)
         self._settings.store("advanced", "update_check_request_timeout", request_timeout, "float")
+        self.update_check_request_timeout_changed.emit(request_timeout)
     def get_max_timer_tick_handled_events(self) -> int:
         return self._settings.retrieve("advanced", "max_timer_tick_handled_events", "float")
     def set_max_timer_tick_handled_events(self, max_handled_events: int) -> None:
-        self.max_timer_tick_handled_events_changed.emit(max_handled_events)
         self._settings.store("advanced", "max_timer_tick_handled_events", max_handled_events, "integer")
+        self.max_timer_tick_handled_events_changed.emit(max_handled_events)
     def get_logging_mode(self) -> str:
         return self._settings.retrieve("advanced", "logging_mode", "string")
     def set_logging_mode(self, logging_mode: str) -> None:
-        self.logging_mode_changed.emit(logging_mode)
         self._settings.store("advanced", "logging_mode", logging_mode, "string")
+        self.logging_mode_changed.emit(logging_mode)

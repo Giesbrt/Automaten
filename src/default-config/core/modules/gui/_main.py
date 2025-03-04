@@ -296,18 +296,26 @@ class MainWindow(QMainWindow, IMainWindow):
         If the user cancels the action, the method returns without creating a new file.
         Finally, the method displays the automaton selection dialog.
         """
+
+        if self.file_path == '' and self.user_panel.grid_view.scene().items:
+            save_selection = self.save_selection()
+            if save_selection[0] == 'Save':
+                self.save_file()
+            elif save_selection[0] == 'Don´t save':
+                pass
+            elif save_selection[0] == 'Cancel':
+                return
+            else:
+                return
+
         self.ui_automaton.unload()
         self.user_panel.grid_view.empty_scene()
-        save_selection = self.save_selection()
-
-        if save_selection[0] == 'Save':
-            self.save_file()
-        elif save_selection[0] == 'Don´t save':
-            pass
-        elif save_selection[0] == 'Cancel':
-            return
 
         self.show_automaton_selection()
+
+        file_dialog = QFileDialog(self)
+        self.file_path, _ = file_dialog.getSaveFileName(
+            self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
 
     def open_file(self):
         """
@@ -325,6 +333,8 @@ class MainWindow(QMainWindow, IMainWindow):
             elif save_selection[0] == 'Don´t save':
                 pass
             elif save_selection[0] == 'Cancel':
+                return
+            else:
                 return
         file_dialog = QFileDialog(self)
         self.file_path, _ = file_dialog.getOpenFileName(
@@ -366,6 +376,16 @@ class MainWindow(QMainWindow, IMainWindow):
 
     def close_file(self):
         """Closes the current file by unloading the automaton, clearing the scene, and showing the automaton selection dialog."""
+        if self.file_path == '' and self.user_panel.grid_view.scene().items:
+            save_selection = self.save_selection()
+            if save_selection[0] == 'Save':
+                self.save_file()
+            elif save_selection[0] == 'Don´t save':
+                pass
+            elif save_selection[0] == 'Cancel':
+                return
+            else:
+                return 
         self.ui_automaton.unload()
         self.user_panel.grid_view.empty_scene()
         self.show_automaton_selection()

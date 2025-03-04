@@ -10,6 +10,7 @@ import yaml
 
 from PySide6.QtGui import QColor
 
+from aplustools.data import beautify_json
 from aplustools.data.bintools import (get_variable_bytes_like, encode_float, encode_integer, read_variable_bytes_like,
                                       decode_integer, decode_float)
 
@@ -115,7 +116,7 @@ def encode_str_or_int_iterable(str_iter: _a.Iterable[str | int]) -> bytes:
 
 
 def _serialize_to_json(serialisation_target: DCGDictT) -> bytes:
-    return json.dumps(serialisation_target, indent=4).encode("utf-8")
+    return beautify_json(serialisation_target).encode("utf-8")
 def _serialize_to_yaml(serialisation_target: DCGDictT) -> bytes:
     dump: _ty.Any = yaml.safe_dump(serialisation_target, default_flow_style=False)  # Will return a str if no stream is passed
     if not isinstance(dump, str):
@@ -198,17 +199,19 @@ def serialize(
         "content_transitions": [],
         "custom_python": custom_python
     }
-    content_root: IUiState = next(iter(automaton.get_states()))  # automaton.get_start_state()
-    counted_nodes: dict[IUiState, int] = {content_root: 0}
+    content_root: IUiState = automaton.get_start_state()
+    counted_nodes: dict[IUiState, int] = {}
     stack: Queue[IUiState] = Queue(maxsize=100)  # Stack for traversal
-    stack.put(content_root)
     nodes_lst: list[dict[str, str | tuple[float, float]]] = dcg_dict["content"]  # type: ignore # List is the same object
-    nodes_lst.append({
-        "name": content_root.get_display_text(),
-        "type": content_root.get_type(),
-        "position": content_root.get_position(),
-        "background_color": content_root.get_colour().name(QColor.NameFormat.HexArgb)
-    })
+    if content_root is not None:
+        stack.put(content_root)
+        counted_nodes[content_root] = 0
+        nodes_lst.append({
+            "name": content_root.get_display_text(),
+            "type": content_root.get_type(),
+            "position": content_root.get_position(),
+            "background_color": content_root.get_colour().name(QColor.NameFormat.HexArgb)
+        })
     transition_tokens: list[list[str]] = [
         dcg_dict["token_lsts"][i]  # type: ignore
         for i in dcg_dict["abs_transition_idxs"]  # type: ignore

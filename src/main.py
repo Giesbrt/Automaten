@@ -126,6 +126,7 @@ class App:
             if input_path != "":
                 success: bool = self.load_file(input_path)
                 self.window.user_panel.grid_view.load_automaton_from_file()
+                self.window.file_path = input_path
                 if not success:
                     self.ui_automaton.unload()
                     print('Could not load file')
@@ -517,6 +518,7 @@ class App:
         if not success:
             return
         else:
+            self.window.file_path = filepath
             self.grid_view.load_automaton_from_file()
 
     def load_file(self, filepath: str) -> bool:

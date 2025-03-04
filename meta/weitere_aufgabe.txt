@@ -6,7 +6,7 @@
 --6. Settings GUI (Ma95)--
 --7. Extra Styles (Ma95)--
 --8. Diagramme [UML] (Giesbrt, me)--
-9. Dokumentation Dokument (me)
-10. Kopieren, löschen und Pasten (JakGame)
+--9. Dokumentation Dokument (me)--
+10. Kopieren, löschen und Pasten (JakGame) -> Wird nicht mehr gemacht
 --11. Custom Extension GUI Widget--
 --12. Update Loader: Autor und Name des Moduls soll geladen werden (Fa4953)--

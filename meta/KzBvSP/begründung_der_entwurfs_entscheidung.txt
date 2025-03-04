@@ -1,0 +1,14 @@
+Das zuvor beschriebene Modell wurde gewählt um GUI freezing zu verhindern.
+Indem man die Ausführung des Backends in einen anderen Thread verlegt ist es unmöglich das GUI zu freezen.
+
+Nachteile sind die erschwerte Kommunikation zwischen den beiden Teilen.
+
+Bald kam heraus, dass es gut währe mehr des Backends im Main Thread zu haben.
+Deswegen haben wir uns entschieden den Großteil des Backends in den Main Thread zu verschieben.
+
+Vorteile sind erleichterte Kommunikation.
+
+PySide6 wurde als GUI Framework gewählt, da es viele vorgefertigte GUI-Elemente hat und zudem ein gesamtes System welches der Anforderung wie DrawIO zu sein entspricht.
+
+Die Kommunikation zwischen dem Backend und dem GUI erflogt mit der Klasse UiAutomaton.
+Diese ist ein Singleton und wird entladen/geladen falls z.B. neue Dateien geöffnet werden.

@@ -1,0 +1,2 @@
+Als erstes wurde ein Design mit totaler Seperation zwischen GUI und Backend realisiert.
+Nachdem sich dies als dumm herausgestellt hat, wurde auf ein anderes mit Seperation der dynamischen extensions und dem Rest des Programmes fortgeführt.

@@ -438,7 +438,7 @@ class UserPanel(Panel):
             self.hide_button.setText("Show Input/Output")
         else:
             self.input_widget.show()
-            self.input_frame.setFixedHeight(self.hide_button.height() + 20)
+            # self.input_frame.setFixedHeight(self.input_widget.sizeHint().height() + self.hide_button.height() + 20)
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:

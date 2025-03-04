@@ -336,9 +336,9 @@ class App:
     def connect_signals(self) -> None:
         automaton: UiAutomaton = self.ui_automaton
 
-        self.control_menu.play_button.clicked.connect(lambda: self.start_simulation(['a', 'b']))
+        self.control_menu.play_button.clicked.connect(lambda: self.start_simulation(None))  # ['a', 'b']
         self.control_menu.stop_button.clicked.connect(self.stop_simulation)
-        self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(['a', 'b']))
+        self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(None))  # ['a', 'b']
 
         self.window.save_file_signal.connect(partial(self.save_to_file, automaton=self.ui_automaton))
         self.window.open_file_signal.connect(self.open_file)
@@ -380,7 +380,16 @@ class App:
             self.control_menu.next_button.setEnabled(True)
             self.control_menu.stop_button.setEnabled(False)
 
-    def start_simulation(self, automaton_input: _ty.List[str]) -> None:
+    def start_simulation(self, automaton_input: _ty.List[str] = None) -> None:
+        # print(f"Input: {self.window.user_panel.input_widget.getFormattedInput()}")
+        if automaton_input is None:
+            automaton_input = self.window.user_panel.input_widget.getFormattedInput()
+            self.io_manager.debug("Input: " + str(automaton_input))
+
+        if not automaton_input:
+            self.io_manager.error('No input provided!', '', True, True)
+            return
+
         self.simulation_mode = 'auto'
         if not self.ui_automaton:
             IOManager().warning('No Automaton loaded!', '', True, True)
@@ -397,6 +406,7 @@ class App:
 
     def stop_simulation(self) -> None:
         self.grid_view.reset_all_highlights()
+        self.window.user_panel.input_widget.reset()
         if self.ui_automaton:
             self.ui_automaton.stop_simulation()
             self.simulation_mode = None
@@ -410,7 +420,15 @@ class App:
 
     def start_simulation_visualisation(self):
         if self.ui_automaton.has_simulation_data():
-            simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
+            simulation_result_raw: _ty.Dict = self.ui_automaton.handle_simulation_updates()
+            simulation_result: _ty.Dict = simulation_result_raw._inner_value
+
+            # display the simulation output in the input widget
+            if isinstance(simulation_result_raw, _result.Success) and simulation_result is not None:
+                self.window.user_panel.input_widget.simulationStep(simulation_result["input"],
+                                                                   simulation_result["pointer_index"])
+            else:
+                self.window.user_panel.input_widget.reset()
             active_state: 'UiState' = self.ui_automaton.get_active_state()
             active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
             state_item = self.grid_view.get_active_state(active_state)
@@ -423,7 +441,15 @@ class App:
             self.simulation_timer.stop(0)
             self.stop_simulation()
 
-    def start_simulation_step_for_step(self, automaton_input: _ty.List[str]) -> None:
+    def start_simulation_step_for_step(self, automaton_input: _ty.List[str] | None) -> None:
+        if automaton_input is None:
+            automaton_input = self.window.user_panel.input_widget.getFormattedInput()
+            self.io_manager.debug("Input: " + str(automaton_input))
+
+        if not automaton_input:
+            self.io_manager.error('No input provided!', '', True, True)
+            return
+
         self.simulation_mode = 'step'
         if self.ui_automaton and not self.ui_automaton.has_simulation_data():
             result = self.ui_automaton.simulate(automaton_input, self.step_simulation)
@@ -440,7 +466,15 @@ class App:
                 self.control_menu.play_button.setEnabled(True)
                 self.control_menu.next_button.setEnabled(True)
                 self.control_menu.stop_button.setEnabled(True)
-            simulation_result: _ty.Dict = self.ui_automaton.handle_simulation_updates()._inner_value
+            simulation_result_raw: _ty.Dict = self.ui_automaton.handle_simulation_updates()
+            simulation_result: _ty.Dict = simulation_result_raw._inner_value
+
+            # display the simulation output in the input widget
+            if isinstance(simulation_result_raw, _result.Success) and simulation_result is not None:
+                self.window.user_panel.input_widget.simulationStep(simulation_result["input"], simulation_result["pointer_index"])
+            else:
+                self.window.user_panel.input_widget.reset()
+
             active_state: 'UiState' = self.ui_automaton.get_active_state()
             active_transition: 'UiTransition' = self.ui_automaton.get_active_transition()
             state_item = self.grid_view.get_active_state(active_state)
@@ -492,6 +526,10 @@ class App:
         try:
             self.ui_automaton.unload()
             custom_python: str = deserialize(self.ui_automaton, content, filetype)
+
+            if self.window.user_panel.input_widget:
+                self.window.user_panel.input_widget.reset()
+                self.window.user_panel.deposition_input_widget()
 
             widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()
             self.window.user_panel.position_input_widget(widget)

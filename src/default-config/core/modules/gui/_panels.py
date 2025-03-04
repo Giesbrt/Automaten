@@ -326,14 +326,13 @@ class UserPanel(Panel):
         """Populate the list with example items"""
         example_items = [
             {"title": "Zustand einfügen", "description": "Doppelklick auf die Oberfläche mit der linken Maustaste"},
-            {"title": "Zustand anpassen", "description": "Klicke den anzupassenden Zustand an. Auf dem rechts aufgehendem \n Sideboard kannst du:\n - Name \n- Farbe und Größe ändern"},
+            {"title": "Zustand anpassen", "description": "Klicke den anzupassenden Zustand an. Auf dem rechts aufgehendem \nSideboard kannst du:\n- Name \n- Farbe und Größe ändern"},
             {"title": "Zustände verbinden", "description": "Klicke auf den grünen Punkt am Zustand den du verbinden möchtest. Klicke dann auf den Punkt mit dem du die Verbindung machen möchtest. Der grüne Kreis ist Ausgang und der rote Eingang."},
             {"title": "Automatentyp wählen", "description": "Du kannst den Typ des Automaten wählen."},
-            {"title": "Design ändern", "description": "Gehe in die settings (oben rechts) und klicke auf Design. Hier kannst du zwischen den zur Verfügung stehenden Designs wählen"},
-            {"title": "Datei laden", "description": "Gehe auf File und wähle Load, oder benutze den Shortcut: "},
-            {"title": "Datei speichern", "description": "Gehe auf File und wähle save, oder benutze den Schortcut: "},
-            {"title": "Schriftart ändern", "description": "Gehe in die settings (Oben rechts) und klcike auf Deign. Wähle eine beliebige Schriftart aus"},
-            {"title": "", "description": ""}
+            {"title": "Design ändern", "description": "Gehe in die Settings (oben rechts) und klicke auf Design. Hier kannst du zwischen den zur Verfügung stehenden Designs wählen."},
+            {"title": "Datei laden", "description": "Gehe auf File und wähle Load, oder benutze den Shortcut."},
+            {"title": "Datei speichern", "description": "Gehe auf File und wähle Save, oder benutze den Shortcut."},
+            {"title": "Schriftart ändern", "description": "Gehe in die Settings (oben rechts) und klicke auf Design. Wähle eine beliebige Schriftart aus."},
         ]
 
         for item_data in example_items:
@@ -344,20 +343,37 @@ class UserPanel(Panel):
 
             button = QPushButton(f"{title} ▼", self.info_menu)
             button.setCheckable(True)
-            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # Dynamic width
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # Dynamische Breite für Button
 
             description_label = QLabel(description)
             description_label.setWordWrap(True)
             description_label.setVisible(False)
-            description_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)  # Adapts itself
+            
+            # Hier wird die maximale Breite des Labels an das Menü angepasst
+            max_width = self.info_menu.width() - 20
+            description_label.setMaximumWidth(max_width)  # Maximale Breite setzen
 
             layout.addWidget(button)
             layout.addWidget(description_label)
             widget.setLayout(layout)
 
-            def toggle_description(checked):
-                description_label.setVisible(checked)
-                list_item.setSizeHint(widget.sizeHint())  # Update the size of the list element
+            list_item = QListWidgetItem(self.items_list)
+            list_item.setSizeHint(widget.sizeHint())
+            self.items_list.addItem(list_item)
+            self.items_list.setItemWidget(list_item, widget)
+
+            # Verknüpfung mit Lambda korrigiert
+            button.toggled.connect(lambda checked, label=description_label, item=list_item, w=widget: label.setVisible(checked) or item.setSizeHint(w.sizeHint()))
+
+            # Speichert das Widget für spätere Größenaktualisierung
+            list_item.widget_ref = widget
+
+
+        def toggle_description(self, checked, label: QLabel, list_item: QListWidgetItem, widget: QWidget):
+            """Beschreibung für ein einzelnes Item ein-/ausblenden"""
+            label.setVisible(checked)
+            list_item.setSizeHint(widget.sizeHint())  # Größe des Listenelements aktualisieren
+
 
             button.toggled.connect(toggle_description)
 
@@ -393,6 +409,11 @@ class UserPanel(Panel):
             self.input_widget.show()
             self.input_frame.setFixedHeight(self.input_widget.sizeHint().height() + self.hide_button.height())
             self.hide_button.setText("Hide Input/Output")
+
+    def deposition_input_widget(self):
+        self.input_frame.layout().removeWidget(self.input_widget)
+        self.input_widget.deleteLater()
+        self.input_widget = None
 
     def position_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput]):
         self.input_widget = input_widget(parent=self)
@@ -472,42 +493,50 @@ class UserPanel(Panel):
 
     # Window Methods
     def resizeEvent(self, event):
+        """Wird aufgerufen, wenn das Fenster seine Größe ändert"""
         height = self.height()
         width = max(200, int(self.width() / 4))
-        # self.state_menu.setGeometry(self.width(), 0, 300, self.height())
 
         if self.input_widget is not None:
-            # Ändere die Geometrie des Widgets
             width = max(200, min(300, int(self.width() / 4)))
             self.input_frame.setGeometry(self.width() - width - 15, self.control_menu.height() + 10, width, self.input_widget.sizeHint().height() + self.hide_button.height())
             self.control_menu.setFixedWidth(width)
         else:
             self.input_frame.setGeometry(self.width() - width - 15, self.control_menu.height() + 10, width, self.hide_button.height() + 20)
 
-        """if self.info_menu.x() == 0 and not self.auto_show_info_menu:
-            self.info_menu.setGeometry(-width, 0, width, height)
-            self.info_menu_button.move(width + 40, 20)  # Update the position of the menu button"""
-
         if self.info_menu.x() < 0:
             self.info_menu.setGeometry(-width, 0, width, height)
-            self.info_menu_button.move(width + 40, 20)  # Update the position of the menu button
+            self.info_menu_button.move(width + 40, 20)
         else:
             self.info_menu.setGeometry(1, 0, width, height)
-            self.info_menu_button.move(40, 20)  # Update the position of the menu button
+            self.info_menu_button.move(40, 20)
+
         if self.state_menu.visible:
             self.state_menu.setGeometry(self.width() - width, 0, width, height)
         else:
             self.state_menu.setGeometry(self.width(), 0, width, height)
+
         if self.state_menu.visible:
             self.control_menu.setGeometry(self.width() - self.control_menu.width() - self.state_menu.width() - 20, 5,
-                                          self.control_menu.width(), self.control_menu.height())
+                                        self.control_menu.width(), self.control_menu.height())
         else:
-            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 15, 5, self.control_menu.width(),
-                                          self.control_menu.height())
+            self.control_menu.setGeometry(self.width() - self.control_menu.width() - 15, 5,
+                                        self.control_menu.width(), self.control_menu.height())
+
         self.update_menu_button_position()
-        # self.settings_button.move(self.width() - 60, 100)
+
+        # **Neue Anpassung: Maximale Breite der Labels aktualisieren**
+        max_label_width = width - 2  # 20px Abstand für bessere Lesbarkeit -20
+        for i in range(self.items_list.count()):
+            item = self.items_list.item(i)
+            widget = self.items_list.itemWidget(item)
+            if widget:
+                label = widget.findChild(QLabel)
+                if label:
+                    label.setMaximumWidth(max_label_width)  # Breite anpassen
 
         super().resizeEvent(event)
+
 
 
 class LanguageDropdown(QComboBox):

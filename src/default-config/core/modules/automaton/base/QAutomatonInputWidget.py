@@ -157,6 +157,9 @@ class QAutomatonInputOutput(QFrame):
     def sizeHint(self) -> QSize:
         raise NotImplementedError
 
+    def getFormattedInput(self) -> list[str]:
+        raise NotImplementedError
+
 
 class QAutomatonTokenIO(QAutomatonInputOutput):
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -238,6 +241,11 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
 
         main_layout.addLayout(widget_layout)
         self.setLayout(main_layout)
+
+    def getFormattedInput(self) -> list[str]:
+        input_string: str = self.input_edit.text()
+        input_string = input_string.strip().removesuffix(self.get_separator())
+        return input_string.strip().split(self.get_separator())
 
     def display_text_error(self) -> None:
         if not self.get_error():

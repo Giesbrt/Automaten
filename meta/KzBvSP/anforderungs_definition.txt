@@ -1,0 +1,14 @@
+1. Einführung
+Das Ziel des Programmes, ist es verschiedenen Automaton Typen auf einer graphischen Oberfläche zu bauen und zu simulieren;
+
+2. Funktionale Anforderungen
+- Automaten bauen im GUI, wie bei DrawIO
+- Automaten können gespeichert und geladen werden
+
+3. Nicht-funktionale Anforderungen
+- Automaten Typen werden als Extensions dynamisch geladen
+- Das Programm muss fehler-sicher sein und darf nicht abstürtzen, da es benutzt werden wird
+
+4. Randbedingungen
+- Das Programm muss ohne Python ausführbar sein -> Kompilierte .exe
+- Das Programm sollte schön aussehen und einfach zu benutzen sein

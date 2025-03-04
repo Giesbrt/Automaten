@@ -542,6 +542,14 @@ class App:
             self.ui_automaton.unload()
             custom_python: str = deserialize(self.ui_automaton, content, filetype)
 
+            # Custom python
+            extension_folder: str = self.extensions_folder
+            path: str = f"{extension_folder}{os.path.sep}{self.ui_automaton.get_automaton_type()}.py"
+            result: _result.Result = CustomPythonHandler().load(custom_python, path)
+            if isinstance(result, _result.Success) and False:
+                self.io_manager.info("Custom python loaded successfully, you may want to restart the Application", "", True, False)
+                return True
+
             if self.window.user_panel.input_widget:
                 self.window.user_panel.input_widget.reset()
                 self.window.user_panel.deposition_input_widget()
@@ -551,11 +559,6 @@ class App:
             self.window.user_panel.refresh_tokens_input_widget(self.ui_automaton.get_token_lists()[0])
             self.window.user_panel.control_menu.update_token_lists(self.ui_automaton.get_token_lists())
 
-
-            # Custom python
-            extension_folder: str = self.extensions_folder
-            path: str = f"{extension_folder}{os.path.sep}{self.ui_automaton.get_automaton_type()}.py"
-            result: _result.Result = CustomPythonHandler().load(custom_python, path)
             # ErrorCache().debug(f"Custom python loading {"success" if isinstance(result, _result.Success) else "failure"}: {result._inner_value}", "", True, True)
         except Exception as e:
             self.io_manager.warning(

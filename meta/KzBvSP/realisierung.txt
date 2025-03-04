@@ -1,0 +1,13 @@
+Das Ziel des Programms wurde vollständig erreicht.
+Die Software ermöglicht es, verschiedene Automatentypen auf einer grafischen Oberfläche zu bauen und zu simulieren.
+Dabei wurde ein intuitives GUI entwickelt, das sich an DrawIO orientiert.
+
+Benutzer können Zustände und Übergänge per Drag & Drop platzieren.
+
+Automaten können gespeichert und geladen werden.
+
+Verschiedene Automatentypen (z. B. DFA, Mealy, Turingmaschinen) können als Module (Extensions) nachgeladen werden.
+
+Fehlersicherung und Exception Handling wurden implementiert.
+
+Es wurde sichergestellt, dass das Programm ohne Probleme kompiliert werden kann.

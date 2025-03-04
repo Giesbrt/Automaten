@@ -260,7 +260,10 @@ class MainWindow(QMainWindow, IMainWindow):
         else:
             for file in recent_files:
                 action = QAction(os.path.basename(file), self)
-                action.triggered.connect(lambda checked, f=file: self.open_file_signal.emit(f))
+                action.triggered.connect(lambda checked, f=file: (
+                    self.user_panel.grid_view.empty_scene(),
+                    self.open_file_signal.emit(f)
+                ))
                 self.recent_menu.addAction(action)
 
     def get_automaton_type(self) -> str:

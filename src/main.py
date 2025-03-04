@@ -6,6 +6,7 @@ config.check()
 config.setup()
 
 # Std Lib imports
+from pathlib import Path as PLPath
 from argparse import ArgumentParser
 from traceback import format_exc
 from functools import partial
@@ -569,7 +570,7 @@ class App:
             return False
         recent_files = []
         for file in self.settings.get_recent_files():
-            if file != filepath:
+            if PLPath(file) != PLPath(filepath):
                 recent_files.append(file)
         recent_files.append(filepath)
         self.settings.set_recent_files(tuple(recent_files))

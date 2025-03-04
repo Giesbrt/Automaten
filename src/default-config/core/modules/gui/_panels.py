@@ -450,6 +450,8 @@ class UserPanel(Panel):
         if self.hide_input_ding:
             self.hide_input_ding = False
             self.input_widget.hide()
+        elif self.input_widget.isHidden():
+            self.toggle_hide_input()
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:

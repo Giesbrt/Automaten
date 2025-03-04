@@ -6,6 +6,7 @@ from PySide6.QtGui import QShowEvent, QTextCursor, QTextCharFormat, QColor
 from aplustools.io.qtquick import QQuickBoxLayout, QBoxDirection, QNoSpacingBoxLayout
 
 
+
 class QFlowLayout(QLayout):  # Not by me
     """
     A custom flow layout class that arranges child widgets horizontally and wraps as needed.
@@ -53,10 +54,23 @@ class QFlowLayout(QLayout):  # Not by me
         super().setGeometry(rect)
         self.doLayout(rect, testOnly=False)
 
+    def expandingDirections(self) -> Qt.Orientations:
+        """Prevents unnecessary expansion by keeping the layout compact."""
+        return Qt.Orientation(0)  # Prevents expanding horizontally/vertically
+
+    def hasHeightForWidth(self) -> bool:
+        return True
+
+    def heightForWidth(self, width: int) -> int:
+        """Calculate the layout height based on the available width."""
+        return self.doLayout(QRect(0, 0, width, 0), testOnly=True)
+
     def sizeHint(self) -> QSize:
+        """Return the preferred size of the layout."""
         return self.calculateSize()
 
     def minimumSize(self) -> QSize:
+        """Return the minimum size of the layout."""
         return self.calculateSize()
 
     def calculateSize(self) -> QSize:

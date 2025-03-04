@@ -1,7 +1,7 @@
 """TBA"""
 from pathlib import Path as PLPath
 import os.path
-import logging, sys
+import logging, sys, re
 
 from utils.OrderedSet import OrderedSet
 from aplustools.io import ActLogger
@@ -16,6 +16,7 @@ import collections.abc as _a
 import abc as _abc
 import typing as _ty
 import types as _ts
+
 
 @singleton
 class IOManager:
@@ -71,12 +72,16 @@ class IOManager:
         """
         self._logger.setLevel(level)
 
+    def get_logging_level(self) -> int:
+        return self._logger.logging_level
+
     @staticmethod
     def _order_logs(directory: str) -> None:
         logs_dir = PLPath(directory)
         to_log_file = logs_dir / "latest.log"
 
         if not to_log_file.exists():
+            print("Logfile missing")
             return
 
         with open(to_log_file, "rb") as f:
@@ -112,6 +117,7 @@ class IOManager:
                     default=0
                 )
             except AttributeError:
+                print("AttribError")
                 return
             max_num += 1
             base_log_file = logs_dir / f"{date_name}.log"
@@ -157,7 +163,7 @@ class IOManager:
                 buttons_list.append(key)
 
         popup_creation_callable: _ty.Callable = self._button_display_callable.get_value()
-        popup_return: tuple[str | None, bool] = popup_creation_callable(title, text, description, icon,
+        popup_return: tuple[str | None, bool] = popup_creation_callable("[N.E.F.S] " + title, text, description, icon,
                                                                         buttons_list, default_button, checkbox_text)
 
         if popup_return[1]:

@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWid
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QPen, QCursor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 
+from storage import AppSettings
 # from automaton.base.transition import Transition
 # from automaton.base.state import State
 
@@ -120,6 +121,8 @@ class InteractiveGridView(StaticGridView):
         self.scene().setSceneRect(QRect(*rect))
 
     def _zoom_to(self, pending_zoom: float) -> None:
+        if pending_zoom == 1.0:
+            return None
         last_point: QPointF = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
         self.scale(pending_zoom, pending_zoom)
         point: QPointF = self.mapToScene(self.mapFromGlobal(QCursor.pos()))
@@ -127,6 +130,25 @@ class InteractiveGridView(StaticGridView):
         movement_vector: QPointF = last_point - point
 
         self.translateViewPosition(-movement_vector)
+        self._pending_zoom = 1.0
+
+    def zoom(self, zoom_factor: float) -> None:
+        if zoom_factor < 0:
+            return None
+        new_zoom: float = self._zoom_level * zoom_factor
+        if self.min_zoom <= new_zoom <= self.max_zoom:
+            self._pending_zoom *= zoom_factor  # Accumulate zoom requests
+            self._zoom_level = new_zoom
+            self._zoom_to(self._pending_zoom)
+
+    def reset_zoom(self) -> None:
+        # zoom_factor = 1.0 / self._zoom_level
+        self._zoom_level = 1.0
+        self._pending_zoom = 1.0
+        self.resetTransform()
+
+    def reset_cache(self) -> None:
+        self.resetCachedContent()
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Zoom in and out with the mouse wheel."""
@@ -221,7 +243,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self.ui_automaton: 'UiAutomaton' = ui_automaton
         self.automaton_type: str | None = self.ui_automaton.get_automaton_type()
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = self.ui_automaton.get_token_lists()
-
+        self.settings = AppSettings()
         self.automaton_is_loaded: bool | None = None
         self._counter: int = 0
         self._last_active: StateGraphicsItem | None = None
@@ -232,7 +254,8 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._last_token_list: TokenListFrame | None = None
         self._highlighted_state_item: StateItem | None = None
         self._highlighted_transition_item: TransitionItem | None = None
-        self._default_color: QColor = default_color
+        self._default_color: QColor = QColor.fromString(self.settings.get_default_state_background_color())
+        self.settings.default_state_background_color_changed.connect(lambda x: setattr(self, "_default_color", x))
         self._default_selection_color: QColor = default_selection_color
         self.token_lists = None
 

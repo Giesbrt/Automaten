@@ -302,5 +302,5 @@ class Extensions_Loader:
         return self.content
 
 if __name__ == "__main__":
-    loader = Extensions_Loader(os.path.dirname(__file__))
+    loader = Extensions_Loader(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
     print(loader.load_content())

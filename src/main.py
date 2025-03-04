@@ -525,6 +525,7 @@ class App:
 
             widget: QAutomatonInputOutput = self.ui_automaton.get_input_widget()
             self.window.user_panel.position_input_widget(widget)
+            self.window.user_panel.refresh_tokens_input_widget()
 
             # Custom python
             extension_folder: str = self.extensions_folder

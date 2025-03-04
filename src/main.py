@@ -371,6 +371,19 @@ class App:
             self.control_menu.next_button.setEnabled(True)
             self.control_menu.stop_button.setEnabled(False)
 
+    def build_simulation_output(self, simulation_output: _ty.Dict) -> _ty.List[str]:
+        """Builds the simulation output from the simulation result"""
+        output = simulation_output["input"]
+        if not simulation_output["output"]:
+            return output
+        else:
+            if (len(output) - 1) >= simulation_output["pointer_index"]:
+                output[simulation_output["pointer_index"]] = simulation_output["output"]
+            else:
+                output.append(simulation_output["output"])
+
+        return simulation_output["input"]
+
     def start_simulation(self, automaton_input: _ty.List[str] = None) -> None:
         # print(f"Input: {self.window.user_panel.input_widget.getFormattedInput()}")
         print(automaton_input, "inp", bool(automaton_input))
@@ -416,11 +429,14 @@ class App:
             simulation_result: _ty.Dict = simulation_result_raw._inner_value
 
             # display the simulation output in the input widget
+            print(simulation_result, "SIM")
+
             if not isinstance(simulation_result, dict):
                 self.io_manager.info(f"Simulation Message: {simulation_result}", "", True, True)
                 return
             if isinstance(simulation_result_raw, _result.Success) and simulation_result is not None:
-                self.window.user_panel.input_widget.simulationStep(simulation_result["input"],
+                output = self.build_simulation_output(simulation_result)
+                self.window.user_panel.input_widget.simulationStep(output,
                                                                    simulation_result["pointer_index"])
             else:
                 self.window.user_panel.input_widget.reset()
@@ -471,7 +487,8 @@ class App:
                 return
 
             if isinstance(simulation_result_raw, _result.Success) and simulation_result is not None:
-                self.window.user_panel.input_widget.simulationStep(simulation_result["input"], simulation_result["pointer_index"])
+                output = self.build_simulation_output(simulation_result)
+                self.window.user_panel.input_widget.simulationStep(output, simulation_result["pointer_index"])
             else:
                 self.window.user_panel.input_widget.reset()
 

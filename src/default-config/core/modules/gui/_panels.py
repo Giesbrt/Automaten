@@ -432,14 +432,13 @@ class UserPanel(Panel):
         self.control_menu.token_update_signal.connect(self.input_widget.set_input_tokens)
         # Update existing tokens
         self.input_widget.set_input_tokens(self.control_menu.token_lists[0])
-        # self.update()
-        """if self.settings.get_auto_hide_input_widget():
+        if self.settings.get_auto_hide_input_widget():
             self.input_widget.hide()
             self.input_frame.setFixedHeight(28 + 20)
             self.hide_button.setText("Show Input/Output")
         else:
             self.input_widget.show()
-            self.input_frame.setFixedHeight(self.hide_button.height() + 20)"""
+            self.input_frame.setFixedHeight(self.hide_button.height() + 20)
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:

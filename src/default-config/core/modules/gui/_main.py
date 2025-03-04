@@ -8,9 +8,9 @@ from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QPara
 
 from aplustools.io.qtquick import QQuickMessageBox
 
-from core.modules.abstractions import IMainWindow
-from core.modules.storage import AppSettings
-from core.modules.automaton.UiSettingsProvider import UiSettingsProvider
+from abstractions import IMainWindow
+from storage import AppSettings
+from automaton.UiSettingsProvider import UiSettingsProvider
 from ._panels import UserPanel, SettingsPanel
 
 # Standard typing imports for aps
@@ -108,34 +108,34 @@ class MainWindow(QMainWindow, IMainWindow):
 
         file_menu = self.menuBar().addMenu("File")
         new_action = QAction('New', self)
-        # new_action.setShortcut(self.settings.get_file_new_shortcut())
-        # self.settings.file_new_shortcut_changed.connect(new_action.setShortcut)
+        new_action.setShortcut(self.settings.get_file_new_shortcut())
+        self.settings.file_new_shortcut_changed.connect(new_action.setShortcut)
         new_action.triggered.connect(self.user_panel.grid_view.empty_scene)
         file_menu.addAction(new_action)
 
         open_action = QAction("Open", self)
-        # open_action.setShortcut(self.settings.get_file_open_shortcut())
-        # self.settings.file_open_shortcut_changed.connect(open_action.setShortcut)
+        open_action.setShortcut(self.settings.get_file_open_shortcut())
+        self.settings.file_open_shortcut_changed.connect(open_action.setShortcut)
         open_action.triggered.connect(self.open_file)
         file_menu.addAction(open_action)
 
         self.recent_menu = QMenu("Open Recent", self)
         file_menu.addMenu(self.recent_menu)
         save_action = QAction("Save", self)
-        # save_action.setShortcut(self.settings.get_file_save_shortcut())
-        # self.settings.file_save_shortcut_changed.connect(save_action.setShortcut)
+        save_action.setShortcut(self.settings.get_file_save_shortcut())
+        self.settings.file_save_shortcut_changed.connect(save_action.setShortcut)
         save_action.triggered.connect(self.save_file)
         file_menu.addAction(save_action)
 
         save_as_action = QAction("Save as", self)
-        # save_as_action.setShortcut(self.settings.get_file_save_as_shortcut())
-        # self.settings.file_save_as_shortcut_changed.connect(save_as_action.setShortcut)
+        save_as_action.setShortcut(self.settings.get_file_save_as_shortcut())
+        self.settings.file_save_as_shortcut_changed.connect(save_as_action.setShortcut)
         save_as_action.triggered.connect(self.save_file_as)
         file_menu.addAction(save_as_action)
 
         exit_action = QAction("Close", self)
-        # exit_action.setShortcut(self.settings.get_file_close_shortcut())
-        # self.settings.file_close_shortcut_changed.connect(exit_action.setShortcut)
+        exit_action.setShortcut(self.settings.get_file_close_shortcut())
+        self.settings.file_close_shortcut_changed.connect(exit_action.setShortcut)
         exit_action.triggered.connect(self.ui_automaton.unload)
         file_menu.addAction(exit_action)
 
@@ -155,35 +155,35 @@ class MainWindow(QMainWindow, IMainWindow):
 
         edit_menu = self.menuBar().addMenu("Edit")
         cut_action = QAction("Cut", self)
-        # cut_action.setShortcut(self.settings.get_states_cut_shortcut())
-        # self.settings.states_cut_shortcut_changed.connect(cut_action.setShortcut)
+        cut_action.setShortcut(self.settings.get_states_cut_shortcut())
+        self.settings.states_cut_shortcut_changed.connect(cut_action.setShortcut)
         edit_menu.addAction(cut_action)
 
         copy_action = QAction("Copy", self)
-        # copy_action.setShortcut(self.settings.get_states_copy_shortcut())
-        # self.settings.states_copy_shortcut_changed.connect(copy_action.setShortcut)
+        copy_action.setShortcut(self.settings.get_states_copy_shortcut())
+        self.settings.states_copy_shortcut_changed.connect(copy_action.setShortcut)
         edit_menu.addAction(copy_action)
 
         paste_action = QAction("Paste", self)
-        # paste_action.setShortcut(self.settings.get_states_paste_shortcut())
-        # self.settings.states_paste_shortcut_changed.connect(paste_action.setShortcut)
+        paste_action.setShortcut(self.settings.get_states_paste_shortcut())
+        self.settings.states_paste_shortcut_changed.connect(paste_action.setShortcut)
         edit_menu.addAction(paste_action)
 
         delete_action = QAction("Delete", self)
-        # delete_action.setShortcut(self.settings.get_states_delete_shortcut())
-        # self.settings.states_delete_shortcut_changed.connect(delete_action.setShortcut)
+        delete_action.setShortcut(self.settings.get_states_delete_shortcut())
+        self.settings.states_delete_shortcut_changed.connect(delete_action.setShortcut)
         edit_menu.addAction(delete_action)
 
         view_menu = self.menuBar().addMenu("View")
         zoom_in_action = QAction("Zoom in", self)
-        # zoom_in_action.setShortcut(self.settings.get_zoom_in_shortcut())  # QKeySequence.ZoomIn
-        # self.settings.zoom_in_shortcut_changed.connect(zoom_in_action.setShortcut)
+        zoom_in_action.setShortcut(self.settings.get_zoom_in_shortcut())  # QKeySequence.ZoomIn
+        self.settings.zoom_in_shortcut_changed.connect(zoom_in_action.setShortcut)
         zoom_in_action.triggered.connect(lambda: self.user_panel.grid_view.zoom(1.1))
         view_menu.addAction(zoom_in_action)
 
         zoom_out_action = QAction("Zoom out", self)
-        # zoom_out_action.setShortcut(self.settings.get_zoom_out_shortcut())  # QKeySequence.ZoomOut
-        # self.settings.zoom_out_shortcut_changed.connect(zoom_out_action.setShortcut)
+        zoom_out_action.setShortcut(self.settings.get_zoom_out_shortcut())  # QKeySequence.ZoomOut
+        self.settings.zoom_out_shortcut_changed.connect(zoom_out_action.setShortcut)
         zoom_out_action.triggered.connect(lambda: self.user_panel.grid_view.zoom(0.9))
         view_menu.addAction(zoom_out_action)
 
@@ -218,8 +218,8 @@ class MainWindow(QMainWindow, IMainWindow):
         # self.update_hide_titlebar(self.settings.get_hide_titlebar())
         # self.settings.stay_on_top_changed.connect(self.update_stay_on_top)
         # self.update_stay_on_top(self.settings.get_stay_on_top())
-        # self.update_recent_files_menu()
-        # self.settings.recent_files_changed.connect(lambda _: self.update_recent_files_menu())
+        self.update_recent_files_menu()
+        self.settings.recent_files_changed.connect(lambda _: self.update_recent_files_menu())
 
     def update_hide_titlebar(self, flag: bool) -> None:
         if self.isVisible():

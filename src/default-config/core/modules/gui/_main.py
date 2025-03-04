@@ -63,6 +63,7 @@ class MainWindow(QMainWindow, IMainWindow):
     save_file_signal: Signal(str) = Signal(str)
     open_file_signal: Signal(str) = Signal(str)
     settings_changed = Signal(dict[str, dict[str, str]])
+    manual_update_check: Signal
 
     def __init__(self) -> None:
         self.file_path: str = ''
@@ -74,17 +75,18 @@ class MainWindow(QMainWindow, IMainWindow):
         self.settings_panel_animation: QPropertyAnimation | None = None
         self.panel_animation_group: QParallelAnimationGroup | None = None
         self.automaton_type: str | None = None
-        self.recent_files = []
         super().__init__(parent=None)
         # self.statusBar().showMessage("Statusbar")
 
     def setup_gui(self, ui_automaton: 'UiAutomaton') -> None:
+        self.settings = AppSettings()
         self.ui_automaton = ui_automaton
 
         self.settings_button = QPushButton(parent=self)
         self.menu_bar = self.menuBar()
         self.user_panel = UserPanel(ui_automaton, parent=self)
         self.settings_panel = SettingsPanel(parent=self)
+        self.manual_update_check = self.settings_panel.manual_update_check
 
         # Animation for Panels
         self.user_panel_animation = QPropertyAnimation(self.user_panel, b"geometry")
@@ -100,26 +102,35 @@ class MainWindow(QMainWindow, IMainWindow):
 
         file_menu = self.menuBar().addMenu("File")
         new_action = QAction('New', self)
+        new_action.setShortcut(self.settings.get_file_new_shortcut())
+        self.settings.file_new_shortcut_changed.connect(new_action.setShortcut)
         new_action.triggered.connect(self.user_panel.grid_view.empty_scene)
         file_menu.addAction(new_action)
+
         open_action = QAction("Open", self)
-        open_action.setShortcut("Ctrl+O")
+        open_action.setShortcut(self.settings.get_file_open_shortcut())
+        self.settings.file_open_shortcut_changed.connect(open_action.setShortcut)
         open_action.triggered.connect(self.open_file)
         file_menu.addAction(open_action)
+
         self.recent_menu = QMenu("Open Recent", self)
         file_menu.addMenu(self.recent_menu)
-        self.update_recent_files_menu()
         save_action = QAction("Save", self)
-        save_action.setShortcut("Ctrl+S")
+        save_action.setShortcut(self.settings.get_file_save_shortcut())
+        self.settings.file_save_shortcut_changed.connect(save_action.setShortcut)
         save_action.triggered.connect(self.save_file)
         file_menu.addAction(save_action)
-        save_action = QAction("Save as", self)
-        # save_action.setShortcut("Ctrl+G")
-        save_action.triggered.connect(self.save_file_as)
-        file_menu.addAction(save_action)
+
+        save_as_action = QAction("Save as", self)
+        save_as_action.setShortcut(self.settings.get_file_save_as_shortcut())
+        self.settings.file_save_as_shortcut_changed.connect(save_as_action.setShortcut)
+        save_as_action.triggered.connect(self.save_file_as)
+        file_menu.addAction(save_as_action)
+
         exit_action = QAction("Close", self)
-        exit_action.setShortcut("Ctrl+Q")
-        exit_action.triggered.connect(self.close)
+        exit_action.setShortcut(self.settings.get_file_close_shortcut())
+        self.settings.file_close_shortcut_changed.connect(exit_action.setShortcut)
+        exit_action.triggered.connect(self.ui_automaton.unload)
         file_menu.addAction(exit_action)
 
         # simulation_menu = self.menuBar().addMenu("Simulation")
@@ -138,24 +149,41 @@ class MainWindow(QMainWindow, IMainWindow):
 
         edit_menu = self.menuBar().addMenu("Edit")
         cut_action = QAction("Cut", self)
-        cut_action.setShortcut("Ctrl+X")
+        cut_action.setShortcut(self.settings.get_states_cut_shortcut())
+        self.settings.states_cut_shortcut_changed.connect(cut_action.setShortcut)
         edit_menu.addAction(cut_action)
+
         copy_action = QAction("Copy", self)
-        copy_action.setShortcut("Ctrl+C")
+        copy_action.setShortcut(self.settings.get_states_copy_shortcut())
+        self.settings.states_copy_shortcut_changed.connect(copy_action.setShortcut)
         edit_menu.addAction(copy_action)
+
         paste_action = QAction("Paste", self)
-        paste_action.setShortcut("Ctrl+V")
+        paste_action.setShortcut(self.settings.get_states_paste_shortcut())
+        self.settings.states_paste_shortcut_changed.connect(paste_action.setShortcut)
         edit_menu.addAction(paste_action)
+
+        delete_action = QAction("Delete", self)
+        delete_action.setShortcut(self.settings.get_states_delete_shortcut())
+        self.settings.states_delete_shortcut_changed.connect(delete_action.setShortcut)
+        edit_menu.addAction(delete_action)
 
         view_menu = self.menuBar().addMenu("View")
         zoom_in_action = QAction("Zoom in", self)
-        zoom_in_action.setShortcut("Ctrl++")  # QKeySequence.ZoomIn
+        zoom_in_action.setShortcut(self.settings.get_zoom_in_shortcut())  # QKeySequence.ZoomIn
+        self.settings.zoom_in_shortcut_changed.connect(zoom_in_action.setShortcut)
+        zoom_in_action.triggered.connect(lambda: self.user_panel.grid_view.zoom(1.1))
         view_menu.addAction(zoom_in_action)
+
         zoom_out_action = QAction("Zoom out", self)
-        zoom_out_action.setShortcut("Ctrl+-")  # QKeySequence.ZoomOut
+        zoom_out_action.setShortcut(self.settings.get_zoom_out_shortcut())  # QKeySequence.ZoomOut
+        self.settings.zoom_out_shortcut_changed.connect(zoom_out_action.setShortcut)
+        zoom_out_action.triggered.connect(lambda: self.user_panel.grid_view.zoom(0.9))
         view_menu.addAction(zoom_out_action)
+
         restore_default_zoom_action = QAction("Restore default zoom", self)
         restore_default_zoom_action.setShortcut("Ctrl+0")
+        restore_default_zoom_action.triggered.connect(self.user_panel.grid_view.reset_zoom)
         view_menu.addAction(restore_default_zoom_action)
         # status_bar_action = QAction("Status bar", self)
         # status_bar_action.setCheckable(True)
@@ -180,22 +208,53 @@ class MainWindow(QMainWindow, IMainWindow):
 
         self.menuBar().setFixedHeight(30)
 
-    def set_recently_opened_files(self, recently_opened_files: list[str]) -> None:
-        self.recent_files = recently_opened_files
+        self.settings.hide_titlebar_changed.connect(self.update_hide_titlebar)
+        self.update_hide_titlebar(self.settings.get_hide_titlebar())
+        self.settings.stay_on_top_changed.connect(self.update_stay_on_top)
+        self.update_stay_on_top(self.settings.get_stay_on_top())
+        self.update_recent_files_menu()
+        self.settings.recent_files_changed.connect(lambda _: self.update_recent_files_menu())
 
-    def get_recently_opened_files(self) -> list[str]:
-        return self.recent_files
+    def update_hide_titlebar(self, flag: bool) -> None:
+        if self.isVisible():
+            do_show = True
+        else:
+            do_show = False
+        if flag:
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
+        else:
+            self.setWindowFlags(
+                self.windowFlags() & ~Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowSystemMenuHint | Qt.WindowType.WindowCloseButtonHint | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint)
+        if do_show:
+            self.show()
+
+    def update_stay_on_top(self, flag: bool) -> None:
+        if self.isVisible():
+            do_show = True
+        else:
+            do_show = False
+        if flag:
+            self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        else:
+            self.setWindowFlags(
+                self.windowFlags() & ~Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.WindowSystemMenuHint | Qt.WindowType.WindowCloseButtonHint | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint)
+        if do_show:
+            self.show()
+
+    def setStyleSheet(self, styleSheet, /):
+        super().setStyleSheet(styleSheet)
+        self.user_panel.grid_view.reset_cache()
 
     def update_recent_files_menu(self):
         """Refreshes the Open Recent menu with updated file list."""
         self.recent_menu.clear()
-        print("RECENT", self.recent_files)
-        if not self.recent_files:
+        recent_files = self.settings.get_recent_files()
+        if not recent_files:
             self.recent_menu.addAction("No Recent Files").setEnabled(False)
         else:
-            for file in self.recent_files:
+            for file in recent_files:
                 action = QAction(os.path.basename(file), self)
-                action.triggered.connect(lambda checked, f=file: self.open_recent_file(f))
+                action.triggered.connect(lambda checked, f=file: self.open_file_signal.emit(f))
                 self.recent_menu.addAction(action)
 
     def get_automaton_type(self) -> str:
@@ -238,7 +297,7 @@ class MainWindow(QMainWindow, IMainWindow):
             QMessageBox.information(self, "File Saved", f"File saved to: {self.file_path}")
 
     def show_about(self):
-        QMessageBox.about(self, "About", "This is a PySide6 Menu Bar Example.")
+        QMessageBox.about(self, "[N.E.F.S] About", "N.E.F.S' Simulator.\nThe meaning of this abbreviation has long been lost to time. Rumor has it though, that it stands for the names of the creators and something about glucose.")
 
     def report_issue(self):
         QDesktopServices.openUrl(QUrl("https://github.com/Giesbrt/Automaten/issues/new?template=Blank%20issue"))

@@ -347,7 +347,7 @@ class AppSettings(QObject):
             "states_cut": "Ctrl+X",
             "states_copy": "Ctrl+C",
             "states_paste": "Ctrl+V",
-            "states_delete": "del",
+            "states_delete": "Del",
             "zoom_in": "Ctrl++",
             "zoom_out": "Ctrl+-",
             "zoom_reset": "Ctrl+0",

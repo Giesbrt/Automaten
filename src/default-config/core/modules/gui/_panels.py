@@ -425,13 +425,16 @@ class UserPanel(Panel):
         self.input_widget.deleteLater()
         self.input_widget = None
 
+    def refresh_tokens_input_widget(self):
+        self.input_widget.set_input_tokens(self.control_menu.token_lists[0])
+
     def position_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput]):
         self.input_widget = input_widget(parent=self)
         self.input_frame.layout().addWidget(self.input_widget)
 
         self.control_menu.token_update_signal.connect(self.input_widget.set_input_tokens)
         # Update existing tokens
-        self.input_widget.set_input_tokens(self.control_menu.token_lists[0])
+        self.refresh_tokens_input_widget()
         if self.settings.get_auto_hide_input_widget():
             self.input_widget.hide()
             self.input_frame.setFixedHeight(28 + 20)

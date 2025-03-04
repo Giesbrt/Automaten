@@ -30,11 +30,11 @@ class Panel(QWidget):
 
 
 class StateMenu(QFrame):
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, ui_automaton, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setAutoFillBackground(True)
 
-        # self.singleton_observer = SingletonObserver()
+        self.ui_automaton = ui_automaton
 
         self.visible: bool = False
         self.state: 'StateItem' | None = None
@@ -310,7 +310,7 @@ class UserPanel(Panel):
         self.control_menu_animation.setDuration(500)
 
         # Condition Edit Menu
-        self.state_menu = StateMenu(self)
+        self.state_menu = StateMenu(ui_automaton, self)
         self.state_menu_animation = QPropertyAnimation(self.state_menu, b'geometry')
         self.state_menu_animation.setDuration(500)
 

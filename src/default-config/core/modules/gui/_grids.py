@@ -465,7 +465,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             display_text = f'q{self._counter}' if isinstance(self._counter, int) else self._counter
 
         ui_state = UiState(self._default_color, (pos.x() - self.grid_size / 2, pos.y() - self.grid_size / 2), display_text, 'default')
-        state_item = StateItem(ui_state, self.grid_size, self._default_selection_color)
+        state_item = StateItem(ui_state, self.ui_automaton, self.grid_size, self._default_selection_color)
 
         self.ui_automaton.add_state(state_item.get_ui_state())
         self.scene().addItem(state_item)
@@ -491,7 +491,11 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         transition_item = TransitionItem(ui_transition, self.ui_automaton, self._automaton_settings['transition_sections'],
                                          start_point, end_point, start_state, end_state)
         transition_item.update_position()
+
+        self.ui_automaton.add_transition(transition_item.get_ui_transition())
         self.scene().addItem(transition_item)
+
+        print(f'{self.ui_automaton=}')
 
     def empty_scene(self):
         """Empties the whole scene"""

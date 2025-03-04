@@ -546,6 +546,9 @@ class App:
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{self.ui_automaton.get_automaton_type()}.py"
             result: _result.Result = CustomPythonHandler().load(custom_python, path)
+            if isinstance(result, _result.Success) and False:
+                self.io_manager.info("Custom python loaded successfully, you may want to restart the Application", "", True, False)
+                return True
 
             if self.window.user_panel.input_widget:
                 self.window.user_panel.input_widget.reset()

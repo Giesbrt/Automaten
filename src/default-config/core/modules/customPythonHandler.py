@@ -35,8 +35,8 @@ class CustomPythonHandler:
             with os_open(extensions_path, "wb") as f:
                 f.write(custom_python.encode())
         except Exception as e:
-            IOManager().error("An error occurred whilst trying to load a custom python extension",
-                              format_exc(), True, ErrorSeverity.FATAL)
+            IOManager().fatal_error("An error occurred whilst trying to load a custom python extension",
+                              format_exc(), True)
             return _result.Failure(f"An error occurred whilst trying to load a custom python extension {str(e)}!")
         return _result.Success("File successfully created!")
 

@@ -288,7 +288,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         """
         if automaton_type:
             self.automaton_type = automaton_type
-        print(f'_setup: {self.automaton_type}')
         if self.automaton_type.lower() == 'dfa':
             self._automaton_settings: dict = {
                 'transition_sections': 1,
@@ -494,8 +493,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
         self.ui_automaton.add_transition(transition_item.get_ui_transition())
         self.scene().addItem(transition_item)
-
-        print(f'{self.ui_automaton=}')
 
     def empty_scene(self):
         """Empties the whole scene"""

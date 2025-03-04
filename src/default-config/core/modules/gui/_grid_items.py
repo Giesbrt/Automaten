@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsItemGroup, QGraph
 
 from automaton.UIAutomaton import UiState, UiTransition
 from ._graphic_items import StateGraphicsItem, LabelGraphicsItem, TransitionGraphicsItem, \
-    StateConnectionGraphicsItem, TokenButton, TokenListFrame, TransitionFunctionItem
+    StateConnectionGraphicsItem, TransitionFunctionItem
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -14,18 +14,21 @@ import typing as _ty
 import types as _ts
 
 
-
 class StateItem(QGraphicsItemGroup):
+    """
+    Represents a state as a graphical group.
+
+    This class creates a graphical representation of a state along with its interaction elements for the UI automaton.
+    """
     def __init__(self, ui_state: 'UiState', ui_automaton, size: int, default_selection_color: QColor, parent: QGraphicsItem | None = None) -> None:
-        """Initializes a state group with a graphical representation and interaction elements.
-        :param x: The x-coordinate of the state.
-        :param y: The y-coordinate of the state.
-        :param width: The width of the state.
-        :param height: The height of the state.
-        :param number: The state's identifier.
-        :param default_color: The default color of the state.
+        """
+        Initializes a StateItem with its graphical components.
+
+        :param ui_state: The UI state associated with this graphical element.
+        :param ui_automaton: The UI automaton managing this state.
+        :param size: The size of the state element.
         :param default_selection_color: The color used when the state is selected.
-        :param parent: The parent graphics item, defaults to None.
+        :param parent: The optional parent graphics item.
         """
         super().__init__(parent)
 
@@ -47,7 +50,7 @@ class StateItem(QGraphicsItemGroup):
         self.size: int = size
 
         self.selection_color = default_selection_color
-        self.connected_transitions: list['TransitionItemOld'] = []
+        self.connected_transitions: list['TransitionItem'] = []
         self.connection_points: list['StateConnectionGraphicsItem'] = []
 
         self.shadow = QGraphicsDropShadowEffect()
@@ -303,12 +306,7 @@ class TransitionItem(QGraphicsItem):
         return self.transition_line_item.boundingRect()
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
-        # super().paint(painter, option, widget)
-        painter.save()
-        painter.setPen(QPen(Qt.GlobalColor.black))
-        painter.setBrush(Qt.GlobalColor.transparent)
-        painter.drawRect(self.boundingRect())
-        painter.restore()
+        pass
 
     def get_ui_automaton(self) -> 'UiAutomaton':
         """Retrieves the UI automaton object associated with this transition.

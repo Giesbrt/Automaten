@@ -240,6 +240,7 @@ class AppSettings(QObject):
     _instance: _ty.Self | None = None
     _settings: MultiUserDBStorage
     _initialized: bool = False
+    _automaton_type: str | None = None
     setup: bool = False
 
     # general
@@ -296,6 +297,9 @@ class AppSettings(QObject):
     max_timer_tick_handled_events_changed = Signal(int)
     logging_mode_changed = Signal(str)
 
+    # custom
+    automaton_type_changed = Signal(str)
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(AppSettings, cls).__new__(cls)
@@ -310,6 +314,7 @@ class AppSettings(QObject):
 
     def init(self, config, settings_folder_path: str) -> None:
         """Initializes the AppSettings"""
+        print(f'{self.setup=}')
         if self.setup:  # Prevent reinitialization
             return
         self._settings: MultiUserDBStorage = MultiUserDBStorage(f"{settings_folder_path}/user_settings.db",
@@ -318,6 +323,7 @@ class AppSettings(QObject):
         # print(self.app_settings._storage._filepath)
         self._configure_settings(config)
         self.setup = True
+        print(f'{self.setup=}, {self._settings}')
 
     def _configure_settings(self, config) -> None:
         self._settings.set_default_settings("general", {
@@ -624,3 +630,10 @@ class AppSettings(QObject):
     def set_logging_mode(self, logging_mode: str) -> None:
         self._settings.store("advanced", "logging_mode", logging_mode, "string")
         self.logging_mode_changed.emit(logging_mode)
+
+    def get_automaton_type(self) -> str:
+        return self._automaton_type
+
+    def set_automaton_type(self, automaton_type: str) -> None:
+        self._automaton_type = automaton_type
+        self.automaton_type_changed.emit(automaton_type)

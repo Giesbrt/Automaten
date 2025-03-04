@@ -713,7 +713,7 @@ class UiAutomaton(IUiAutomaton):
         try:
             print(other.get_automaton_type())
         except:
-            print(other, 'has no attribute get_automaton_type')
+            # print(other, 'has no attribute get_automaton_type')
             return
         return (self._type == other.get_automaton_type()
                 and self._states == other.get_states()

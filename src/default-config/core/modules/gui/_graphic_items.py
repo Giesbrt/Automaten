@@ -530,7 +530,7 @@ class TransitionFunctionItem(QGraphicsProxyWidget):
         self.ui_automaton = ui_automaton
         self.token_lists = self.ui_automaton.get_token_lists()
 
-        self.transition = transition
+        self.transition_item: 'TransitionItem' = self.parentItem()
 
         self.token_list_frame = TokenListFrame(self.token_lists, self)
         self.token_button_frame = TokenButtonFrame(self.token_list_frame, sections, self)
@@ -547,11 +547,8 @@ class TransitionFunctionItem(QGraphicsProxyWidget):
 
         :param condition: A list of the currently selected tokens.
         """
-        # traceback.print_stack()
-        print(f'Vor condition set: {self.transition.get_ui_transition()}')
         self.token_button_frame.set_condition(condition)
-        self.transition.get_ui_transition().set_condition(condition)
-        print(f'Nach condition set: {self.transition.get_ui_transition()}')
+        self.transition_item.get_ui_transition().set_condition(condition)
 
     def update_token_list(self, token_lists: tuple[list[str], list[str]]) -> None:
         """Updates the token list and replaces invalid tokens in the condition."""

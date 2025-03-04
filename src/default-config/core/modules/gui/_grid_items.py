@@ -277,10 +277,7 @@ class TransitionItem(QGraphicsItem):
 
         self.update_position()
 
-        # Für QGraphicsItem musst du mindestens boundingRect und paint implementieren.
     def boundingRect(self) -> QRectF:
-        # Hier solltest du den Bereich berechnen, der beide Kinder abdeckt.
-        # Dies ist nur ein Beispiel:
         return self.transition_line_item.boundingRect()
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
@@ -318,6 +315,7 @@ class TransitionItem(QGraphicsItem):
         :param condition: A list of strings representing the condition.
         """
         self.get_ui_transition().set_condition(condition)
+        self.transition_function_item.set_condition(condition)
 
     def update_position(self) -> None:
         # transition_line_item

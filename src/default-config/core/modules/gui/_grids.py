@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsItem, QWid
 from PySide6.QtGui import QPainter, QWheelEvent, QMouseEvent, QAction, QColor, QPen, QCursor
 from PySide6.QtCore import QRect, QRectF, Qt, QPointF, QPoint, Signal, QTimer
 
-from storage import AppSettings
 # from automaton.base.transition import Transition
 # from automaton.base.state import State
 
@@ -13,6 +12,7 @@ from ._graphic_items import TransitionFunctionItem, TokenListFrame, TokenButtonF
 from ._graphic_support_items import TempTransitionItem
 from ._panels import UserPanel
 from automaton.UIAutomaton import UiState, UiTransition
+from storage import AppSettings
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -244,7 +244,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self.automaton_type: str | None = self.ui_automaton.get_automaton_type()
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = self.ui_automaton.get_token_lists()
         self.settings = AppSettings()
-        self.automaton_is_loaded: bool | None = None
         self._counter: int = 0
         self._last_active: StateGraphicsItem | None = None
         self._last_hovered: StateItem | None = None
@@ -259,9 +258,8 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._default_selection_color: QColor = default_selection_color
         self.token_lists = None
 
-        self._setup_automaton_view()
+        self.settings.automaton_type_changed.connect(self._setup_automaton_view)
 
-        print(self.ui_automaton)
         if self.ui_automaton.get_states() and self.ui_automaton.get_transitions():
             self.load_automaton_from_file()
 
@@ -274,7 +272,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
     def load_automaton_from_file(self) -> None:
         """Loads the UiAutomaton"""
-        self.automaton_type = self.get_ui_automaton.get_automaton_type()
+        self.automaton_type = self.get_ui_automaton().get_automaton_type()
         self._setup_automaton_view()
         self.get_ui_automaton().set_transition_pattern(self._automaton_settings['transition_pattern'])
 
@@ -283,37 +281,42 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         for transition in self.ui_automaton.get_transitions():
             self.create_transition_from_automaton(transition)
 
-        self.token_lists = self.ui_automaton.get_token_lists()
-        self.update_transition_functions()
+        self.update_token_lists()
         self.get_ui_automaton().set_is_changeable_token_list([True, False])
 
-    def _setup_automaton_view(self) -> None:
+    def _setup_automaton_view(self, automaton_type: str | None = None) -> None:
         """
         Configure settings based on the selected automaton type.
         This method sets the number of sections required in a transition function.
         """
-        print(self.automaton_type)
-        if self.automaton_type == 'dfa':
+        if automaton_type:
+            self.automaton_type = automaton_type
+        print(f'_setup: {self.automaton_type}')
+        if self.automaton_type.lower() == 'dfa':
             self._automaton_settings: dict = {
                 'transition_sections': 1,
                 'transition_pattern': [0]
             }
-        elif self.automaton_type == 'mealy':
+        elif self.automaton_type.lower() == 'mealy':
             self._automaton_settings: dict = {
                 'transition_sections': 2,
                 'transition_pattern': [0, 0]
             }
-        elif self.automaton_type == 'tm':
+        elif self.automaton_type.lower() == 'tm':
             self._automaton_settings: dict = {
                 'transition_sections': 3,
                 'transition_pattern': [0, 0, 1]
             }
 
     def set_automaton_type(self, automaton_type: str):
+        """Sets the automaton-type"""
         self.automaton_type = self.get_ui_automaton().get_automaton_type()
 
-    def update_transition_functions(self):
+    def update_token_lists(self, token_lists=None):
         """Updates all TransitionFunction to the new token_list"""
+        # print(f'update_token_lists: {token_lists}')
+        self.token_lists = self.get_ui_automaton().get_token_lists()
+
         for item in self.scene().items():
             if isinstance(item, TransitionFunctionItem):
                 item.update_token_list(self.token_lists)
@@ -331,7 +334,10 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                     return item
 
     def get_active_transition(self, active_transition):
+        """Returns the active transition item
 
+        :param active_transition: The active transition
+        :return: The active transition item"""
         for item in self.scene().items():
             if isinstance(item, TransitionItem):
                 if item.get_ui_transition() == active_transition:
@@ -345,87 +351,64 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         return self.token_lists
 
     def get_mapped_position(self, item: QGraphicsItem) -> any:
-        """
-        Get the mapped scene position of a given item.
+        """Get the mapped scene position of a given item.
 
-        Args:
-            item (QGraphicsItem): The item whose position is needed.
-
-        Returns:
-            QPoint: The mapped position in the grid view.
+        :param item: The item whose position is needed.
         """
         scene_pos = item.mapToScene(item.boundingRect().center())
         return self.mapFromScene(scene_pos)
 
     def get_item_at(self, pos: QPoint) -> QGraphicsItem:
-        """
-        Retrieve the item at a given position.
+        """Retrieve the item at a given position.
 
-        Args:
-            pos (QPoint): The position in the grid view.
-
-        Returns:
-            QGraphicsItem: The item at the given position, if any.
+        :param pos: The position in the grid view.
         """
         scene_pos: QPointF = self.mapToScene(pos)
         return self.scene().itemAt(scene_pos, self.transform())
 
     def get_item_group(self, item: StateGraphicsItem | LabelGraphicsItem | StateConnectionGraphicsItem) -> StateItem:
-        """
-        Retrieve the parent `StateGroup` of a given item.
+        """Retrieve the parent `StateGroup` of a given item.
 
-        Args:
-            item (StateGraphicsItem | LabelGraphicsItem | StateConnectionGraphicsItem): The item whose group is needed.
-
-        Returns:
-            StateItem: The parent group of the item.
+        :param item: The item whose group is needed.
         """
         while not isinstance(item, StateItem):
             item: StateGraphicsItem | StateItem = item.parentItem()
         return item
 
     def highlight_state_item(self, state_item: 'StateItem') -> None:
-        """Hebt den angegebenen StateItem hervor und entfernt das Highlight von zuvor hervorgehobenen Items."""
-        # Entferne vorheriges StateItem-Highlight
+        """Highlights the specified StateItem and removes the highlight from previously highlighted items.
+
+        :param state_item: The StateItem to highlight.
+        """
         if self._highlighted_state_item and self._highlighted_state_item != state_item:
             self.unhighlight_state_item()
-        # Setze den neuen Highlight
         self._highlighted_state_item = state_item
-        # Beispielsweise wird das StateItem farblich markiert oder mit einem Rahmen versehen.
-        # Hier setzen wir den 'Selected'-Flag als Beispiel:
-        highlight_effect = QGraphicsDropShadowEffect()
-        highlight_effect.setBlurRadius(40)
-        highlight_effect.setOffset(0)
-        highlight_effect.setColor(QColor("yellow"))
-        self.setGraphicsEffect(highlight_effect)
-        self._highlighted_state_item.setGraphicsEffect(highlight_effect)
+        self._highlighted_state_item.highlight()
 
     def unhighlight_state_item(self) -> None:
-        """Entfernt das Highlight vom aktuell hervorgehobenen StateItem."""
+        """Removes the highlight from the currently highlighted StateItem."""
         if self._highlighted_state_item:
-            self._highlighted_state_item.setGraphicsEffect(None)
+            self._highlighted_state_item.unhighlight()
             self._highlighted_state_item = None
 
     def highlight_transition_item(self, transition_item: 'TransitionItem') -> None:
-        """Hebt den angegebenen TransitionItem hervor und entfernt das Highlight von zuvor hervorgehobenen Items."""
-        # Entferne vorheriges TransitionItem-Highlight
+        """Highlights the specified TransitionItem and removes the highlight from previously highlighted items.
+
+        :param transition_item: The TransitionItem to highlight.
+        """
         if self._highlighted_transition_item and self._highlighted_transition_item != transition_item:
             self.unhighlight_transition_item()
-        # Setze den neuen Highlight
         self._highlighted_transition_item = transition_item
-        # Beispielhaft wird hier der Pen verändert, um das TransitionItem hervorzuheben.
-        transition_item.setPen(QPen(QColor('red'), transition_item.pen().width() + 2))
+        self._highlighted_transition_item.highlight()
 
     def unhighlight_transition_item(self) -> None:
-        """Entfernt das Highlight vom aktuell hervorgehobenen TransitionItem."""
+        """Removes the highlight from the currently highlighted TransitionItem."""
         if self._highlighted_transition_item:
-            # Setze den Pen auf den Standardzustand zurück, hier muss der Standardwert bekannt sein.
-            transition_item = self._highlighted_transition_item
-            transition_item.setPen(QPen(QColor(0, 10, 33), 4))
+            self._highlighted_transition_item.unhighlight()
             self._highlighted_transition_item = None
 
     def reset_all_highlights(self) -> None:
-        """Entfernt alle Hervorhebungen (StateItem und TransitionItem)."""
+        """Removes all highlights (StateItem and TransitionItem)."""
         self.unhighlight_state_item()
         self.unhighlight_transition_item()
 
@@ -437,33 +420,23 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if token in self.token_lists[0]:
             self.token_lists[0].remove(token)
 
-    def create_state_from_automaton(self, state: UiState):
-        color: QColor = state.get_colour()
-        position: tuple[float, float] = state.get_position()
-        display_text: str = state.get_display_text()
-        state_type: _ty.Literal['default', 'start', 'end'] = state.get_type()
+    def create_state_from_automaton(self, ui_state: UiState) -> None:
+        state_item = StateItem(ui_state, self.grid_size, self._default_selection_color)
+        self.scene().addItem(state_item)
+        state_item.update_shadow_effect()
+        state_item.update_label_position()
 
-        state_group = StateItem(position[0],
-                                position[1],
-                                self.grid_size, self.grid_size,
-                                display_text, color, self._default_selection_color)
-        self.scene().addItem(state_group)
-        state_group.set_state_type(state_type)
-        state_group.update_shadow_effect()
-        state_group.update_label_position()
-
-    def create_transition_from_automaton(self, ui_transition: UiTransition):
+    def create_transition_from_automaton(self, ui_transition: UiTransition) -> None:
+        """Creates a TransitionItem from the given UiTransition"""
         from_state: UiState = ui_transition.get_from_state()
         from_connection_point: _ty.Literal['n', 's', 'e', 'w'] = ui_transition.get_from_state_connecting_point()
         to_state: UiState = ui_transition.get_to_state()
         to_connection_point: _ty.Literal['n', 's', 'e', 'w'] = ui_transition.get_to_state_connecting_point()
         condition: _ty.List[str] = ui_transition.get_condition()
 
-        start_state, end_state = None, None
-        start_point, end_point = None, None
+        start_state, end_state, start_point, end_point = None, None, None, None
         for state in self.scene().items():
             if isinstance(state, StateItem):
-                # print(f'UiState: {state.get_ui_state()} \nfrom_state: {from_state} \nto_state: {to_state}\n')
                 if state.get_ui_state() == from_state:
                     start_state: StateItem = state
                 elif state.get_ui_state() == to_state:
@@ -476,19 +449,18 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 if connection_point.get_flow() == 'in' and connection_point.get_direction() == to_connection_point:
                     end_point: StateConnectionGraphicsItem = connection_point
             if start_point and end_point:
-                transition = TransitionItem(start_point, end_point, end_state)
-                transition_function = TransitionFunctionItem(self.get_token_list(), self._automaton_settings['transition_sections'], transition)
-                transition.set_transition_function(transition_function)
-                transition_function.set_condition(condition)
-                transition.update_position()
-                self.scene().addItem(transition_function)
+                transition_item = TransitionItem(ui_transition, self.ui_automaton,
+                                                 self._automaton_settings['transition_sections'],
+                                                 start_point, end_point, start_state, end_state)
+                transition_item.update_position()
+                transition_item.set_condition(condition)
+                self.scene().addItem(transition_item)
 
     def create_state(self, pos: QPointF, display_text=None) -> None:
-        """
-        Create a new state at the given position.
+        """Create a new state at the given position.
 
-        Args:
-            pos (QPointF): The position where the new state should be created.
+        :param pos: The position where the new state should be created.
+        :param display_text: The displayed text if a automaton was loaded
         """
         if not display_text:
             display_text = f'q{self._counter}' if isinstance(self._counter, int) else self._counter
@@ -508,6 +480,11 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._counter += 1
 
     def create_transition(self, start_point, end_point):
+        """Creates a new transition from the start_point to the end_point
+
+        :param start_point: The start point of the transition
+        :param end_point: The end point of the transition
+        """
         start_state = start_point.parentItem()
         end_state = end_point.parentItem()
 
@@ -518,21 +495,23 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self.scene().addItem(transition_item)
 
     def empty_scene(self):
+        """Empties the whole scene"""
         for item in self.scene().items():
             self.scene().removeItem(item)
 
-    def remove_transition(self, transition: 'Transition') -> None:
+    def remove_transition(self, transition: 'TransitionItem') -> None:
+        """Removes the given transition
+
+        :param transition: The transition"""
         transition.start_state.connected_transitions.remove(transition)
         transition.end_state.connected_transitions.remove(transition)
         self.scene().removeItem(transition)
         self.scene().removeItem(transition.get_transition_function())
 
     def remove_item(self, item: QGraphicsItem) -> None:
-        """
-        Remove an item from the scene.
+        """Remove an item from the scene.
 
-        Args:
-            item (QGraphicsItem): The item to remove.
+        :param item: The item to remove.
         """
         if isinstance(item, TempTransitionItem):
             self.scene().removeItem(item)
@@ -549,15 +528,13 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self.get_ui_automaton().delete_transition(item.get_ui_transition())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """
-        Handle mouse press events for interaction with the automaton.
+        """Handle mouse press events for interaction with the automaton.
 
-        - Middle-click opens a context menu for deleting states.
         - Right-click starts panning.
+        - Right-click on a StateItem or a TransitionItem opens a context menu for deleting states.
         - Left-click selects/moves items or starts a transition.
 
-        Args:
-            event (QMouseEvent): The mouse event.
+        :param event: The mouse event.
         """
         if event.button() == Qt.MouseButton.RightButton:
             item: StateGraphicsItem | LabelGraphicsItem | StateConnectionGraphicsItem = self.get_item_at(event.pos())
@@ -597,11 +574,9 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         super().mousePressEvent(event)
 
     def left_button_click(self, event: QMouseEvent):
-        """
-        Handle left mouse button clicks for selection, movement, and transitions.
+        """Handle left mouse button clicks for selection, movement, and transitions.
 
-        Args:
-            event (QMouseEvent): The mouse event.
+        :param event: The mouse event.
         """
         item = self.get_item_at(event.pos())
         parent: QWidget = self.parent()
@@ -660,11 +635,9 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._last_active = current_parent_item
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        """
-        Handle double-click events to create new states.
+        """Handle double-click events to create new states.
 
-        Args:
-            event (QMouseEvent): The mouse event.
+        :param event: The mouse event.
         """
         if event.button() == Qt.MouseButton.LeftButton:
             if not self.get_item_at(event.pos()):
@@ -674,11 +647,9 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event):
-        """
-        Handle mouse movement events for hovering effects and temporary transitions.
+        """Handle mouse movement events for hovering effects and temporary transitions.
 
-        Args:
-            event (QMouseEvent): The mouse event.
+        :param event: The mouse event.
         """
         item = self.get_item_at(event.pos())
 

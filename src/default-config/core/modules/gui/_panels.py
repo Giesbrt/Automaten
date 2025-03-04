@@ -140,12 +140,9 @@ class StateMenu(QFrame):
 
     def change_state_type(self):
         state_type: _ty.Literal['default', 'start', 'end'] = self.type_input.currentText().lower()
-        # if state_type == 'start':
-        #     self.singleton_observer.set('start_state', self.state.get_ui_state())
         self.state.set_state_type(state_type)
 
-    def on_current_item_changed(self, current: QTableWidgetItem | QComboBox,
-                                previous: QTableWidgetItem | QComboBox | None) -> None:
+    def on_current_item_changed(self, current: QTableWidgetItem | QComboBox, previous: QTableWidgetItem | QComboBox | None) -> None:
         if previous:
             previous.data(Qt.ItemDataRole.UserRole).setPen(QPen(QColor('black'), 4))
         current.data(Qt.ItemDataRole.UserRole).setPen(QPen(QColor('red'), 4))
@@ -160,20 +157,25 @@ class StateMenu(QFrame):
 
 
 class ControlMenu(QFrame):
+
     token_update_signal: Signal = Signal(list)
 
     def __init__(self, grid_view: 'AutomatonInteractiveGridView', parent=None):
         super().__init__(parent)
-        # self.singleton_observer = SingletonObserver()
-        # self.singleton_observer.subscribe('token_lists', self.update_token_lists)
 
         self.grid_view = grid_view
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = [[], []]
 
-        self.init_ui()
+        self.play_button = None
+        self.stop_button = None
+        self.next_button = None
+        self.token_list_box = None
+
+        self.setup_ui()
         self.adjustSize()
 
-    def init_ui(self):
+    def setup_ui(self):
+        """Sets the UI-interface"""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(5)
@@ -204,47 +206,46 @@ class ControlMenu(QFrame):
 
         self.setLayout(main_layout)
 
-        # self.singleton_observer.set('token_lists', self.token_lists)
-
     def show_context_menu(self, pos):
-        """Zeigt das Kontextmenü bei Rechtsklick"""
+        """Shows the menu with a right-click"""
         menu = QMenu(self)
-        delete_action = menu.addAction("Ausgewähltes Element löschen")
+        delete_action = menu.addAction('Delete selected item')
         action = menu.exec_(self.token_list_box.mapToGlobal(pos))
 
         if action == delete_action:
             self.remove_token(self.token_list_box.currentText().strip(), self.token_list_box.currentIndex())
 
-    def add_token(self):
+    def add_token(self) -> None:
+        """Adds a token to the token_lists"""
         token = self.token_list_box.currentText().strip()
         if token.isalnum():
             if not token in self.token_lists[0]:
                 self.token_list_box.addItem(token)
             QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
             self.token_lists[0].append(token)
-            # self.singleton_observer.set('token_lists', self.token_lists)
+            # self.grid_view.update_token_lists
             self.token_update_signal.emit(self.token_lists[0])
         else:
             IOManager().warning('No whitespace or special characters allowed!', '', True, False)
 
-    def remove_token(self, token, token_index: int = None):
+    def remove_token(self, token, token_index: int = None) -> None:
+        """Remove a given token by its index
+
+        :param token: The token to be deleted
+        :param token_index: The token_index
+        """
         self.token_list_box.removeItem(token_index)
         self.token_lists[0].remove(token)
 
         self.token_update_signal.emit(self.token_lists[0])
 
-    def update_token_lists(self, token_lists: _ty.List[_ty.List[str]]):
+    def update_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
+        """Updates the token_list_box
+
+        :param token_lists: The new token lists"""
         self.token_lists = token_lists
         self.token_list_box.clear()
         self.token_list_box.addItems(token_lists[0])
-
-    """def handle_automaton_changed(self, event: 'AutomatonEvent'):
-        if event.is_loaded:
-            self.token_lists = event.token_list_box
-            self.update_token_list(self.token_lists)
-        else:
-            self.token_lists = [[], []]
-            self.update_token_list(self.token_lists)"""
 
 
 class UserPanel(Panel):
@@ -348,7 +349,7 @@ class UserPanel(Panel):
             description_label = QLabel(description)
             description_label.setWordWrap(True)
             description_label.setVisible(False)
-            
+
             # Hier wird die maximale Breite des Labels an das Menü angepasst
             max_width = self.info_menu.width() - 20
             description_label.setMaximumWidth(max_width)  # Maximale Breite setzen
@@ -431,12 +432,6 @@ class UserPanel(Panel):
             self.input_widget.show()
             self.input_frame.setFixedHeight(self.hide_button.height() + 20)
 
-    def set_token_list(self, token_list: _ty.List[str]):
-        self.token_list = token_list
-
-    def get_token_list(self) -> _ty.List[str]:
-        return self.token_list
-
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:
             preset_value = self.info_menu.x()
@@ -462,7 +457,7 @@ class UserPanel(Panel):
 
     def toggle_condition_edit_menu(self, to_state: bool) -> None:
         width = min(300, int(self.width() / 4))
-        print("WIDTH", width)
+        # print("WIDTH", width)
         height = self.height()
         c_menu_width = self.control_menu.width()
         c_menu_height = self.control_menu.height()

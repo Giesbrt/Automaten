@@ -56,7 +56,7 @@ class IMainWindow:
         Fusion = "Fusion"
         Default = None
 
-    def setup_gui(self) -> None:
+    def setup_gui(self, ui_automaton: 'IUiAutomaton') -> None:
         """
         Configure the main graphical user interface (GUI) elements of the MV application.
 

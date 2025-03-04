@@ -435,6 +435,9 @@ class UserPanel(Panel):
         self.input_widget.set_input_tokens(token_lists)
 
     def position_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput]):
+        if self.input_widget:
+            return
+
         self.input_widget = input_widget(parent=self)
         self.input_frame.layout().addWidget(self.input_widget)
 

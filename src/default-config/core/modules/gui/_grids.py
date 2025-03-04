@@ -420,7 +420,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             self.token_lists[0].remove(token)
 
     def create_state_from_automaton(self, ui_state: UiState) -> None:
-        state_item = StateItem(ui_state, self.grid_size, self._default_selection_color)
+        state_item = StateItem(ui_state, self.ui_automaton, self.grid_size, self._default_selection_color)
         self.scene().addItem(state_item)
         state_item.update_shadow_effect()
         state_item.update_label_position()

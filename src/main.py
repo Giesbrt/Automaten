@@ -327,7 +327,7 @@ class App:
     def connect_signals(self) -> None:
         self.control_menu.play_button.clicked.connect(lambda: self.start_simulation())
         self.control_menu.stop_button.clicked.connect(self.stop_simulation)
-        self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(['a', 'b']))
+        self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(None))
 
         # self.control_menu.token_update_signal.connect(self.grid_view.update_token_lists)
 
@@ -373,11 +373,12 @@ class App:
 
     def start_simulation(self, automaton_input: _ty.List[str] = None) -> None:
         # print(f"Input: {self.window.user_panel.input_widget.getFormattedInput()}")
+        print(automaton_input, "inp", bool(automaton_input))
         if automaton_input is None:
             automaton_input = self.window.user_panel.input_widget.getFormattedInput()
             self.io_manager.debug("Input: " + str(automaton_input))
 
-        if not automaton_input:
+        if not automaton_input or not all(automaton_input):
             self.io_manager.error('No input provided!', '', True, True)
             return
 
@@ -415,6 +416,9 @@ class App:
             simulation_result: _ty.Dict = simulation_result_raw._inner_value
 
             # display the simulation output in the input widget
+            if not isinstance(simulation_result, dict):
+                self.io_manager.info(f"Simulation Message: {simulation_result}", "", True, True)
+                return
             if isinstance(simulation_result_raw, _result.Success) and simulation_result is not None:
                 self.window.user_panel.input_widget.simulationStep(simulation_result["input"],
                                                                    simulation_result["pointer_index"])
@@ -437,7 +441,7 @@ class App:
             automaton_input = self.window.user_panel.input_widget.getFormattedInput()
             self.io_manager.debug("Input: " + str(automaton_input))
 
-        if not automaton_input:
+        if not automaton_input or not all(automaton_input):
             self.io_manager.error('No input provided!', '', True, True)
             return
 
@@ -461,6 +465,11 @@ class App:
             simulation_result: _ty.Dict = simulation_result_raw._inner_value
 
             # display the simulation output in the input widget
+
+            if not isinstance(simulation_result, dict):
+                self.io_manager.info(f"Simulation Message: {simulation_result}", "", True, True)
+                return
+
             if isinstance(simulation_result_raw, _result.Success) and simulation_result is not None:
                 self.window.user_panel.input_widget.simulationStep(simulation_result["input"], simulation_result["pointer_index"])
             else:

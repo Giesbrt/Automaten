@@ -260,9 +260,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
         self.settings.automaton_type_changed.connect(self._setup_automaton_view)
 
-        if self.ui_automaton.get_states() and self.ui_automaton.get_transitions():
-            self.load_automaton_from_file()
-
     def get_ui_automaton(self) -> 'UiAutomaton':
         """Returns the UiAutomaton
 
@@ -312,16 +309,15 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         """Sets the automaton-type"""
         self.automaton_type = self.get_ui_automaton().get_automaton_type()
 
-    def update_token_lists(self, token_lists=None):
+    def update_token_lists(self):
         """Updates all TransitionFunction to the new token_list"""
-        # print(f'update_token_lists: {token_lists}')
         self.token_lists = self.get_ui_automaton().get_token_lists()
 
         for item in self.scene().items():
             if isinstance(item, TransitionFunctionItem):
                 item.update_token_list(self.token_lists)
 
-    def get_active_state(self, active_state):
+    def get_active_state(self, active_state: 'UiState') -> StateItem | None:
         """Returns the active state item
 
         :param active_state: The active state
@@ -333,13 +329,16 @@ class AutomatonInteractiveGridView(InteractiveGridView):
                 if item.get_ui_state() == active_state:
                     return item
 
-    def get_active_transition(self, active_transition):
+    def get_active_transition(self, active_transition: 'UiTransition') -> TransitionItem | None:
         """Returns the active transition item
 
         :param active_transition: The active transition
         :return: The active transition item"""
         for item in self.scene().items():
             if isinstance(item, TransitionItem):
+                active_transition._is_active = False
+                if item.get_ui_transition().get_from_state() == active_transition.get_from_state():
+                    pass
                 if item.get_ui_transition() == active_transition:
                     return item
 
@@ -439,7 +438,7 @@ class AutomatonInteractiveGridView(InteractiveGridView):
             if isinstance(state, StateItem):
                 if state.get_ui_state() == from_state:
                     start_state: StateItem = state
-                elif state.get_ui_state() == to_state:
+                if state.get_ui_state() == to_state:
                     end_state: StateItem = state
         if start_state and end_state:
             for connection_point in start_state.connection_points:
@@ -499,14 +498,13 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         for item in self.scene().items():
             self.scene().removeItem(item)
 
-    def remove_transition(self, transition: 'TransitionItem') -> None:
+    def remove_transition(self, transition_item: 'TransitionItem') -> None:
         """Removes the given transition
 
-        :param transition: The transition"""
-        transition.start_state.connected_transitions.remove(transition)
-        transition.end_state.connected_transitions.remove(transition)
-        self.scene().removeItem(transition)
-        self.scene().removeItem(transition.get_transition_function())
+        :param transition_item: The transition"""
+        transition_item.transition_line_item.start_state.connected_transitions.remove(transition_item)
+        transition_item.transition_line_item.end_state.connected_transitions.remove(transition_item)
+        self.scene().removeItem(transition_item)
 
     def remove_item(self, item: QGraphicsItem) -> None:
         """Remove an item from the scene.

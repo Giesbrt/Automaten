@@ -59,8 +59,6 @@ class AutomatonSelectionDialog(QDialog):
             self.selected_type = _re.findall(r'\((.*?)\)', button.text())
         self.parent().ui_automaton.set_automaton_type(self.selected_type[0])
         self.grid_view._setup_automaton_view(self.selected_type[0])
-        # self._settings.set_automaton_type(self.selected_type[0])
-
         widget = self.parent().ui_automaton.get_input_widget()
         self.parent().user_panel.position_input_widget(widget)
 
@@ -453,10 +451,8 @@ class MainWindow(QMainWindow, IMainWindow):
         self.show()
         self.raise_()
 
-        # self.singleton_observer = SingletonObserver()
-        # if not self.singleton_observer.get('is_loaded'):
-        print(self.ui_automaton.get_states() and self.ui_automaton.get_transitions())
-        if not (self.ui_automaton.get_states() and self.ui_automaton.get_transitions()):
+        print(bool(self.ui_automaton.get_states()) and bool(self.ui_automaton.get_transitions()))
+        if not (bool(self.ui_automaton.get_states()) and bool(self.ui_automaton.get_transitions())):
             if not self.show_automaton_selection():
                 self.close()
 

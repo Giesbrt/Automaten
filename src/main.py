@@ -125,7 +125,7 @@ class App:
 
             if input_path != "":
                 success: bool = self.load_file(input_path)
-                self.settings.set_load_automaton(True)
+                self.window.user_panel.grid_view.load_automaton_from_file()
                 if not success:
                     self.ui_automaton.unload()
                     print('Could not load file')
@@ -332,11 +332,11 @@ class App:
         return base
 
     def connect_signals(self) -> None:
-        self.control_menu.play_button.clicked.connect(lambda: self.start_simulation(['a', 'b']))
+        self.control_menu.play_button.clicked.connect(lambda: self.start_simulation())
         self.control_menu.stop_button.clicked.connect(self.stop_simulation)
         self.control_menu.next_button.clicked.connect(lambda: self.start_simulation_step_for_step(['a', 'b']))
 
-        self.control_menu.token_update_signal.connect(self.grid_view.update_token_lists)
+        # self.control_menu.token_update_signal.connect(self.grid_view.update_token_lists)
 
         self.window.save_file_signal.connect(partial(self.save_to_file, automaton=self.ui_automaton))
         self.window.open_file_signal.connect(self.open_file)
@@ -499,6 +499,7 @@ class App:
             return
         else:
             self.grid_view.load_automaton_from_file()
+
 
     def load_file(self, filepath: str) -> bool:
         """Loads a UIAutomaton from a serialized file.

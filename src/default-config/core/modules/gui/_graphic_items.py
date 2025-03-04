@@ -151,12 +151,7 @@ class StateConnectionGraphicsItem(QGraphicsEllipseItem):
         :param option: The style options for the item.
         :param widget: The widget on which the item is painted, defaults to None.
         """
-        for key, values in self.parentItem().create_connection_positions(self.parentItem().state.rect()).items():
-            if f'{self.get_direction()}_{self.get_flow()}' == key:
-                self.setRect(QRectF(values[0] - self._size / 2, values[1] - self._size / 2, self._size, self._size))
-                if self.is_hovered and self.get_flow() == 'out':
-                    self.setRect(QRectF(values[0] - self._hovered_size / 2, values[1] - self._hovered_size / 2,
-                                        self._hovered_size, self._hovered_size))
+        self.update_position()
         super().paint(painter, option, widget)
 
 
@@ -214,30 +209,6 @@ class TransitionGraphicsItem(QGraphicsLineItem):
 
         self.setPen(QPen(QColor(0, 10, 33), 4))
 
-    def set_transition(self, condition: _ty.List[str]):
-        """Sets the condition of the transition.
-
-        :param condition: A list of strings representing the condition.
-        """
-        self.ui_transition.set_condition(condition)
-
-    def set_transition_function(self, transition_function) -> None:
-        """Sets the transition function associated with this transition.
-
-        :param transition_function: The widget or function representing the transition function.
-        """
-        self.transition_function = transition_function
-
-    def set_ui_transition(self, ui_transition):
-        self.ui_transition = ui_transition
-
-    def get_transition_function(self) -> 'TransitionFunctionItem':
-        """Retrieves the transition function associated with this transition.
-
-        :return: The transition function.
-        """
-        return self.transition_function
-
     def get_ui_transition(self) -> 'UiTransition':
         """Retrieves the UI transition object associated with this transition.
 
@@ -291,6 +262,7 @@ class TransitionGraphicsItem(QGraphicsLineItem):
 
 
 class TokenButton(QPushButton):
+    """The token button to open the selection menu"""
     def __init__(self, text: str, toggle_token_selection_list, button_index: int, parent: QWidget = None) -> None:
         """Initializes the token button.
 
@@ -312,15 +284,17 @@ class TokenButton(QPushButton):
         ''')
 
 class TokenButtonFrame(QGraphicsProxyWidget):
-    """Initializes the token selection button container.
+    """The token button frame to """
 
-    :param token_list_frame: The associated token selection list.
-    :param sections: The number of token sections/buttons.
-    :param parent: The parent graphics item, defaults to None.
-    """
     all_token_set: Signal = Signal(list)
 
     def __init__(self, token_list_frame, sections: int, parent: QWidget = None) -> None:
+        """Initializes the token selection button container.
+
+        :param token_list_frame: The associated token selection list.
+        :param sections: The number of token sections/buttons.
+        :param parent: The parent graphics item, defaults to None.
+        """
         super().__init__(parent)
         self.token_list_frame = token_list_frame
         self.sections = sections
@@ -341,7 +315,8 @@ class TokenButtonFrame(QGraphicsProxyWidget):
         container.setLayout(layout)
         self.setWidget(container)
 
-    def _create_container(self) -> QWidget:
+    @staticmethod
+    def _create_container() -> QWidget:
         """Creates the container widget for token buttons.
 
         :return: A new container widget.
@@ -353,7 +328,8 @@ class TokenButtonFrame(QGraphicsProxyWidget):
             border_width=1
         )
 
-    def _create_separator(self, parent: QWidget) -> QWidget:
+    @staticmethod
+    def _create_separator(parent: QWidget) -> QWidget:
         """Creates a separator widget.
 
         :param parent: The parent widget for the separator.
@@ -387,7 +363,6 @@ class TokenButtonFrame(QGraphicsProxyWidget):
 
         :param button_index: The index of the token button.
         """
-        print('button clicked')
         self.token_list_frame.set_visible(not self.token_list_frame.isVisible(), button_index)
         return self.token_list_frame
 

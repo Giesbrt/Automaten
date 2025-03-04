@@ -687,10 +687,6 @@ class UiAutomaton(IUiAutomaton):
 
         :return: None
         """
-        self.signal_bus = None
-
-        self.singleton_observer = None
-
         self._type = None
         self._states.clear()
         self._transitions.clear()
@@ -699,7 +695,7 @@ class UiAutomaton(IUiAutomaton):
         self._input = None
         self._pointer_index = None
 
-        self._bridge = None
+        # self._bridge = None
         self._input_widget = None
 
     def get_input_widget(self) -> _ty.Type[QAutomatonInputOutput] | None:

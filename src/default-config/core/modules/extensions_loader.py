@@ -112,6 +112,7 @@ class Extensions_Loader:
         return classes
     
     def check_module(self, module):
+        return True
         importlib.reload(module)
         self.remove_dublicates()
         

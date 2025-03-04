@@ -211,6 +211,22 @@ class StateItem(QGraphicsItemGroup):
         self.setSelected(False)
         self.ui_state.set_active(False)
 
+    def highlight(self) -> None:
+        """Highlights the transition."""
+        highlight_effect = QGraphicsDropShadowEffect()
+        highlight_effect.setBlurRadius(40)
+        highlight_effect.setOffset(0)
+        highlight_effect.setColor(QColor('yellow'))
+        self.state.setGraphicsEffect(highlight_effect)
+
+    def unhighlight(self) -> None:
+        """Removes the highlight effect from the transition."""
+        self.shadow = QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(20)
+        self.shadow.setOffset(0)
+        self.shadow.setColor(QColor('black'))
+        self.state.setGraphicsEffect(self.shadow)
+
     def update_shadow_effect(self) -> None:
         """Updates the shadow effect based on the selection state of the state."""
         if self.isSelected():
@@ -316,6 +332,18 @@ class TransitionItem(QGraphicsItem):
         """
         self.get_ui_transition().set_condition(condition)
         self.transition_function_item.set_condition(condition)
+
+    def highlight(self) -> None:
+        """Highlights the transition."""
+        highlight_effect = QGraphicsDropShadowEffect()
+        highlight_effect.setBlurRadius(40)
+        highlight_effect.setOffset(0)
+        highlight_effect.setColor(QColor('yellow'))
+        self.setGraphicsEffect(highlight_effect)
+
+    def unhighlight(self) -> None:
+        """Removes the highlight effect from the transition."""
+        self.setGraphicsEffect(None)
 
     def update_position(self) -> None:
         # transition_line_item

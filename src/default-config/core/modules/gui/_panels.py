@@ -160,10 +160,11 @@ class ControlMenu(QFrame):
 
     token_update_signal: Signal = Signal(list)
 
-    def __init__(self, grid_view: 'AutomatonInteractiveGridView', parent=None):
+    def __init__(self, grid_view: 'AutomatonInteractiveGridView', ui_automaton, parent=None):
         super().__init__(parent)
 
         self.grid_view = grid_view
+        self.ui_automaton = ui_automaton
         self.token_lists: _ty.Tuple[_ty.List[str], _ty.List[str]] = [[], []]
 
         self.play_button = None
@@ -217,14 +218,18 @@ class ControlMenu(QFrame):
 
     def add_token(self) -> None:
         """Adds a token to the token_lists"""
+
+        self.token_lists = self.ui_automaton.get_token_lists()
         token = self.token_list_box.currentText().strip()
+
         if token.isalnum():
             if not token in self.token_lists[0]:
                 self.token_list_box.addItem(token)
             QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
-            self.token_lists[0].append(token)
-            # self.grid_view.update_token_lists
-            self.token_update_signal.emit(self.token_lists[0])
+            new_token_lists = [self.ui_automaton.get_token_lists()[0] + [token]] + ([[self.ui_automaton.get_token_lists()[1]]] if len(self.ui_automaton.get_token_lists()) > 1 else [[]])
+            self.ui_automaton.set_token_lists(new_token_lists)
+            self.grid_view.update_token_lists()
+            self.token_update_signal.emit(self.ui_automaton.get_token_lists()[0])
         else:
             IOManager().warning('No whitespace or special characters allowed!', '', True, False)
 
@@ -235,9 +240,10 @@ class ControlMenu(QFrame):
         :param token_index: The token_index
         """
         self.token_list_box.removeItem(token_index)
-        self.token_lists[0].remove(token)
-
-        self.token_update_signal.emit(self.token_lists[0])
+        self.ui_automaton.set_token_lists(self.ui_automaton.get_token_lists()[0].remove(token))
+        self.grid_view.update_token_lists()
+        # self.token_lists[0].remove(token)
+        self.token_update_signal.emit(self.ui_automaton.get_token_lists()[0])
 
     def update_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
         """Updates the token_list_box
@@ -295,8 +301,11 @@ class UserPanel(Panel):
         self.input_frame_layout.addLayout(top_layout)
         # self.input_frame.setFixedHeight(28 + 20)
 
+        self.input_frame_animation = QPropertyAnimation(self.input_frame, b'geometry')
+        self.input_frame_animation.setDuration(500)
+
         # Control Menu
-        self.control_menu = ControlMenu(self.grid_view, self)
+        self.control_menu = ControlMenu(self.grid_view, ui_automaton, self)
         self.control_menu_animation = QPropertyAnimation(self.control_menu, b'geometry')
         self.control_menu_animation.setDuration(500)
 
@@ -423,14 +432,14 @@ class UserPanel(Panel):
         self.control_menu.token_update_signal.connect(self.input_widget.set_input_tokens)
         # Update existing tokens
         self.input_widget.set_input_tokens(self.control_menu.token_lists[0])
-        self.update()
-        if self.settings.get_auto_hide_input_widget():
+        # self.update()
+        """if self.settings.get_auto_hide_input_widget():
             self.input_widget.hide()
             self.input_frame.setFixedHeight(28 + 20)
             self.hide_button.setText("Show Input/Output")
         else:
             self.input_widget.show()
-            self.input_frame.setFixedHeight(self.hide_button.height() + 20)
+            self.input_frame.setFixedHeight(self.hide_button.height() + 20)"""
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:
@@ -467,23 +476,28 @@ class UserPanel(Panel):
             state_start = QRect(self.width(), 0, width, height)
             state_end = QRect(self.width() - width, 0, width, height)
             control_start = QRect(self.width() - width - 10, 10, width, c_menu_height)
-            control_end = QRect(self.width() - width - self.state_menu.width() - 10, 10, width,
-                                c_menu_height)
+            control_end = QRect(self.width() - width - self.state_menu.width() - 10, 10, width, c_menu_height)
+            input_start = QRect(self.width() - width - 10, 20 + self.control_menu.height(), width, self.input_frame.height())
+            input_end = QRect(self.width() - width - self.state_menu.width() - 10, 20 + self.control_menu.height(), width, self.input_frame.height())
         else:
             state_start = QRect(self.width() - width, 0, width, height)
             state_end = QRect(self.width(), 0, width, height)
-            control_start = QRect(self.width() - width - self.state_menu.width() - 10, 10, width,
-                                  c_menu_height)
+            control_start = QRect(self.width() - width - self.state_menu.width() - 10, 10, width, c_menu_height)
             control_end = QRect(self.width() - width - 10, 10, width, c_menu_height)
+            input_start = QRect(self.width() - width - self.state_menu.width() - 10, 20 + self.control_menu.height(), width, self.input_frame.height())
+            input_end = QRect(self.width() - width - 10, 20 + self.control_menu.height(), width, self.input_frame.height())
 
         self.state_menu_animation.setStartValue(state_start)
         self.state_menu_animation.setEndValue(state_end)
         self.control_menu_animation.setStartValue(control_start)
         self.control_menu_animation.setEndValue(control_end)
+        self.input_frame_animation.setStartValue(input_start)
+        self.input_frame_animation.setEndValue(input_end)
 
         animation_group = QParallelAnimationGroup(self)
         animation_group.addAnimation(self.state_menu_animation)
         animation_group.addAnimation(self.control_menu_animation)
+        animation_group.addAnimation(self.input_frame_animation)
         animation_group.start()
 
     # Window Methods

@@ -270,18 +270,20 @@ class MainWindow(QMainWindow, IMainWindow):
         return self.automaton_type
 
     def open_file(self):
-        save_selection = self.button_popup(title='Unsaved changes',
-                                            text='Do you want to save your changes? \nYour changes will be lost if you don´t save them.',
-                                            description='',
-                                            icon='Warning',
-                                            buttons=['Save', 'Don´t save', 'Cancel'],
-                                            default_button='Save')
-        if save_selection[0] == 'Save':
-            self.save_file()
-        elif save_selection[0] == 'Don´t save':
-            pass
-        elif save_selection[0] == 'Cancel':
-            return
+        print("DE", self.user_panel.grid_view.scene().items())
+        if self.file_path == "" and self.user_panel.grid_view.scene().items():
+            save_selection = self.button_popup(title='Unsaved changes',
+                                                text='Do you want to save your changes? \nYour changes will be lost if you don´t save them.',
+                                                description='',
+                                                icon='Warning',
+                                                buttons=['Save', 'Don´t save', 'Cancel'],
+                                                default_button='Save')
+            if save_selection[0] == 'Save':
+                self.save_file()
+            elif save_selection[0] == 'Don´t save':
+                pass
+            elif save_selection[0] == 'Cancel':
+                return
         file_dialog = QFileDialog(self)
         self.file_path, _ = file_dialog.getOpenFileName(
             self, "Open File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au);;All Files (*)"

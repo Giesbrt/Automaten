@@ -310,9 +310,7 @@ class App:
 
     def check_for_update(self) -> None:
         """TBA"""
-        print("Checking for update")
         update_result = self.get_update_result()
-        print("Result", update_result)
         self.for_loop_list.append((self.show_update_result, (update_result,)))
 
     def get_os_theme(self) -> SystemTheme:
@@ -494,7 +492,6 @@ class App:
             return
         else:
             self.grid_view.load_automaton_from_file()
-
 
     def load_file(self, filepath: str) -> bool:
         """Loads a UIAutomaton from a serialized file.

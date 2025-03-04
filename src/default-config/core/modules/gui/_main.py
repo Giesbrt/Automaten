@@ -270,7 +270,6 @@ class MainWindow(QMainWindow, IMainWindow):
         return self.automaton_type
 
     def open_file(self):
-        print("DE", self.user_panel.grid_view.scene().items())
         if self.file_path == "" and self.user_panel.grid_view.scene().items():
             save_selection = self.button_popup(title='Unsaved changes',
                                                 text='Do you want to save your changes? \nYour changes will be lost if you don´t save them.',

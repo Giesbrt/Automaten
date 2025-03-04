@@ -14,12 +14,22 @@ from automaton.UiSettingsProvider import UiSettingsProvider
 from ._panels import UserPanel, SettingsPanel
 
 # Standard typing imports for aps
-import re as _re
 import typing as _ty
 
 
 class AutomatonSelectionDialog(QDialog):
+    """
+    Dialog for selecting an automaton type.
+
+    This dialog displays available automaton types and allows the user to choose one.
+    """
     def __init__(self, grid_view, parent=None):
+        """
+        Initialize the AutomatonSelectionDialog.
+
+        :param grid_view: The grid view containing the automaton structure.
+        :param parent: The parent widget.
+        """
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
@@ -40,13 +50,12 @@ class AutomatonSelectionDialog(QDialog):
         layout.addWidget(title)
 
         self.ui_settings_provider = UiSettingsProvider()
-        settings = self.ui_settings_provider.get_loaded_settings()
+        types: _ty.List[_ty.Tuple[str, str]] = self.ui_settings_provider.get_loaded_setting_names()
 
-        types = ["Deterministic Finite Automaton (DFA)", "Mealy-Machine (Mealy)", "Turing Machine (TM)"]
         self.buttons = {}
-
         for automaton_type in types:
-            button = QPushButton(automaton_type)
+            button = QPushButton(automaton_type[0])
+            button.setProperty('type', automaton_type[1])
             button.clicked.connect(self.select_type)
             layout.addWidget(button)
             self.buttons[automaton_type] = button
@@ -54,11 +63,17 @@ class AutomatonSelectionDialog(QDialog):
         self.selected_type = None
 
     def select_type(self):
+        """Handles the selection of an automaton type.
+
+        This method is triggered when an automaton type button is clicked. It extracts the selected
+        automaton type from the button text, updates the UI automaton with the selected type, and
+        repositions the input widget accordingly.
+        """
         button = self.sender()
         if button:
-            self.selected_type = _re.findall(r'\((.*?)\)', button.text())
-        self.parent().ui_automaton.set_automaton_type(self.selected_type[0])
-        self.grid_view._setup_automaton_view(self.selected_type[0])
+            self.selected_type = button.property('type')
+        self.parent().ui_automaton.set_automaton_type(self.selected_type)
+        self.grid_view._setup_automaton_view(self.selected_type)
         widget = self.parent().ui_automaton.get_input_widget()
         self.parent().user_panel.position_input_widget(widget)
 
@@ -110,7 +125,7 @@ class MainWindow(QMainWindow, IMainWindow):
         new_action = QAction('New', self)
         new_action.setShortcut(self.settings.get_file_new_shortcut())
         self.settings.file_new_shortcut_changed.connect(new_action.setShortcut)
-        new_action.triggered.connect(self.user_panel.grid_view.empty_scene)
+        new_action.triggered.connect(self.new_file)
         file_menu.addAction(new_action)
 
         open_action = QAction("Open", self)
@@ -136,22 +151,8 @@ class MainWindow(QMainWindow, IMainWindow):
         exit_action = QAction("Close", self)
         exit_action.setShortcut(self.settings.get_file_close_shortcut())
         self.settings.file_close_shortcut_changed.connect(exit_action.setShortcut)
-        exit_action.triggered.connect(self.ui_automaton.unload)
+        exit_action.triggered.connect(self.close_file)
         file_menu.addAction(exit_action)
-
-        # simulation_menu = self.menuBar().addMenu("Simulation")
-        # start_action = QAction("Start", self)
-        # start_action.setShortcut("Ctrl+G")
-        # simulation_menu.addAction(start_action)
-        # single_step_action = QAction("Single Step", self)
-        # single_step_action.setCheckable(True)
-        # simulation_menu.addAction(single_step_action)
-        # step_action = QAction("Step", self)
-        # step_action.setShortcut("Ctrl+T")
-        # simulation_menu.addAction(step_action)
-        # stop_action = QAction("Stop", self)
-        # stop_action.setShortcut("Ctrl+Y")
-        # simulation_menu.addAction(stop_action)
 
         edit_menu = self.menuBar().addMenu("Edit")
         cut_action = QAction("Cut", self)
@@ -203,10 +204,6 @@ class MainWindow(QMainWindow, IMainWindow):
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
 
-        # settings_menu = self.menuBar().addMenu("Settings")
-        # settings_action = QAction("Open Settings", self)
-        # settings_action.triggered.connect(self.switch_panel)
-        # settings_menu.addAction(settings_action)
         self.settings_button.setObjectName("settings_button")
         self.settings_button.setFixedSize(22, 22)
         self.settings_button.clicked.connect(self.switch_panel)
@@ -267,16 +264,62 @@ class MainWindow(QMainWindow, IMainWindow):
                 self.recent_menu.addAction(action)
 
     def get_automaton_type(self) -> str:
+        """Returns the currently set automaton type.
+
+        :return: The automaton type as a string.
+        """
         return self.automaton_type
 
+    def save_selection(self):
+        """
+        Displays a popup dialog asking the user if they want to save their changes.
+
+        :return: A tuple containing the selected button text and a boolean indicating if the checkbox is checked.
+        """
+        save_selection = self.button_popup(
+            title='Unsaved changes',
+            text='Do you want to save your changes? \nYour changes will be lost if you don\'t save them.',
+            description='',
+            icon='Warning',
+            buttons=['Save', 'Don\'t save', 'Cancel'],
+            default_button='Save'
+        )
+
+        return save_selection
+
+    def new_file(self):
+        """
+        Creates a new file, optionally saving the current file if there are unsaved changes.
+
+        This method unloads the current automaton, clears the grid view, and prompts the user to save any unsaved changes.
+        If the user chooses to save, the current file is saved. If the user chooses not to save, the method proceeds without saving.
+        If the user cancels the action, the method returns without creating a new file.
+        Finally, the method displays the automaton selection dialog.
+        """
+        self.ui_automaton.unload()
+        self.user_panel.grid_view.empty_scene()
+        save_selection = self.save_selection()
+
+        if save_selection[0] == 'Save':
+            self.save_file()
+        elif save_selection[0] == 'Don´t save':
+            pass
+        elif save_selection[0] == 'Cancel':
+            return
+
+        self.show_automaton_selection()
+
     def open_file(self):
-        if self.file_path == "" and self.user_panel.grid_view.scene().items():
-            save_selection = self.button_popup(title='Unsaved changes',
-                                                text='Do you want to save your changes? \nYour changes will be lost if you don´t save them.',
-                                                description='',
-                                                icon='Warning',
-                                                buttons=['Save', 'Don´t save', 'Cancel'],
-                                                default_button='Save')
+        """
+        Opens a file dialog to select a file and loads the selected file.
+
+        This method first checks if there are unsaved changes and prompts the user to save them.
+        If the user chooses to save, the current file is saved. If the user chooses not to save,
+        the method proceeds without saving. If the user cancels the action, the method returns
+        without opening a new file.
+        """
+        if self.file_path == '' and self.user_panel.grid_view.scene().items:
+            save_selection = self.save_selection()
             if save_selection[0] == 'Save':
                 self.save_file()
             elif save_selection[0] == 'Don´t save':
@@ -293,18 +336,39 @@ class MainWindow(QMainWindow, IMainWindow):
             QMessageBox.information(self, "File Opened", f"You opened: {self.file_path}")
 
     def save_file(self):
+        """
+        Saves the current file. If no file path is set, prompts the user to specify a file path.
+
+        Emits the save_file_signal with the current file path if it is set.
+        Otherwise, calls save_file_as to prompt the user for a file path.
+        """
         if self.file_path != "":
             self.save_file_signal.emit(self.file_path)
         else:
             self.save_file_as()
 
     def save_file_as(self):
+        """
+        Prompts the user to specify a file path and saves the current file.
+
+        This method opens a file dialog to let the user choose a file path for saving the current file.
+        If a valid file path is selected, it emits the save_file_signal with the chosen file path and
+        displays a message box confirming the file has been saved.
+
+        :return: None
+        """
         file_dialog = QFileDialog(self)
         self.file_path, _ = file_dialog.getSaveFileName(
             self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
         if self.file_path:
             self.save_file_signal.emit(self.file_path)
             QMessageBox.information(self, "File Saved", f"File saved to: {self.file_path}")
+
+    def close_file(self):
+        """Closes the current file by unloading the automaton, clearing the scene, and showing the automaton selection dialog."""
+        self.ui_automaton.unload()
+        self.user_panel.grid_view.empty_scene()
+        self.show_automaton_selection()
 
     def show_about(self):
         QMessageBox.about(self, "[N.E.F.S] About", "N.E.F.S' Simulator.\nThe meaning of this abbreviation has long been lost to time. Rumor has it though, that it stands for the names of the creators and something about glucose.")
@@ -439,7 +503,7 @@ class MainWindow(QMainWindow, IMainWindow):
 
         overlay = QWidget(self)
         overlay.setGeometry(self.rect())
-        overlay.setStyleSheet("background-color: rgba(0, 0, 0, 150);")
+        overlay.setStyleSheet('background-color: rgba(0, 0, 0, 150);')
         overlay.show()
 
         result = dialog.exec()
@@ -455,7 +519,6 @@ class MainWindow(QMainWindow, IMainWindow):
         self.show()
         self.raise_()
 
-        print(bool(self.ui_automaton.get_states()) and bool(self.ui_automaton.get_transitions()))
         if not (bool(self.ui_automaton.get_states()) and bool(self.ui_automaton.get_transitions())):
             if not self.show_automaton_selection():
                 self.close()

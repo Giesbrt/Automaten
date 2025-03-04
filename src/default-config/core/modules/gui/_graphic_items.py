@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphi
     QGraphicsProxyWidget, QGraphicsRectItem, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent, QPushButton, \
     QHBoxLayout
 
-from ._graphic_support_items import FrameWidgetItem, HorizontalLayout, VerticalLayout
+from ._graphic_support_items import FrameWidgetItem
 from painter import PainterStr, StrToPainter
 from storage import AppSettings
 
@@ -51,17 +51,6 @@ class StateGraphicsItem(QGraphicsEllipseItem):
             "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;")
         self.start_painter_str: PainterStr = PainterStr(
             "Polygon: ((80.0, 160.0), (230.0, 160.0), (230.0, 130.0), (280.0, 180.0), (230.0, 230.0), (230.0, 200.0), (80.0, 200.0)), 0#ff0000##ff0000;")
-
-        """arrow = PainterToStr()
-        arrow.polygon([arrow.coord().load_from_cartesian(-100, -20),
-                       arrow.coord().load_from_cartesian(50, -20),
-                       arrow.coord().load_from_cartesian(50, -50),
-                       arrow.coord().load_from_cartesian(100, 0),
-                       arrow.coord().load_from_cartesian(50, 50),
-                       arrow.coord().load_from_cartesian(50, 20),
-                       arrow.coord().load_from_cartesian(-100, 20)], fill_color=PainterColor(255, 0, 0))
-        arrow_str = arrow.clean_out_style_str()
-        self.start_painter_str = PainterStr(arrow_str)"""
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None):
         """Paints the state as an ellipse and adds an inner circle if the state type is 'end'.
@@ -173,7 +162,7 @@ class LabelGraphicsItem(QGraphicsTextItem):
         self.setPlainText(text)
         self.setDefaultTextColor(QColor('black'))
         self.settings = AppSettings()
-        self.setFont(QFont(self.settings.get_font(), 24, QFont.Weight.Bold))  # Needs to be changeable, idk yet how
+        self.setFont(QFont(self.settings.get_font(), 24, QFont.Weight.Bold))
         self.settings.font_changed.connect(lambda: self.setFont(QFont(self.settings.get_font(), 24, QFont.Weight.Bold)))
 
     def paint(self, painter, option, widget=None):
@@ -257,7 +246,7 @@ class TransitionGraphicsItem(QGraphicsLineItem):
         """
         super().paint(painter, option, widget)
         if self.arrow_head:
-            painter.setBrush(QColor(0, 10, 33))
+            painter.setBrush(QColor(0, 0, 0))
             painter.drawPolygon(self.arrow_head)
 
 
@@ -282,6 +271,7 @@ class TokenButton(QPushButton):
                 border: none;
             }
         ''')
+
 
 class TokenButtonFrame(QGraphicsProxyWidget):
     """The token button frame to """
@@ -371,6 +361,7 @@ class TokenButtonFrame(QGraphicsProxyWidget):
         if all(button.text() != '...' for button in self.token_buttons):
             tokens = [button.text() for button in self.token_buttons]
             self.all_token_set.emit(tokens)
+
 
 class TokenListFrame(QGraphicsProxyWidget):
 
@@ -495,7 +486,7 @@ class TransitionFunctionItem(QGraphicsProxyWidget):
     def __init__(self, ui_automaton, transition, sections, parent=None) -> None:
         """Initializes the transition function widget.
 
-        :param tokens: A list of tokens for the transition function.
+        :param ui_automaton: The central ui automaton
         :param sections: The number of sections for token selection.
         :param transition: The transition associated with this function.
         :param parent: The parent graphics item, defaults to None.
@@ -529,5 +520,3 @@ class TransitionFunctionItem(QGraphicsProxyWidget):
         """Updates the token list and replaces invalid tokens in the condition."""
         self.token_lists = token_lists
         self.token_list_frame.update_token_lists(token_lists)
-
-        # self.set_condition(token_lists[0])

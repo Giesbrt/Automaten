@@ -8,10 +8,10 @@ from datetime import datetime
 import ast
 import textwrap
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from automaton.base.state import State as BaseState
-from automaton.base.transition import Transition as BaseTransition
-from automaton.base.automaton import Automaton as BaseAutomaton
-from automaton.base.settings import Settings as BaseSettings
+from core.modules.automaton.base.state import State as BaseState
+from core.modules.automaton.base.transition import Transition as BaseTransition
+from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from core.modules.automaton.base.settings import Settings as BaseSettings
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))

@@ -253,6 +253,7 @@ class AppSettings(QObject):
     show_no_update_info_changed = Signal(bool)
     show_update_info_changed = Signal(bool)
     show_update_timeout_changed = Signal(bool)
+    show_update_error_changed = Signal(bool)
     ask_to_reopen_last_file_changed = Signal(bool)
     recent_files_changed = Signal(tuple)  # tuple[str, ...]
     # shortcuts
@@ -337,6 +338,7 @@ class AppSettings(QObject):
             "show_no_update_info": "False",
             "show_update_info": "True",
             "show_update_timeout": "True",
+            "show_update_error": "True",
             "ask_to_reopen_last_file": "True",
             "recent_files": "()"
         })
@@ -436,6 +438,11 @@ class AppSettings(QObject):
     def set_show_update_timeout(self, flag: bool) -> None:
         self._settings.store("auto", "show_update_timeout", flag, "bool")
         self.show_update_timeout_changed.emit(flag)
+    def get_show_update_error(self) -> bool:
+        return self._settings.retrieve("auto", "show_update_error", "bool")  # type: ignore
+    def set_show_update_error(self, flag: bool) -> None:
+        self._settings.store("auto", "show_update_error", flag, "bool")
+        self.show_update_error_changed.emit(flag)
     def get_ask_to_reopen_last_file(self) -> bool:
         return self._settings.retrieve("auto", "ask_to_reopen_last_file", "bool")  # type: ignore
     def set_ask_to_reopen_last_file(self, flag: bool) -> None:

@@ -188,15 +188,10 @@ class App:
         retval_func: _a.Callable[[str], _ty.Any] = lambda button: None
         do_popup: bool = True
 
-        print(1)
-
         try:  # Get update content
-            print(1)
-            print(type(self.settings.get_update_check_request_timeout()))
             response: requests.Response = requests.get(
                 "https://raw.githubusercontent.com/Giesbrt/Automaten/main/meta/update_check.json",
                 timeout=float(self.settings.get_update_check_request_timeout()))
-            print(2)
         except requests.exceptions.Timeout:
             title, text, description = "Update Info", ("The request timed out.\n"
                                                        "Please check your internet connection, "
@@ -220,9 +215,9 @@ class App:
                     (checkbox, checkbox_setting),
                     (standard_buttons, default_button), retval_func)
         except Exception as e:
-            return (True,
+            return (self.settings.get_show_update_error(),
                     ("Warning", "Update check failed", "Due to an internal error,\nthe operation could not be completed.", format_exc()),
-                    (None, ("", "")),
+                    ("Do not show again", ("auto", "show_update_error")),
                     (["Ok"], "Ok"), lambda button: None)
         print("Response", response)
 

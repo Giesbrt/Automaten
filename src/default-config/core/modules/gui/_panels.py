@@ -319,8 +319,12 @@ class UserPanel(Panel):
         self.info_menu_button.clicked.connect(self.toggle_side_menu)  # Menu
         self.hide_button.clicked.connect(self.toggle_hide_input)
 
-        # TODO: SETTINGS
-        # - Automaton loader settings
+        if self.settings.get_auto_hide_input_widget():
+            self.hide_input_ding = True
+            self.input_frame.setFixedHeight(28 + 20)
+            self.hide_button.setText("Show Input/Output")
+        else:
+            self.hide_input_ding = False
 
     def search_items(self, text):
         """Search items in the list"""
@@ -435,13 +439,9 @@ class UserPanel(Panel):
         self.control_menu.token_update_signal.connect(self.input_widget.set_input_tokens)
         # Update existing tokens
         self.refresh_tokens_input_widget()
-        if self.settings.get_auto_hide_input_widget():
+        if self.hide_input_ding:
+            self.hide_input_ding = False
             self.input_widget.hide()
-            self.input_frame.setFixedHeight(28 + 20)
-            self.hide_button.setText("Show Input/Output")
-        else:
-            self.input_widget.show()
-            # self.input_frame.setFixedHeight(self.input_widget.sizeHint().height() + self.hide_button.height() + 20)
 
     def update_menu_button_position(self, preset_value: int | None = None):
         if not preset_value:

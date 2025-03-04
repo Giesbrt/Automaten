@@ -16,7 +16,7 @@ import types as _ts
 
 
 class StateItem(QGraphicsItemGroup):
-    def __init__(self, ui_state: 'UiState', size: int, default_selection_color: QColor, parent: QGraphicsItem | None = None) -> None:
+    def __init__(self, ui_state: 'UiState', ui_automaton, size: int, default_selection_color: QColor, parent: QGraphicsItem | None = None) -> None:
         """Initializes a state group with a graphical representation and interaction elements.
         :param x: The x-coordinate of the state.
         :param y: The y-coordinate of the state.
@@ -37,6 +37,7 @@ class StateItem(QGraphicsItemGroup):
         self.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemSendsScenePositionChanges, True)
 
         self.ui_state: 'UiState' = ui_state
+        self.ui_automaton: 'UiAutomaton' = ui_automaton
 
         self.position = self.ui_state.get_position()
         self.color = self.ui_state.get_colour()
@@ -123,6 +124,8 @@ class StateItem(QGraphicsItemGroup):
         self.state_type = state_type
         self.get_ui_state().set_type(state_type)
         self.state.update(self.state.rect())
+        if self.state_type == 'start':
+            self.ui_automaton.set_start_state(self.get_ui_state())
 
     def get_size(self) -> int:
         """Gets the current size of the state.
@@ -285,6 +288,9 @@ class TransitionItem(QGraphicsItem):
         self.ui_transition: 'UiTransition' = ui_transition
         self.ui_automaton: 'UiAutomaton' = ui_automaton
 
+        self.start_state = start_state
+        self.end_state = end_state
+
         self.transition_line_item = TransitionGraphicsItem(start_point, end_point, start_state, end_state, self)
         self.transition_function_item = TransitionFunctionItem(self.ui_automaton, self.transition_line_item, transition_sections, self)
 
@@ -345,7 +351,26 @@ class TransitionItem(QGraphicsItem):
         """Removes the highlight effect from the transition."""
         self.setGraphicsEffect(None)
 
+    def update_path(self) -> None:
+        path = QPainterPath()
+        # Prüfen, ob Start- und Endpunkt identisch sind (Self-Loop)
+        if self.start_point == self.end_point:
+            # Kreis als Self-Loop; der Radius bestimmt die Größe des Kreises.
+            radius = 20
+            rect = QRectF(self.start_point.x() - radius,
+                          self.start_point.y() - radius,
+                          2 * radius,
+                          2 * radius)
+            # Der Kreis wird vollständig gezeichnet.
+            path.addEllipse(rect)
+        else:
+            # Normaler Linienpfad zwischen zwei Punkten
+            path.moveTo(self.start_point)
+            path.lineTo(self.end_point)
+        self.setPath(path)
+
     def update_position(self) -> None:
+        """Updates the position of the TransitionItem"""
         # transition_line_item
         start_scene = self.transition_line_item.start_point.mapToScene(self.transition_line_item.start_point.boundingRect().center())
         end_scene = self.transition_line_item.end_point.mapToScene(self.transition_line_item.end_point.boundingRect().center())

@@ -323,6 +323,8 @@ class UiAutomaton(IUiAutomaton):
             automaton_settings = settings_loader.get_settings(automaton_type)
             io_manager: IOManager = IOManager()
 
+            print(f'settings: {automaton_settings.token_lists}')
+
             if automaton_settings is not None:
                 settings_loader.apply_to_automaton(self, None, automaton_settings)
 

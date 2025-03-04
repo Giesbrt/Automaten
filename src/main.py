@@ -545,6 +545,8 @@ class App:
             self.ui_automaton.unload()
             custom_python: str = deserialize(self.ui_automaton, content, filetype)
 
+            print(self.ui_automaton.get_token_lists())
+
             # Custom python
             extension_folder: str = self.extensions_folder
             path: str = f"{extension_folder}{os.path.sep}{self.ui_automaton.get_automaton_type()}.py"

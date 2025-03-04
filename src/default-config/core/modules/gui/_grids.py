@@ -256,7 +256,6 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         self._default_color: QColor = QColor.fromString(self.settings.get_default_state_background_color())
         self.settings.default_state_background_color_changed.connect(lambda x: setattr(self, "_default_color", x))
         self._default_selection_color: QColor = default_selection_color
-        self.token_lists = None
 
         self.settings.automaton_type_changed.connect(self._setup_automaton_view)
 

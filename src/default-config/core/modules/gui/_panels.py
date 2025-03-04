@@ -124,7 +124,6 @@ class StateMenu(QFrame):
             target_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             target_item.setData(Qt.ItemDataRole.UserRole, transition)
 
-            # token_list = self.singleton_observer.get('token_lists')
             condition_edit: QComboBox = QComboBox()
             # condition_edit.addItems(token_list[0] if token_list else [])
             # condition_edit.setItemData(Qt.ItemDataRole.UserRole, transition)
@@ -226,7 +225,13 @@ class ControlMenu(QFrame):
             if not token in self.token_lists[0]:
                 self.token_list_box.addItem(token)
             QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
-            new_token_lists = [self.ui_automaton.get_token_lists()[0] + [token]] + ([[self.ui_automaton.get_token_lists()[1]]] if len(self.ui_automaton.get_token_lists()) > 1 else [[]])
+            print(self.token_lists)
+            new_token_lists = (
+                [self.ui_automaton.get_token_lists()[0] + [token], self.ui_automaton.get_token_lists()[1]]
+                if len(self.ui_automaton.get_token_lists()) > 1
+                else [self.ui_automaton.get_token_lists()[0] + [token]]
+            )
+            print(new_token_lists)
             self.ui_automaton.set_token_lists(new_token_lists)
             self.grid_view.update_token_lists()
             self.token_update_signal.emit(self.ui_automaton.get_token_lists()[0])
@@ -242,7 +247,6 @@ class ControlMenu(QFrame):
         self.token_list_box.removeItem(token_index)
         self.ui_automaton.set_token_lists(self.ui_automaton.get_token_lists()[0].remove(token))
         self.grid_view.update_token_lists()
-        # self.token_lists[0].remove(token)
         self.token_update_signal.emit(self.ui_automaton.get_token_lists()[0])
 
     def update_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:

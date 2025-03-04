@@ -518,5 +518,6 @@ class TransitionFunctionItem(QGraphicsProxyWidget):
 
     def update_token_list(self, token_lists: tuple[list[str], list[str]]) -> None:
         """Updates the token list and replaces invalid tokens in the condition."""
+        print(token_lists)
         self.token_lists = token_lists
         self.token_list_frame.update_token_lists(token_lists)

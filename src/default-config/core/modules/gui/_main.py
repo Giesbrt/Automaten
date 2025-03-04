@@ -1,4 +1,5 @@
 """TBA"""
+import copy
 import os
 
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget, QDialog, \
@@ -69,12 +70,14 @@ class AutomatonSelectionDialog(QDialog):
         automaton type from the button text, updates the UI automaton with the selected type, and
         repositions the input widget accordingly.
         """
+        ui_automaton = self.parent().ui_automaton
         button = self.sender()
         if button:
             self.selected_type = button.property('type')
-        self.parent().ui_automaton.set_automaton_type(self.selected_type)
+        ui_automaton.set_automaton_type(self.selected_type)
+        self.grid_view.update_token_lists()
         self.grid_view._setup_automaton_view(self.selected_type)
-        widget = self.parent().ui_automaton.get_input_widget()
+        widget = ui_automaton.get_input_widget()
         self.parent().user_panel.position_input_widget(widget)
 
         self.accept()
@@ -95,6 +98,7 @@ class MainWindow(QMainWindow, IMainWindow):
         self.user_panel_animation: QPropertyAnimation | None = None
         self.settings_panel_animation: QPropertyAnimation | None = None
         self.panel_animation_group: QParallelAnimationGroup | None = None
+        self.opened_ui_automaton: 'UiAutomaton' | None = None
         self.automaton_type: str | None = None
         super().__init__(parent=None)
         # self.statusBar().showMessage("Statusbar")
@@ -270,6 +274,12 @@ class MainWindow(QMainWindow, IMainWindow):
         """
         return self.automaton_type
 
+    def verify_require_save(self):
+        if self.opened_ui_automaton == self.ui_automaton:
+            return False
+        else:
+            return True
+
     def save_selection(self):
         """
         Displays a popup dialog asking the user if they want to save their changes.
@@ -343,6 +353,7 @@ class MainWindow(QMainWindow, IMainWindow):
         if self.file_path:
             self.user_panel.grid_view.empty_scene()
             self.open_file_signal.emit(self.file_path)
+            self.opened_ui_automaton = copy.deepcopy(self.ui_automaton)
             QMessageBox.information(self, "File Opened", f"You opened: {self.file_path}")
 
     def save_file(self):
@@ -352,6 +363,7 @@ class MainWindow(QMainWindow, IMainWindow):
         Emits the save_file_signal with the current file path if it is set.
         Otherwise, calls save_file_as to prompt the user for a file path.
         """
+        # print(self.verify_require_save())
         if self.file_path != "":
             self.save_file_signal.emit(self.file_path)
         else:

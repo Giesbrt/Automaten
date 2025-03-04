@@ -20,7 +20,7 @@ class TmSettings(BaseSettings):
 
     def __init__(self):
         super().__init__("tm", "touring machine", "Fa4953",
-                         [[], ], [True, ], [0, ],
+                         [[], ['L', 'R', 'H']], [True, False], [0, 1, 0],
                          {"end": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;",
                           "default": "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;"})
 

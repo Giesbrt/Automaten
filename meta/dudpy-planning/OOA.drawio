@@ -1,0 +1,285 @@
+<mxfile host="drawio-plugin" modified="2025-03-04T12:00:13.254Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" etag="gAteR0X49EuP1PrYuyel" version="22.1.22" type="embed">
+  <diagram id="23iRSUPoRavnBvh4doch" name="Page-1">
+    <mxGraphModel dx="3285" dy="1313" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="State" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-330" y="40" width="350" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="&lt;div&gt;self._transitions: _ty.Set[Transition]&lt;/div&gt;&lt;div&gt;self._state_name: str&lt;/div&gt;&lt;div&gt;self._activation_callback: _ty.Callable or None&lt;/div&gt;&lt;div&gt;self._is_active: bool&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry y="26" width="350" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="2">
+          <mxGeometry y="106" width="350" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="&lt;div&gt;set_name(self, new_name: str) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_name(self) -&amp;gt; str:&lt;/div&gt;&lt;div&gt;get_transitions(self) -&amp;gt; _ty.Set[&quot;Transition&quot;]:&lt;/div&gt;&lt;div&gt;add_transition(self, new_transition: &quot;Transition&quot;) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;remove_transition(self, old_transition: &quot;Transition&quot;) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;find_transition(self, current_input_char: str) -&amp;gt; _result.Result:&lt;/div&gt;&lt;div&gt;set_activation_callback(self, callback: _ty.Callable) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_activation_callback(self) -&amp;gt; _ty.Callable or None:&lt;/div&gt;&lt;div&gt;activate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;deactivate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;is_active(self) -&amp;gt; bool:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry y="114" width="350" height="176" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Transition" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="710" y="30" width="350" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="&lt;div&gt;self.start_state: State&lt;/div&gt;&lt;div&gt;self.transition_target_state: State&lt;/div&gt;&lt;div&gt;self.activation_callback: _ty.Callable or None&lt;/div&gt;&lt;div&gt;self._condition: _ty.List[_ty.Any]&lt;/div&gt;&lt;div&gt;self._is_active: bool&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="6">
+          <mxGeometry y="26" width="350" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="6">
+          <mxGeometry y="110" width="350" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="&lt;div&gt;canTransition(self, current_input: _ty.Any) -&amp;gt; _result.Result:&lt;/div&gt;&lt;div&gt;get_transition_target(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_start_state(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_condition(self) -&amp;gt; _ty.List[_ty.Any]:&lt;/div&gt;&lt;div&gt;set_condition(self, new_condition: _ty.List[_ty.Any]) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_activation_callback(self, callback: _ty.Callable) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_activation_callback(self) -&amp;gt; _ty.Callable or None:&lt;/div&gt;&lt;div&gt;activate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;deactivate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;is_active(self) -&amp;gt; bool:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="6">
+          <mxGeometry y="118" width="350" height="152" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Automaton" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="150" y="30" width="440" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="&lt;div&gt;self.states: OrderedSet[State]&lt;/div&gt;&lt;div&gt;self.transitions: OrderedSet[Transition]&lt;/div&gt;&lt;div&gt;self.current_state: State | None&lt;/div&gt;&lt;div&gt;self.start_state: State | None&lt;/div&gt;&lt;div&gt;self.end_states: _ty.Set[State]&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+          <mxGeometry y="26" width="440" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="10">
+          <mxGeometry y="130" width="440" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="&lt;div&gt;get_states(self) -&amp;gt; OrderedSet[State]:&lt;/div&gt;&lt;div&gt;get_transitions(self, scrape_transitions: bool = True) -&amp;gt; OrderedSet[Transition]:&lt;/div&gt;&lt;div&gt;get_current_state(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_start_state(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;set_start_state(self, new_start_state: State) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_states(self, new_states: OrderedSet[State]) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;add_state(self, state: State, state_type: str) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_state_by_id(self, state_id: int) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_transition_by_id(self, transition_id: int) -&amp;gt; Transition:&lt;/div&gt;&lt;div&gt;set_transitions(self, new_transitions: OrderedSet[Transition]) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;simulate_one_step(self) -&amp;gt; _result.Result:&lt;/div&gt;&lt;div&gt;set_input(self, automaton_input: _ty.Any) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_input(self) -&amp;gt; _ty.Any:&lt;/div&gt;&lt;div&gt;get_state_index(self, state: State) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;get_transition_index(self, transition: Transition) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;get_current_index(self) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;get_current_return_value(self) -&amp;gt; _ty.Any:&lt;/div&gt;&lt;div&gt;delete_state(self, state: &quot;State&quot;) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;delete_transition(self, transition: &quot;Transition&quot;) -&amp;gt; None:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+          <mxGeometry y="138" width="440" height="302" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="DFAState" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-370" y="560" width="340" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="&lt;div&gt;self._transitions: _ty.Set[Transition]&lt;/div&gt;&lt;div&gt;self._state_name: str&lt;/div&gt;&lt;div&gt;self._activation_callback: _ty.Callable or None&lt;/div&gt;&lt;div&gt;self._is_active: bool&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="14">
+          <mxGeometry y="26" width="340" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="14">
+          <mxGeometry y="130" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="&lt;div&gt;set_name(self, new_name: str) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_name(self) -&amp;gt; str:&lt;/div&gt;&lt;div&gt;get_transitions(self) -&amp;gt; _ty.Set[&quot;Transition&quot;]:&lt;/div&gt;&lt;div&gt;add_transition(self, new_transition: &quot;Transition&quot;) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;remove_transition(self, old_transition: &quot;Transition&quot;) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;find_transition(self, current_input_char: str) -&amp;gt; _result.Result:&lt;/div&gt;&lt;div&gt;set_activation_callback(self, callback: _ty.Callable) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_activation_callback(self) -&amp;gt; _ty.Callable or None:&lt;/div&gt;&lt;div&gt;activate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;deactivate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;is_active(self) -&amp;gt; bool:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="14">
+          <mxGeometry y="138" width="340" height="172" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="DFATransition" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="725.05" y="510" width="350" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="&lt;div&gt;self.start_state: State&lt;/div&gt;&lt;div&gt;self.transition_target_state: State&lt;/div&gt;&lt;div&gt;self.activation_callback: _ty.Callable or None&lt;/div&gt;&lt;div&gt;self._condition: _ty.List[_ty.Any]&lt;/div&gt;&lt;div&gt;self._is_active: bool&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="18">
+          <mxGeometry y="26" width="350" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="18">
+          <mxGeometry y="130" width="350" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="&lt;div&gt;canTransition(self, current_input: _ty.Any) -&amp;gt; _result.Result:&lt;/div&gt;&lt;div&gt;get_transition_target(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_start_state(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_condition(self) -&amp;gt; _ty.List[_ty.Any]:&lt;/div&gt;&lt;div&gt;set_condition(self, new_condition: _ty.List[_ty.Any]) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_activation_callback(self, callback: _ty.Callable) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_activation_callback(self) -&amp;gt; _ty.Callable or None:&lt;/div&gt;&lt;div&gt;activate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;deactivate(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;is_active(self) -&amp;gt; bool:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="18">
+          <mxGeometry y="138" width="350" height="152" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="DFAAutomaton" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="560" width="460" height="430" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="&lt;div&gt;self.states: OrderedSet[State]&lt;/div&gt;&lt;div&gt;self.transitions: OrderedSet[Transition]&lt;/div&gt;&lt;div&gt;self.current_state: State | None&lt;/div&gt;&lt;div&gt;self.start_state: State | None&lt;/div&gt;&lt;div&gt;self.end_states: _ty.Set[State]&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="22">
+          <mxGeometry y="26" width="460" height="114" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="22">
+          <mxGeometry y="140" width="460" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="&lt;div&gt;get_states(self) -&amp;gt; OrderedSet[State]:&lt;/div&gt;&lt;div&gt;get_transitions(self, scrape_transitions: bool = True) -&amp;gt; OrderedSet[Transition]:&lt;/div&gt;&lt;div&gt;get_current_state(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_start_state(self) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;set_start_state(self, new_start_state: State) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_states(self, new_states: OrderedSet[State]) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;add_state(self, state: State, state_type: str) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_state_by_id(self, state_id: int) -&amp;gt; State:&lt;/div&gt;&lt;div&gt;get_transition_by_id(self, transition_id: int) -&amp;gt; Transition:&lt;/div&gt;&lt;div&gt;set_transitions(self, new_transitions: OrderedSet[Transition]) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;simulate_one_step(self) -&amp;gt; _result.Result:&lt;/div&gt;&lt;div&gt;set_input(self, automaton_input: _ty.Any) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_input(self) -&amp;gt; _ty.Any:&lt;/div&gt;&lt;div&gt;get_state_index(self, state: State) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;get_transition_index(self, transition: Transition) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;get_current_index(self) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;get_current_return_value(self) -&amp;gt; _ty.Any:&lt;/div&gt;&lt;div&gt;delete_state(self, state: &quot;State&quot;) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;delete_transition(self, transition: &quot;Transition&quot;) -&amp;gt; None:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="22">
+          <mxGeometry y="148" width="460" height="282" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="Am Beispiel eines DFA-Automatens" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry y="10" width="210" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="Extends" style="endArrow=block;endSize=16;endFill=0;html=1;rounded=0;entryX=0.456;entryY=0.923;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="22" target="13">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="320" y="430" as="sourcePoint" />
+            <mxPoint x="480" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="28" value="Extends" style="endArrow=block;endSize=16;endFill=0;html=1;rounded=0;entryX=0.138;entryY=1.038;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.1;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="14" target="5">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="50" y="360" as="sourcePoint" />
+            <mxPoint x="210" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="29" value="Extends" style="endArrow=block;endSize=16;endFill=0;html=1;rounded=0;entryX=0.438;entryY=1.077;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.925;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="18" target="9">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="530" y="350" as="sourcePoint" />
+            <mxPoint x="690" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="30" value="" style="endArrow=diamondThin;endFill=0;endSize=24;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=-0.002;exitY=0.756;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="19" target="23">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="330" y="370" as="sourcePoint" />
+            <mxPoint x="490" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="31" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="30">
+          <mxGeometry x="0.596" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="32" value="0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="30">
+          <mxGeometry x="-0.7727" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="33" value="" style="endArrow=diamondThin;endFill=0;endSize=24;html=1;rounded=0;entryX=-0.006;entryY=0.115;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1.01;exitY=0.28;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="15" target="23">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="330" y="370" as="sourcePoint" />
+            <mxPoint x="490" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="34" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="33">
+          <mxGeometry x="0.6012" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="35" value="0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="33">
+          <mxGeometry x="-0.8469" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="36" value="" style="endArrow=diamondThin;endFill=0;endSize=24;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="3" target="11">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="330" y="370" as="sourcePoint" />
+            <mxPoint x="490" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="37" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="36">
+          <mxGeometry x="0.319" y="3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="38" value="0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="36">
+          <mxGeometry x="-0.7672" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="39" value="" style="endArrow=diamondThin;endFill=0;endSize=24;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="7" target="11">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="330" y="370" as="sourcePoint" />
+            <mxPoint x="490" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="40" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="39">
+          <mxGeometry x="0.5799" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="41" value="0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="39">
+          <mxGeometry x="-0.8119" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="42" value="AutomatonSimulator" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="1020" width="200" height="208" as="geometry" />
+        </mxCell>
+        <mxCell id="43" value="&lt;div&gt;self._simulation_request: _ty.Dict[str, _ty.Any]&lt;/div&gt;&lt;div&gt;self._simulation_result_callback: _ty.Callable&lt;/div&gt;&lt;div&gt;self._error_callable: _ty.Callable&lt;/div&gt;&lt;div&gt;self.automaton: AutomatonBridge | None&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="42">
+          <mxGeometry y="26" width="200" height="114" as="geometry" />
+        </mxCell>
+        <mxCell id="44" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="42">
+          <mxGeometry y="140" width="200" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="45" value="run(self) -&amp;gt; _result.Result:" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="42">
+          <mxGeometry y="148" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="46" value="SimulationLoader" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="1040" width="190" height="118" as="geometry" />
+        </mxCell>
+        <mxCell id="47" value="&lt;div&gt;self._app_storage: IAppSettings&lt;/div&gt;&lt;div&gt;self._bridge: UiBridge&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="46">
+          <mxGeometry y="26" width="190" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="48" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="46">
+          <mxGeometry y="70" width="190" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="49" value="handle_bridge(self) -&amp;gt; None:" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="46">
+          <mxGeometry y="78" width="190" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="50" value="UiBridge" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="910" y="940" width="310" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="51" value="&lt;div&gt;_ui_queue: Queue[_ty.Dict[str, str]]&lt;/div&gt;&lt;div&gt;_backend_queue: Queue[_ty.Dict[str, str]]&lt;/div&gt;&lt;div&gt;_simulation_queue: Queue[_ty.Dict[str, str]]&lt;/div&gt;&lt;div&gt;_simulation_data_ready: StaticContainer[bool]&lt;/div&gt;&lt;div&gt;_data_ready_signal: StaticContainer[Signal[_ty.Callable]]&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="50">
+          <mxGeometry y="26" width="310" height="94" as="geometry" />
+        </mxCell>
+        <mxCell id="52" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="50">
+          <mxGeometry y="120" width="310" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="53" value="&lt;div&gt;set_signal(self, signal) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_signal(self) -&amp;gt; Signal[_ty.Callable]:&lt;/div&gt;&lt;div&gt;get_ui_queue(self) -&amp;gt; Queue[_ty.Dict[str, str]]:&lt;/div&gt;&lt;div&gt;get_ui_task(self) -&amp;gt; _ty.Dict[str, str] or None:&lt;/div&gt;&lt;div&gt;add_ui_item(self, item) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;complete_ui_task(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;has_ui_items(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;clear_ui_queue(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_simulation_queue(self) -&amp;gt; Queue[_ty.Dict[str, str]]:&lt;/div&gt;&lt;div&gt;get_simulation_task(self) -&amp;gt; _ty.Dict[str, str] or None:&lt;/div&gt;&lt;div&gt;add_simulation_item(self, item) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;complete_simulation_task(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;has_simulation_items(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;clear_simulation_queue(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;is_simulation_data_ready(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;set_simulation_data_status(self, status) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_backend_queue(self) -&amp;gt; Queue[_ty.Dict[str, str]]:&lt;/div&gt;&lt;div&gt;get_backend_task(self) -&amp;gt; _ty.Dict[str, str] or None:&lt;/div&gt;&lt;div&gt;add_backend_item(self, item) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;complete_backend_task(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;has_backend_items(self) -&amp;gt; bool:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="50">
+          <mxGeometry y="128" width="310" height="312" as="geometry" />
+        </mxCell>
+        <mxCell id="54" value="UiAutomaton" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="1190" width="440" height="1028" as="geometry" />
+        </mxCell>
+        <mxCell id="55" value="&lt;div&gt;self._type: str&lt;/div&gt;&lt;div&gt;self._states: OrderedSet[UiState]&lt;/div&gt;&lt;div&gt;self._transitions: OrderedSet[UiTransition]&lt;/div&gt;&lt;div&gt;self._start_state: UiState | None&lt;/div&gt;&lt;div&gt;self._input: _ty.List[_ty.Any]&lt;/div&gt;&lt;div&gt;self._pointer_index: int&lt;/div&gt;&lt;div&gt;self._bridge: UiBridge&lt;/div&gt;&lt;div&gt;self._input_widget: _ty.Type[QAutomatonInputOutput] | None&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="54">
+          <mxGeometry y="26" width="440" height="134" as="geometry" />
+        </mxCell>
+        <mxCell id="56" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="54">
+          <mxGeometry y="160" width="440" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="57" value="&lt;div&gt;set_colour(self, colour) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_position(self, position) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_display_text(self, display_text) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_type(self, state_type) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_active(self, value) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_colour(self) -&amp;gt; QColor:&lt;/div&gt;&lt;div&gt;get_position(self) -&amp;gt; _ty.Tuple[float, float]:&lt;/div&gt;&lt;div&gt;get_display_text(self) -&amp;gt; str:&lt;/div&gt;&lt;div&gt;get_type(self) -&amp;gt; str:&lt;/div&gt;&lt;div&gt;is_active(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;set_from_state(self, from_state) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_from_state_connecting_point(self, connecting_point) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_to_state(self, to_state) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_to_state_connecting_point(self, connecting_point) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_from_state(self) -&amp;gt; UiState:&lt;/div&gt;&lt;div&gt;get_from_state_connecting_point(self) -&amp;gt; _ty.Literal[&#39;n&#39;, &#39;s&#39;, &#39;e&#39;, &#39;w&#39;]:&lt;/div&gt;&lt;div&gt;get_to_state(self) -&amp;gt; UiState:&lt;/div&gt;&lt;div&gt;get_to_state_connecting_point(self) -&amp;gt; _ty.Literal[&#39;n&#39;, &#39;s&#39;, &#39;e&#39;, &#39;w&#39;]:&lt;/div&gt;&lt;div&gt;is_active(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;set_condition(self, condition) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_condition(self) -&amp;gt; _ty.List[str]:&lt;/div&gt;&lt;div&gt;get_start_state(self) -&amp;gt; UiState | None:&lt;/div&gt;&lt;div&gt;get_states(self) -&amp;gt; OrderedSet[UiState]:&lt;/div&gt;&lt;div&gt;get_transitions(self) -&amp;gt; OrderedSet[UiTransition]:&lt;/div&gt;&lt;div&gt;add_state(self, state) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;add_transition(self, transition) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_automaton_type(self) -&amp;gt; str:&lt;/div&gt;&lt;div&gt;set_automaton_type(self, automaton_type, load_settings) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_start_state(self, state) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;has_bridge_updates(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;is_simulation_data_available(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;handle_bridge_updates(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_state_by_id(self, state_id) -&amp;gt; UiState:&lt;/div&gt;&lt;div&gt;get_state_index(self, state) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;get_transition_by_id(self, transition_id) -&amp;gt; UiTransition:&lt;/div&gt;&lt;div&gt;get_transition_index(self, transition) -&amp;gt; int:&lt;/div&gt;&lt;div&gt;simulate(self, input, notification_callback) -&amp;gt; _result.Result:&lt;/div&gt;&lt;div&gt;handle_simulation_updates(self) -&amp;gt; _result.Result or None:&lt;/div&gt;&lt;div&gt;get_author(self) -&amp;gt; str:&lt;/div&gt;&lt;div&gt;set_author(self, author) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_token_lists(self) -&amp;gt; _ty.List[_ty.List[str]]:&lt;/div&gt;&lt;div&gt;get_is_changeable_token_list(self) -&amp;gt; _ty.List[bool]:&lt;/div&gt;&lt;div&gt;get_transition_pattern(self) -&amp;gt; _ty.List[int]:&lt;/div&gt;&lt;div&gt;set_token_lists(self, token_lists) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_is_changeable_token_list(self, changeable_token_lists) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;set_transition_pattern(self, transition_pattern) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_state_types_with_design(self) -&amp;gt; _ty.Dict[str, _ty.Any]:&lt;/div&gt;&lt;div&gt;set_state_types_with_design(self, state_types_with_design) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;has_simulation_data(self) -&amp;gt; bool:&lt;/div&gt;&lt;div&gt;delete_transition(self, transition) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;delete_state(self, state) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;stop_simulation(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_active_state(self) -&amp;gt; IUiState | None:&lt;/div&gt;&lt;div&gt;set_active_state(self, state) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_active_transition(self) -&amp;gt; IUiTransition | None:&lt;/div&gt;&lt;div&gt;set_active_transition(self, transition) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;unload(self) -&amp;gt; None:&lt;/div&gt;&lt;div&gt;get_input_widget(self) -&amp;gt; _ty.Type[QAutomatonInputOutput] | None:&lt;/div&gt;&lt;div&gt;set_input_widget(self, input_widget) -&amp;gt; None:&lt;/div&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" vertex="1" parent="54">
+          <mxGeometry y="168" width="440" height="860" as="geometry" />
+        </mxCell>
+        <mxCell id="62" value="GUI" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="-120" y="1200" width="110" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="64" value="" style="endArrow=diamondThin;endFill=0;endSize=24;html=1;rounded=0;exitX=-0.003;exitY=0.704;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="53" target="55">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="860" y="1300" as="sourcePoint" />
+            <mxPoint x="500" y="1290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="65" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="64">
+          <mxGeometry x="-0.8318" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="66" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="64">
+          <mxGeometry x="0.578" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="67" value="" style="endArrow=diamondThin;endFill=0;endSize=24;html=1;rounded=0;exitX=1.025;exitY=0.821;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="49" target="53">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="340" y="1290" as="sourcePoint" />
+            <mxPoint x="500" y="1290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="68" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="67">
+          <mxGeometry x="0.8543" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="69" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="67">
+          <mxGeometry x="-0.8584" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="62" target="55">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="72" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="70">
+          <mxGeometry x="-0.7536" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="73" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="70">
+          <mxGeometry x="0.7801" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="74" value="" style="endArrow=diamondThin;endFill=1;endSize=24;html=1;rounded=0;exitX=-0.017;exitY=0.231;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="43" target="46">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="460" y="1230" as="sourcePoint" />
+            <mxPoint x="620" y="1230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="77" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.795;entryY=1.01;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="42">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="480" y="1080.23" as="sourcePoint" />
+            <mxPoint x="475.70000000000005" y="990.0500000000002" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="78" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="77">
+          <mxGeometry x="0.8003" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="79" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="77">
+          <mxGeometry x="-0.5343" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

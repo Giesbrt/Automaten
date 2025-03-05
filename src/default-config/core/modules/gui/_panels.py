@@ -366,15 +366,15 @@ class UserPanel(Panel):
 
             button = QPushButton(f"{title} ▼", self.info_menu)
             button.setCheckable(True)
-            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # Dynamische Breite für Button
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
             description_label = QLabel(description)
             description_label.setWordWrap(True)
             description_label.setVisible(False)
 
-            # Hier wird die maximale Breite des Labels an das Menü angepasst
+            # The maximum width of the label is adjusted to the menu here
             max_width = self.info_menu.width() - 20
-            description_label.setMaximumWidth(max_width)  # Maximale Breite setzen
+            description_label.setMaximumWidth(max_width)
 
             layout.addWidget(button)
             layout.addWidget(description_label)
@@ -385,17 +385,17 @@ class UserPanel(Panel):
             self.items_list.addItem(list_item)
             self.items_list.setItemWidget(list_item, widget)
 
-            # Verknüpfung mit Lambda korrigiert
+            # Link with Lambda corrected
             button.toggled.connect(lambda checked, label=description_label, item=list_item, w=widget: label.setVisible(checked) or item.setSizeHint(w.sizeHint()))
 
-            # Speichert das Widget für spätere Größenaktualisierung
+            # Saves the widget for later size updates
             list_item.widget_ref = widget
 
 
         def toggle_description(self, checked, label: QLabel, list_item: QListWidgetItem, widget: QWidget):
             """Beschreibung für ein einzelnes Item ein-/ausblenden"""
             label.setVisible(checked)
-            list_item.setSizeHint(widget.sizeHint())  # Größe des Listenelements aktualisieren
+            list_item.setSizeHint(widget.sizeHint())
 
 
             button.toggled.connect(toggle_description)

@@ -33,10 +33,10 @@ import stdlib_list
 import requests
 
 # Core imports (dynamically resolved)
-from core.modules.storage import MultiUserDBStorage, JSONAppStorage
-from core.modules.gui import MainWindow, assign_object_names_iterative, Theme, Style
+from storage import MultiUserDBStorage, JSONAppStorage
+from gui import MainWindow, assign_object_names_iterative, Theme, Style
 from abstractions import IMainWindow, IBackend
-from core.modules.automaton_loader import start
+from automaton_loader import start
 
 # Standard typing imports for aps
 import collections.abc as _a

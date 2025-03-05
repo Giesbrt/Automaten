@@ -6,10 +6,10 @@ from returns import result as _result
 # Standard typing imports for aps
 import typing as _ty
 
-from core.modules.automaton.base.state import State
+from automaton.base.state import State
 # Abstract Machine related imports
 from old_but_maybe_needed.mealy.mealyState import MealyState
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.base.automaton import Automaton as BaseAutomaton
 
 # Comments generated with Chat-GPT
 

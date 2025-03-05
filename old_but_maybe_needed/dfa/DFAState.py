@@ -4,8 +4,8 @@ import json
 from returns import result as _result
 
 # Abstract Machine related imports
-from core.modules.automaton.base.state import State as BaseState
-from core.modules.automaton.base.transition import Transition as BaseTransition
+from automaton.base.state import State as BaseState
+from automaton.base.transition import Transition as BaseTransition
 
 # Standard typing imports for aps
 import typing as _ty

@@ -7,9 +7,9 @@ import typing as _ty
 
 # Abstract Machine related imports
 from old_but_maybe_needed.dfa.DFAState import DFAState
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.base.automaton import Automaton as BaseAutomaton
 
-from core.modules.automaton.base.state import State
+from automaton.base.state import State
 
 
 # Docs generated with Chat-GPT

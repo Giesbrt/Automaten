@@ -4,7 +4,7 @@ import returns.result as _result
 from aplustools.io import ActLogger
 import pickle
 
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.base.automaton import Automaton as BaseAutomaton
 
 # Standard typing imports for aps
 import collections.abc as _a

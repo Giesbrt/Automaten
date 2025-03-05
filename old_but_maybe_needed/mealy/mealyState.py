@@ -3,8 +3,8 @@ import sys
 import os
 # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../base')))
 # Abstract Machine related imports
-from core.modules.automaton.base.state import State as BaseState
-from core.modules.automaton.base.transition import Transition as BaseTransition
+from automaton.base.state import State as BaseState
+from automaton.base.transition import Transition as BaseTransition
 
 # Standard typing imports for advanced functionality
 import collections.abc as _a

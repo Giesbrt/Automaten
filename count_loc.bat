@@ -1,3 +1,3 @@
 @echo off
-cloc --include-lang=Python . 
+cloc --include-lang=Python ./src
 pause

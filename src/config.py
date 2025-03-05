@@ -6,13 +6,13 @@ import shutil as _shutil
 import platform as _platform
 
 
-INDEV: bool = True
+INDEV: bool = False
 INDEV_KEEP_RUNTIME_FILES: bool = True
 OLD_CWD: str = _os.getcwd()
 PROGRAM_NAME: str = "N.E.F.S Simulator"
 PROGRAM_NAME_NORMALIZED: str = "efs_simulator"
-VERSION: int = 1300
-VERSION_ADD: str = "a0"
+VERSION: int = 1400
+VERSION_ADD: str = "b0"
 OS_LIST: list[str] = ["Windows"]
 OS_VERSIONS_LIST: list[tuple[str, ...]] = [("any",)]
 MAJOR_OS_VERSIONS_LIST: list[tuple[str, ...]] = [("10", "11")]

@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "E.F.S."
-#define MyAppVersion "1300a0"
+#define MyAppVersion "1400b0"
 #define MyAppPublisher "Giesbrt; adalfarus; Fa4953; TheCodeJak; MNcode24"
 #define MyAppURL "https://www.example.com/"
 #define MyAppExeName "main.exe"

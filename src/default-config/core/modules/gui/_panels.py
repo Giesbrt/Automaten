@@ -15,11 +15,13 @@ from aplustools.io.env import SystemTheme
 from automaton.base.QAutomatonInputWidget import QFlowLayout
 from storage import AppSettings
 from utils.IOManager import IOManager
+from painter import PainterStr
 
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
 import types as _ts
+
 
 
 class Panel(QWidget):
@@ -75,8 +77,14 @@ class StateMenu(QFrame):
         self.size_input.setValue(100)
 
         self.type_input: QComboBox = QComboBox(self)
-        self.type_input.addItems(["Default", "Start", "End"])
+        # self.type_input.addItems(list(design_typ.values()))
         self.type_input.currentTextChanged.connect(self.change_state_type)
+
+        self.settings = AppSettings()
+        self.settings.automaton_type_changed.connect(lambda _: (
+            self.type_input.clear(),
+            self.type_input.addItems(list(self.ui_automaton.get_state_types_with_design().keys()))
+        ))
 
         form_layout.addRow("Name:", self.name_input)
         form_layout.addRow("Color:", self.color_button)
@@ -138,7 +146,7 @@ class StateMenu(QFrame):
         self.layout.addRow(label, widget)
 
     def change_state_type(self):
-        state_type: _ty.Literal['default', 'start', 'end'] = self.type_input.currentText().lower()
+        state_type: _ty.Literal['default', 'start', 'end'] = self.type_input.currentText()
         self.state.set_state_type(state_type)
 
     def on_current_item_changed(self, current: QTableWidgetItem | QComboBox, previous: QTableWidgetItem | QComboBox | None) -> None:
@@ -226,13 +234,10 @@ class ControlMenu(QFrame):
                 self.token_list_box.addItem(token)
             QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
             print(self.token_lists)
-            new_token_lists = (
-                [self.ui_automaton.get_token_lists()[0] + [token], self.ui_automaton.get_token_lists()[1]]
-                if len(self.ui_automaton.get_token_lists()) > 1
-                else [self.ui_automaton.get_token_lists()[0] + [token]]
-            )
-            print(new_token_lists)
-            self.ui_automaton.set_token_lists(new_token_lists)
+            print(self.ui_automaton.get_is_changeable_token_list())
+            self.ui_automaton.get_token_lists()[0].append(token)
+            token_lists = [self.ui_automaton.get_token_lists()[0] if v else self.ui_automaton.get_token_lists()[i] for i, v in enumerate(self.ui_automaton.get_is_changeable_token_list())]
+            self.ui_automaton.set_token_lists(token_lists)
             self.grid_view.update_token_lists()
             self.token_update_signal.emit(self.ui_automaton.get_token_lists()[0])
         else:

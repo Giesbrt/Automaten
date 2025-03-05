@@ -76,6 +76,12 @@ class StateItem(QGraphicsItemGroup):
         """
         return self.ui_state
 
+    def get_ui_automaton(self) -> 'UiAutomaton':
+        """Returns the UiAutomaton
+
+        :return: The UiAutomaton"""
+        return self.ui_automaton
+
     def set_display_text(self, name: str) -> None:
         """Sets the display name of the state.
 

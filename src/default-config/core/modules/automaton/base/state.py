@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import returns.result as _result
+from utils.OrderedSet import OrderedSet
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -78,7 +79,7 @@ class State(_abc.ABC):
             - `state_name`: The provided name for the state.
             - `activation_callback`: Set to `None` initially.
         """
-        self._transitions: _ty.Set[Transition] = set()
+        self._transitions: OrderedSet[Transition] = OrderedSet()
         self._state_name: str = name
         self._activation_callback: _ty.Callable or None = None
 

@@ -64,7 +64,8 @@ class StateGraphicsItem(QGraphicsEllipseItem):
         center: QPointF = self.boundingRect().center()
         str_painter = StrToPainter(painter, center, min(self.boundingRect().width(), self.boundingRect().height()))
         # print("BR", self.boundingRect(), center)
-        str_painter.draw_painter_str(self.type_dict[state_type])
+        if state_type in self.type_dict:
+            str_painter.draw_painter_str(self.type_dict[state_type])
         painter.restore()
 
 

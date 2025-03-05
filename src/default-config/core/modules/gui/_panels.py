@@ -147,7 +147,8 @@ class StateMenu(QFrame):
 
     def change_state_type(self):
         state_type: _ty.Literal['default', 'start', 'end'] = self.type_input.currentText()
-        self.state.set_state_type(state_type)
+        if self.state is not None:
+            self.state.set_state_type(state_type)
 
     def on_current_item_changed(self, current: QTableWidgetItem | QComboBox, previous: QTableWidgetItem | QComboBox | None) -> None:
         if previous:

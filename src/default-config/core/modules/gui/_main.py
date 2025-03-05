@@ -1,6 +1,7 @@
 """TBA"""
 import copy
 import os
+from pathlib import Path as PLPath
 
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton, QCheckBox, QWidget, QDialog, \
     QVBoxLayout, QLabel, QMenu
@@ -372,6 +373,11 @@ class MainWindow(QMainWindow, IMainWindow):
         # print(self.verify_require_save())
         if self.file_path != "":
             self.save_file_signal.emit(self.file_path)
+            recent_files = [self.file_path]
+            for file in self.settings.get_recent_files():
+                if PLPath(file) != PLPath(self.file_path):
+                    recent_files.append(file)
+            self.settings.set_recent_files(tuple(recent_files))
         else:
             self.save_file_as()
 
@@ -391,6 +397,11 @@ class MainWindow(QMainWindow, IMainWindow):
         if self.file_path:
             self.save_file_signal.emit(self.file_path)
             QMessageBox.information(self, "File Saved", f"File saved to: {self.file_path}")
+            recent_files = [self.file_path]
+            for file in self.settings.get_recent_files():
+                if PLPath(file) != PLPath(self.file_path):
+                    recent_files.append(file)
+            self.settings.set_recent_files(tuple(recent_files))
 
     def close_file(self):
         """Closes the current file by unloading the automaton, clearing the scene, and showing the automaton selection dialog."""

@@ -3,7 +3,6 @@ from returns import result as _result
 import sys
 import os
 
-
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
@@ -14,6 +13,8 @@ from automaton.base.automaton import Automaton as BaseAutomaton
 from automaton.base.state import State as BaseState
 from automaton.base.transition import Transition as BaseTransition
 from automaton.base.settings import Settings as BaseSettings
+
+
 # Comments generated with Chat-GPT
 
 class TmSettings(BaseSettings):
@@ -89,6 +90,7 @@ class TMState(BaseState):
         # If no valid transitions exist, return a failure result
         return _result.Failure(f"No transition found for state {self.get_name()}!")
 
+
 class TMTransition(BaseTransition):
     """
     Represents a transition between two states in a Turing Machine (TM).
@@ -147,7 +149,7 @@ class TMTransition(BaseTransition):
             to_write = condition_parts[1]  # Character to write
             head_move = condition_parts[2]  # Direction to move the head
             return _result.Success((to_write, head_move))  # Transition can occur
-        
+
         return _result.Failure(f"Cannot transition with input {str(current_input)}!")  # Invalid transition
 
 
@@ -275,7 +277,9 @@ class TMAutomaton(BaseAutomaton):
         Returns:
             str: The reconstructed word from the tape.
         """
-        return "".join(self.memoryTape.get(i, "B") for i in range(min(self.memoryTape.keys()), max(self.memoryTape.keys()) + 1))
+        return "".join(
+            self.memoryTape.get(i, "B") for i in range(min(self.memoryTape.keys()), max(self.memoryTape.keys()) + 1))
+
     def set_input_alphabet(self, alphabet: _ty.Any) -> None:
         """
         Abstract method to set the input alphabet for the automaton.
@@ -397,12 +401,12 @@ class TMAutomaton(BaseAutomaton):
         transition_result: _result.Result = self.current_state.find_transition(self.current_char)
         if not isinstance(transition_result, _result.Success):
             return _result.Failure("There's no possible transition")
-        
+
         target_state, condition = transition_result.unwrap()
 
         transition: TMState = target_state
         if not transition or transition not in self.states:
-            return  _result.Failure("Invalid target state!") 
+            return _result.Failure("Invalid target state!")
 
         self.current_state = transition
         print(self.current_state)
@@ -462,7 +466,7 @@ class TMAutomaton(BaseAutomaton):
             if isinstance(condition, _result.Failure):
                 return condition
             if isinstance(condition, tuple) and len(condition) == 2:
-                self.current_char = condition[0] 
+                self.current_char = condition[0]
             else:
                 return _result.Failure("There is no condition!")
             if self.current_char != "_":
@@ -514,14 +518,13 @@ class TMAutomaton(BaseAutomaton):
             self.current_state = self.start_state
             self.current_state.activate()
 
-
         condition = self.next_state()  # Transition to the next state.
         if isinstance(condition, _result.Failure):
             return condition
         if isinstance(condition, tuple) and len(condition) == 2:
-            self.current_char = condition[0] 
+            self.current_char = condition[0]
             self.write()
-        else: 
+        else:
             return _result.Failure("There is no condition.")
         if condition[1] == "L":
             self.left()
@@ -539,13 +542,9 @@ class TMAutomaton(BaseAutomaton):
                 self.end_states.add(state)
             case "default":
                 pass
-                
 
     def get_current_index(self) -> int:
         return self.head
 
     def get_current_return_value(self) -> _ty.Any:
-        return self.memoryTape
-
-
-
+        return self.memoryTape[self.head]

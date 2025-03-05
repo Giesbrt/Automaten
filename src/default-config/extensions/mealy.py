@@ -416,7 +416,7 @@ class MealyAutomaton(BaseAutomaton):
 
     def add_state(self, state: MealyState, state_type: str) -> None:
         self.states.add(state)
-        match state_type:
+        match state_type.lower():
             case "end":
                 self.end_states.add(state)
             case "default":

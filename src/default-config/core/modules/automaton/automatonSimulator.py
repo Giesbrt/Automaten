@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from returns import result as _result
 from aplustools.io import ActLogger
 
@@ -22,6 +24,7 @@ class AutomatonSimulator:
                  simulation_result_callback: _ty.Callable,
                  error_callable: _ty.Callable):
         super().__init__()
+        pprint(simulation_request)
 
         self._simulation_request: _ty.Dict[str, _ty.Any] = simulation_request
         self._simulation_result_callback: _ty.Callable = simulation_result_callback

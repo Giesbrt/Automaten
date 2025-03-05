@@ -19,7 +19,7 @@ from automaton.base.settings import Settings as BaseSettings
 class TmSettings(BaseSettings):
 
     def __init__(self):
-        super().__init__("tm", "touring machine", "Fa4953",
+        super().__init__("tm", "turing machine", "Fa4953",
                          [[], ['L', 'R', 'H']], [True, False], [0, 0, 1],
                          {'Default': "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;",
                           'Start': "Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##00000000;Polygon: ((80.0, 160.0), (230.0, 160.0), (230.0, 130.0), (280.0, 180.0), (230.0, 230.0), (230.0, 200.0), (80.0, 200.0)), 0#ff0000##ff0000;",
@@ -534,7 +534,7 @@ class TMAutomaton(BaseAutomaton):
 
     def add_state(self, state: BaseState, state_type: str) -> None:
         self.states.add(state)
-        match state_type:
+        match state_type.lower():
             case "end":
                 self.end_states.add(state)
             case "default":

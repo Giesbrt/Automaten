@@ -266,6 +266,7 @@ class QAutomatonTokenIO(QAutomatonInputOutput):
         """Colorizes the output at the given index"""
         output_str = self._active_separator.join(output)
         self.set_output(output_str)
+        index = max(index - 1, 0)
 
         if index < 0 or index >= len(output):
             return

@@ -559,5 +559,6 @@ class MainWindow(QMainWindow, IMainWindow):
                 self.close()
 
     def close(self) -> None:
-        self.settings.set_window_geometry((self.geometry().x(), self.geometry().y(), self.geometry().width(), self.geometry().height()))
+        if hasattr(self, "settings"):
+            self.settings.set_window_geometry((self.geometry().x(), self.geometry().y(), self.geometry().width(), self.geometry().height()))
         QMainWindow.close(self)

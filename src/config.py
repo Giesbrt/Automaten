@@ -1,5 +1,4 @@
 """TBA"""
-import os.path
 import sys as _sys
 import os as _os
 import shutil as _shutil
@@ -12,7 +11,7 @@ OLD_CWD: str = _os.getcwd()
 PROGRAM_NAME: str = "N.E.F.S Simulator"
 PROGRAM_NAME_NORMALIZED: str = "efs_simulator"
 VERSION: int = 1400
-VERSION_ADD: str = "b0"
+VERSION_ADD: str = "b1"
 OS_LIST: list[str] = ["Windows"]
 OS_VERSIONS_LIST: list[tuple[str, ...]] = [("any",)]
 MAJOR_OS_VERSIONS_LIST: list[tuple[str, ...]] = [("10", "11")]
@@ -44,12 +43,16 @@ def is_compiled() -> bool:
 def _configure() -> dict[str, str]:
     if is_compiled():
         _os.chdir(_os.path.join(_os.getcwd(), "_internal"))
+        if not _sys.stdout:
+            _sys.stdout = open(_os.devnull, "w")
+        if not _sys.stderr:
+            _sys.stderr = open(_os.devnull, "w")
     accumulated_logs = "Starting cloning of defaults ...\n"
     old_cwd = _os.getcwd()
     install_dir = _os.path.join(old_cwd, "default-config")
     base_app_dir = _os.path.join(_os.environ.get("LOCALAPPDATA", "."), PROGRAM_NAME_NORMALIZED)
 
-    if INDEV and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
+    if (INDEV or 1) and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
         if not INDEV_KEEP_RUNTIME_FILES:
             _shutil.rmtree(base_app_dir)
             _os.mkdir(base_app_dir)

@@ -378,12 +378,11 @@ class App:
         if not simulation_output["output"]:
             return output
         else:
-            if (len(output) - 1) >= simulation_output["pointer_index"]:
-                output[simulation_output["pointer_index"]] = simulation_output["output"]
+            if max(0, simulation_output["pointer_index"] -1) < len(output):
+                output[max(0, simulation_output["pointer_index"] -1)] = simulation_output["output"]
             else:
                 output.append(simulation_output["output"])
-
-        return simulation_output["input"]
+        return output
 
     def start_simulation(self, automaton_input: _ty.List[str] = None) -> None:
         # print(f"Input: {self.window.user_panel.input_widget.getFormattedInput()}")

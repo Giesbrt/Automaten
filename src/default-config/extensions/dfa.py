@@ -74,6 +74,7 @@ class DFAState(BaseState):
 
             # Activate the transition (optional behavior)
             function.activate()
+            print(f"ACTIVE DFA {function.get_start_state().get_name()} - {function.get_transition_target().get_name()} -> {current_input_char}")
 
             # Return the target state of the valid transition
             return _result.Success(function.get_transition_target())
@@ -278,6 +279,11 @@ class DFAAutomaton(BaseAutomaton):
             ActLogger().error("Tried to start simulation of DFA-Automaton without start state in automaton states!")
             return _result.Failure("Start state not in automaton states")
 
+
+        for transition in self.get_transitions():
+            print(f"TRANSITION2 {self.get_transition_index(transition)} {transition.get_start_state().get_name()} - {transition.get_transition_target().get_name()} -> {transition.get_condition()}")
+
+
         # loop die alle states und transitions deaktiviert (state#deactivate())
         for state in self.get_states():
             state.deactivate()
@@ -287,6 +293,7 @@ class DFAAutomaton(BaseAutomaton):
 
         if self.current_state is None:
             self.current_state = self.start_state
+            print(f"ACTIVE DFA {self.current_state.get_name()}")
             self.current_state.activate()
 
         result: _result.Result = self.next_state()  # Transition to the next state.

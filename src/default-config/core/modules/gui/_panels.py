@@ -552,15 +552,15 @@ class UserPanel(Panel):
 
         self.update_menu_button_position()
 
-        # **Neue Anpassung: Maximale Breite der Labels aktualisieren**
-        max_label_width = width - 2  # 20px Abstand für bessere Lesbarkeit -20
+
+        max_label_width = width - 20
         for i in range(self.items_list.count()):
             item = self.items_list.item(i)
             widget = self.items_list.itemWidget(item)
             if widget:
                 label = widget.findChild(QLabel)
                 if label:
-                    label.setMaximumWidth(max_label_width)  # Breite anpassen
+                    label.setMaximumWidth(max_label_width)
 
         super().resizeEvent(event)
 

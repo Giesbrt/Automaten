@@ -144,14 +144,14 @@ class App:
             self.backend_thread.start()
             # self.window.set_recently_opened_files(list(self.user_settings.retrieve("auto", "recent_files", "tuple")))
 
-            x, y, height, width = self.settings.get_window_geometry()
+            x, y, width, height = self.settings.get_window_geometry()
             if not self.settings.get_save_window_dimensions():
-                height = 640
                 width = 1050
+                height = 640
             if self.settings.get_save_window_position():
-                self.window.set_window_geometry(x, y + 31, height, width)  # Somehow saves it as 31 pixels less,
+                self.window.set_window_geometry(x, y + 31, width, height)  # Somehow saves it as 31 pixels less,
             else:  # I guess windows does some weird shit with the title bar
-                self.window.set_window_dimensions(height, width)
+                self.window.set_window_dimensions(width, height)
 
             assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
             self.apply_theme()
@@ -525,6 +525,11 @@ class App:
     def load_file(self, filepath: str) -> bool:
         """Loads a UIAutomaton from a serialized file.
         Returns an UIAutomaton upon successful load or None if an error occurred."""
+        recent_files = [filepath]
+        for file in self.settings.get_recent_files():
+            if PLPath(file) != PLPath(filepath):
+                recent_files.append(file)
+        self.settings.set_recent_files(tuple(recent_files))
         end = filepath.rsplit(".", maxsplit=1)[1]
         try:
             with os_open(filepath, "rb") as f:
@@ -569,13 +574,10 @@ class App:
             self.io_manager.warning(
                 f"The loading of the file '{os.path.basename(filepath)}' has failed.\nThe file may be corrupted.",
                 format_exc(), True, True)
+            self.ui_automaton.unload()
+            self.window.user_panel.grid_view.empty_scene()
+            self.window.show_automaton_selection()
             return False
-        recent_files = []
-        for file in self.settings.get_recent_files():
-            if PLPath(file) != PLPath(filepath):
-                recent_files.append(file)
-        recent_files.append(filepath)
-        self.settings.set_recent_files(tuple(recent_files))
         return True
 
     def save_to_file(self, filepath: str, automaton: UiAutomaton) -> str | None:
@@ -694,7 +696,7 @@ class App:
             SignalCache().invoke()
 
             num_handled: int = 0
-            while len(self.for_loop_list) > 0 and num_handled < 5:
+            while len(self.for_loop_list) > 0 and num_handled < self.settings.get_max_timer_tick_handled_events():
                 entry = self.for_loop_list.pop()
                 func, args = entry
                 func(*args)

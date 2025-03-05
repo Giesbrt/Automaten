@@ -215,10 +215,10 @@ class MainWindow(QMainWindow, IMainWindow):
 
         self.menuBar().setFixedHeight(30)
 
-        # self.settings.hide_titlebar_changed.connect(self.update_hide_titlebar)
-        # self.update_hide_titlebar(self.settings.get_hide_titlebar())
-        # self.settings.stay_on_top_changed.connect(self.update_stay_on_top)
-        # self.update_stay_on_top(self.settings.get_stay_on_top())
+        self.settings.hide_titlebar_changed.connect(self.update_hide_titlebar)
+        self.update_hide_titlebar(self.settings.get_hide_titlebar())
+        self.settings.stay_on_top_changed.connect(self.update_stay_on_top)
+        self.update_stay_on_top(self.settings.get_stay_on_top())
         self.update_recent_files_menu()
         self.settings.recent_files_changed.connect(lambda _: self.update_recent_files_menu())
 
@@ -259,12 +259,15 @@ class MainWindow(QMainWindow, IMainWindow):
         if not recent_files:
             self.recent_menu.addAction("No Recent Files").setEnabled(False)
         else:
+            def _make_lambda(file):
+                return lambda checked, f=file: (
+                    self.user_panel.grid_view.empty_scene(),
+                    self.open_file_signal.emit(f),
+                     setattr(self, "file_path", file)
+                )
             for file in recent_files:
                 action = QAction(os.path.basename(file), self)
-                action.triggered.connect(lambda checked, f=file: (
-                    self.user_panel.grid_view.empty_scene(),
-                    self.open_file_signal.emit(f)
-                ))
+                action.triggered.connect(_make_lambda(file))
                 self.recent_menu.addAction(action)
 
     def get_automaton_type(self) -> str:
@@ -414,11 +417,11 @@ class MainWindow(QMainWindow, IMainWindow):
     def set_window_title(self, title: str) -> None:
         self.setWindowTitle(title)
 
-    def set_window_geometry(self, x: int, y: int, height: int, width: int) -> None:
-        self.setGeometry(QRect(x, y, height, width))
+    def set_window_geometry(self, x: int, y: int, width: int, height: int) -> None:
+        self.setGeometry(QRect(x, y, width, height))
 
-    def set_window_dimensions(self, height: int, width: int) -> None:
-        self.resize(QSize(height, width))
+    def set_window_dimensions(self, width: int, height: int) -> None:
+        self.resize(QSize(width, height))
 
     def switch_panel_simple(self):
         menubar_bottom = self.menuBar().height()
@@ -556,4 +559,5 @@ class MainWindow(QMainWindow, IMainWindow):
                 self.close()
 
     def close(self) -> None:
+        self.settings.set_window_geometry((self.geometry().x(), self.geometry().y(), self.geometry().width(), self.geometry().height()))
         QMainWindow.close(self)

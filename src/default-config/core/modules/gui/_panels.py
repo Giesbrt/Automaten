@@ -267,6 +267,8 @@ class UserPanel(Panel):
         main_layout = QNoSpacingBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=self)
 
         self.grid_view = AutomatonInteractiveGridView(ui_automaton)  # Get values from settings
+        self.setShowScrollbars(not self.settings.get_hide_scrollbars())
+        self.settings.hide_scrollbars_changed.connect(lambda y: self.setShowScrollbars(not y))
         main_layout.addWidget(self.grid_view)
 
         # Info Menu

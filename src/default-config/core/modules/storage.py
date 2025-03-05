@@ -249,7 +249,7 @@ class AppSettings(QObject):
     auto_hide_input_widget_changed = Signal(bool)
     auto_check_for_updates_changed = Signal(bool)
     # auto
-    geometry_changed = Signal(tuple[int, int, int, int])
+    geometry_changed = Signal(tuple)  # tuple[int, int, int, int]
     show_no_update_info_changed = Signal(bool)
     show_update_info_changed = Signal(bool)
     show_update_timeout_changed = Signal(bool)

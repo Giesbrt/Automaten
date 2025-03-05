@@ -363,6 +363,7 @@ class MealyAutomaton(BaseAutomaton):
             if isinstance(output, _result.Failure):
                 return output
             self.output = output
+            self.input[self.get_current_index()] = self.output
             print(self.output)
             self.next_input()
             self.current_state.activate()
@@ -411,6 +412,7 @@ class MealyAutomaton(BaseAutomaton):
             return output
 
         self.output = output
+        self.input[self.get_current_index()] = self.output
         self.next_input()
         self.current_state.activate()
 

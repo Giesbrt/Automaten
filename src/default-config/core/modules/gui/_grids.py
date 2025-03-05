@@ -462,10 +462,12 @@ class AutomatonInteractiveGridView(InteractiveGridView):
         if not display_text:
             display_text = f'q{self._counter}' if isinstance(self._counter, int) else self._counter
 
-        ui_state = UiState(self._default_color, (pos.x() - self.grid_size / 2, pos.y() - self.grid_size / 2), display_text, 'default')
+        ui_state = UiState(self._default_color, (pos.x() - self.grid_size / 2, pos.y() - self.grid_size / 2), display_text, list(self.ui_automaton.get_state_types_with_design().keys())[0])
         state_item = StateItem(ui_state, self.ui_automaton, self.grid_size, self._default_selection_color)
 
         self.ui_automaton.add_state(state_item.get_ui_state())
+        if not self.get_ui_automaton().get_start_state():
+            self.get_ui_automaton().set_start_state(ui_state)
         self.scene().addItem(state_item)
 
         parent: UserPanel = self.parent()

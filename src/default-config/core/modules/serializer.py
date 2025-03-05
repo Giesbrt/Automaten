@@ -241,6 +241,7 @@ def serialize(
                 })
                 stack.put(connected_node)  # Push the connected node onto the stack
             # Append the connection using the index of the connected node
+            print(f'{transition_tokens=}')
             dcg_dict["content_transitions"].append(  # type: ignore
                 (  # type: ignore
                     (current_idx, counted_nodes[connected_node]),

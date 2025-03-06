@@ -6,6 +6,12 @@
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 .\run.ps1
 ````
+### Alternatively: run the installer and install the program according to the dialog.
+
+## Open files
+1. start the program
+2. select any vending machine
+3. select a file in the menu under File > Open
 
 ## How to program executes step-by-step
 

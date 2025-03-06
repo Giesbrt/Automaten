@@ -505,7 +505,8 @@ class AutomatonInteractiveGridView(InteractiveGridView):
 
         :param transition_item: The transition"""
         transition_item.transition_line_item.start_state.connected_transitions.remove(transition_item)
-        transition_item.transition_line_item.end_state.connected_transitions.remove(transition_item)
+        if not transition_item.transition_line_item.start_state == transition_item.transition_line_item.end_state:
+            transition_item.transition_line_item.end_state.connected_transitions.remove(transition_item)
         self.scene().removeItem(transition_item)
 
     def remove_item(self, item: QGraphicsItem) -> None:

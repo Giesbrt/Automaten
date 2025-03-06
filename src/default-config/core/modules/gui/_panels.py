@@ -232,15 +232,12 @@ class ControlMenu(QFrame):
 
         if token.isalnum():
             if not token in self.token_lists[0]:
-                self.token_list_box.addItem(token)
+                self.ui_automaton.get_token_lists()[0].append(token)
+                token_lists = [self.ui_automaton.get_token_lists()[0] if v else self.ui_automaton.get_token_lists()[i] for i, v in enumerate(self.ui_automaton.get_is_changeable_token_list())]
+                self.ui_automaton.set_token_lists(token_lists)
+                self.grid_view.update_token_lists()
+                self.token_update_signal.emit(self.ui_automaton.get_token_lists()[0])
             QTimer.singleShot(0, lambda: self.token_list_box.setCurrentText(''))
-            print(self.token_lists)
-            print(self.ui_automaton.get_is_changeable_token_list())
-            self.ui_automaton.get_token_lists()[0].append(token)
-            token_lists = [self.ui_automaton.get_token_lists()[0] if v else self.ui_automaton.get_token_lists()[i] for i, v in enumerate(self.ui_automaton.get_is_changeable_token_list())]
-            self.ui_automaton.set_token_lists(token_lists)
-            self.grid_view.update_token_lists()
-            self.token_update_signal.emit(self.ui_automaton.get_token_lists()[0])
         else:
             IOManager().warning('No whitespace or special characters allowed!', '', True, False)
 

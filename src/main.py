@@ -100,9 +100,6 @@ class App:
                              ))
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
-            if self.settings.get_auto_check_for_updates():
-                self.pool.submit(self.check_for_update)
-
             # Automaton backend init
             while self.extensions is None:
                 time.sleep(0.1)
@@ -110,6 +107,9 @@ class App:
                     entry = self.for_loop_list.pop()
                     func, args = entry
                     func(*args)
+
+            if self.settings.get_auto_check_for_updates():
+                self.pool.submit(self.check_for_update)
 
             self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
 

@@ -522,7 +522,9 @@ class TMAutomaton(BaseAutomaton):
             self.current_char = condition[0]
             self.write()
         else:
-            return _result.Failure("There is no condition.")
+            if self.current_state in self.end_states:
+                return _result.Success("Automaton terminated in an end state!")
+            return _result.Failure("Automaton failed to terminate in an end state!")
         if condition[1] == "L":
             self.left()
         if condition[1] == "R":

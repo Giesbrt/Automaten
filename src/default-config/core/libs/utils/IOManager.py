@@ -232,7 +232,7 @@ class IOManager:
         if print_log:
             self._logger.info(f"{log_message} {f'({description})' if description else ''}")
 
-        if ActLogger().logging_level >= INFO:
+        if ActLogger().logging_level > INFO:
             return
 
         self._handle_dialog(show_dialog, title, log_message, description, "Information", custom_buttons)
@@ -258,7 +258,7 @@ class IOManager:
         if print_log:
             self._logger.warning(f"{log_message} {f'({description})' if description else ''}")
 
-        if ActLogger().logging_level >= WARNING:
+        if ActLogger().logging_level > WARNING:
             return
 
         self._handle_dialog(show_dialog, title, log_message, description, "Warning", custom_buttons)
@@ -302,7 +302,7 @@ class IOManager:
         if print_log:
             self._logger.error(f"{str(error_severity)}: {log_message} {f'({description})' if description else ''}")
 
-        if ActLogger().logging_level >= ERROR:
+        if ActLogger().logging_level > ERROR:
             return
 
         self._handle_dialog(show_dialog, title, log_message, description, "Critical", custom_buttons)
@@ -335,7 +335,7 @@ class IOManager:
         if print_log:
             self._logger.debug(f"{log_message} {f'({description})' if description else ''}")
 
-        if ActLogger().logging_level >= DEBUG:
+        if ActLogger().logging_level > DEBUG:
             return
 
         self._handle_dialog(show_dialog, title, log_message, description, "NoIcon", custom_buttons)

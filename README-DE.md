@@ -6,6 +6,12 @@
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 .\run.ps1
 ````
+### Alternativ: den Installer ausführen und das Programm dem Dialog entsprechend installieren.
+
+## Dateien öffnen
+1. Programm starten
+2. einen beliebigen Automaten auswählen
+3. im Menü unter File > Open eine Datei auswählen
 
 ## So wird das Programm Schritt für Schritt ausgeführt
 

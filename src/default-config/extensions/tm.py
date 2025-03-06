@@ -359,10 +359,7 @@ class TMAutomaton(BaseAutomaton):
         """
         Writes the current character to the tape at the head's position.
         """
-        if self.current_char != "B":
-            self.memoryTape[self.head] = self.current_char
-        else:
-            del self.memoryTape[self.head]
+        self.memoryTape[self.head] = self.current_char
 
     def set_end_states(self, new_end_states: _ty.Set[TMState]) -> None:
         """

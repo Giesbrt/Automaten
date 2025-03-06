@@ -7,11 +7,11 @@ import inspect
 from datetime import datetime
 import ast
 import textwrap
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from core.modules.automaton.base.state import State as BaseState
-from core.modules.automaton.base.transition import Transition as BaseTransition
-from core.modules.automaton.base.automaton import Automaton as BaseAutomaton
-from core.modules.automaton.base.settings import Settings as BaseSettings
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from automaton.base.state import State as BaseState
+from automaton.base.transition import Transition as BaseTransition
+from automaton.base.automaton import Automaton as BaseAutomaton
+from automaton.base.settings import Settings as BaseSettings
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'extensions'))
@@ -93,7 +93,8 @@ class Extensions_Loader:
                 json.dump({"modules": []}, file, indent=4)
         
     def sort_list(self, classes, element, position = None):
-        self.remove_dublicates()
+        #self.remove_dublicates()
+        #importlib.reload(module)
         if position == None:
             if issubclass(element, BaseAutomaton):
                 position = 0
@@ -112,9 +113,9 @@ class Extensions_Loader:
         return classes
     
     def check_module(self, module):
-        return True
-        importlib.reload(module)
-        self.remove_dublicates()
+        #return True
+        #self.remove_dublicates()
+        #importlib.reload(module)
         
         classes_in_module = []
         classes = [(name, obj) for name, obj in inspect.getmembers(module, inspect.isclass)]

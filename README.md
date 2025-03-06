@@ -1,5 +1,4 @@
-# Enterprise-flavored sugar
-### E.F.S.' Simulator
+# F.E.F.S.' Simulator
 
 ## How to run
 
@@ -7,3 +6,5 @@
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 .\run.ps1
 ````
+
+

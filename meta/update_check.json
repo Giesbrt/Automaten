@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "newestVersion": "100",
+    "newestVersion": "1300a0",
     "authors": "adalfarus; Giesbrt; TheCodeJak; Fa4953",
-    "lastUpdated": "2024-12-09",
+    "lastUpdated": "2025-03-02",
     "sorryUrl": "https://github.com/adalfarus/update_check/blob/main/sorry.md"
   },
   "versions": [
@@ -15,6 +15,18 @@
     {
       "versionNumber": "1000a3",
       "description": "[Stable Release]\nInitial release with basic functionality, no known bugs.",
+      "updateUrl": "None",
+      "push": "True"
+    },
+    {
+      "versionNumber": "1300a0",
+      "description": "[Stable Release]\nImplemented nearly everything.",
+      "updateUrl": "None",
+      "push": "True"
+    },
+    {
+      "versionNumber": "1400b4",
+      "description": "[Stable Release]\nImplemented everything. Mostly bug-free",
       "updateUrl": "None",
       "push": "True"
     }

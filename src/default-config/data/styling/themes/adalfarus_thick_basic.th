@@ -76,14 +76,14 @@ QScrollBar::corner {
 /* End of QSS */
 
 ph:
-color_text~=QPalette.text;
-color_background~=QPalette.toolTipBase;
+color_text~=QPalette.Text;
+color_background~=QPalette.ToolTipBase;
 color_disabled_text~=darkGray;
-color_disabled_background~=QPalette.toolTipBase;
-color_label_background~=QPalette.toolTipBase;
+color_disabled_background~=QPalette.ToolTipBase;
+color_label_background~=QPalette.ToolTipBase;
 
-color_interactable_border~=QPalette.toolTipText;
-color_interactable_background~=QPalette.toolTipBase;
-color_interactable_hover~=QPalette.midlight;
+color_interactable_border~=QPalette.ToolTipText;
+color_interactable_background~=QPalette.ToolTipBase;
+color_interactable_hover~=QPalette.Midlight;
 
 color_scrollbar_background~=transparent;

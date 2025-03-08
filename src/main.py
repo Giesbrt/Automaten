@@ -88,6 +88,12 @@ class App:
             for exported_line in config.exported_logs.split("\n"):
                 self.io_manager.debug(exported_line)  # Flush config prints
 
+            recent_files = []
+            for file in self.settings.get_recent_files():
+                if os.path.exists(file):
+                    recent_files.append(file)
+            self.settings.set_recent_files(tuple(recent_files))
+
             # Thread pool
             self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
             self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
@@ -161,6 +167,7 @@ class App:
             self.settings.window_icon_sets_path_changed.connect(lambda _: self.update_icon())
             self.settings.window_icon_set_changed.connect(lambda _: self.update_icon())
             self.settings.window_title_template_changed.connect(lambda _: self.update_title())
+            self.settings.automaton_type_changed.connect(lambda _: self.update_title())
             self.settings.font_changed.connect(lambda _: self.update_font())
 
             self.window.start()  # Shows gui
@@ -220,7 +227,6 @@ class App:
                     ("Warning", "Update check failed", "Due to an internal error,\nthe operation could not be completed.", format_exc()),
                     ("Do not show again", ("auto", "show_update_error")),
                     (["Ok"], "Ok"), lambda button: None)
-        print("Response", response)
 
         try:  # Parse update content
             update_json: dict = response.json()
@@ -622,7 +628,7 @@ class App:
     def update_title(self) -> None:
         """Updates the window title with data from the settings"""
         raw_title: Template = Template(self.settings.get_window_title_template())
-        formatted_title: str = raw_title.safe_substitute(version=config.VERSION, version_add=config.VERSION_ADD)
+        formatted_title: str = raw_title.safe_substitute(program_name=config.PROGRAM_NAME, version=config.VERSION, version_add=config.VERSION_ADD, automaton_type=str(self.ui_automaton.get_automaton_type()).upper())
         self.window.set_window_title(formatted_title)
 
     def update_font(self) -> None:
@@ -668,10 +674,8 @@ class App:
             IOManager().warning(f"Couldn't find specified style {style_str} for theme {theme_str}", "",
                                 show_dialog=True)
             return
-        print(theme, style)
         theme_str, palette = theme.apply_style(style, QPalette(),
                                                transparency_mode="none")  # TODO: Get from settings
-        print("PAL", palette)
         self.qapp.setPalette(palette)
         self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base_styling()))
 

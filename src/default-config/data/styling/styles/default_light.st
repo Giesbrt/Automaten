@@ -19,7 +19,7 @@ QPalette[
     Link: rgba(0, 120, 212, 255);
     LinkVisited: rgba(0, 26, 104, 255);
     AlternateBase: rgba(0, 0, 0, 9);
-    NoRole: rgba(0, 0, 0, 255);
+    //NoRole: rgba(0, 0, 0, 255);
     ToolTipBase: rgba(243, 243, 243, 255);
     ToolTipText: rgba(0, 0, 0, 228);
     PlaceholderText: rgba(0, 0, 0, 128);

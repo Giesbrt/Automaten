@@ -370,7 +370,7 @@ class AppSettings(QObject):
             "window_icon_sets_path": ":/data/assets/app_icons",
             "window_icon_set": "shelline",
             "font": "Segoe UI",
-            "window_title_template": f"{config.PROGRAM_NAME} $version$version_add $title" + (
+            "window_title_template": f"$program_name $version$version_add [$automaton_type]" + (
                 " [INDEV]" if config.INDEV else ""),
             "enable_animations": "True",
             "default_state_background_color": "#FFFFFFFF",

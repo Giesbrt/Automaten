@@ -893,7 +893,9 @@ class SettingsPanel(Panel):
             lambda: self.settings.set_theming(SystemTheme.DARK, f"{self.dark_theme_dropdown.currentText()}/{self.dark_style_dropdown.currentText().lower().replace(' ', '_')}")
         )
         self.light_theme_dropdown.setCurrentText(light_theme)
+        self.populate_style_dropdown(self.light_theme_dropdown.currentText(), light_style, self.light_style_dropdown)
         self.dark_theme_dropdown.setCurrentText(dark_theme)
+        self.populate_style_dropdown(self.dark_theme_dropdown.currentText(), dark_style, self.dark_style_dropdown)
 
         self.state_bg_color_button: QPushButton = QPushButton("Choose Color", self)
         self.state_bg_color_button.clicked.connect(self.open_color_dialog)
@@ -922,6 +924,7 @@ class SettingsPanel(Panel):
 
     def populate_style_dropdown(self, theme_name: str, wanted_style: str, dropdown: QComboBox):
         dropdown.clear()
+        print("POPULATING", self.theme_styles[self.name_to_theme[theme_name]])
         for style in self.theme_styles[self.name_to_theme[theme_name]]:
             style_name = style.get_style_name()
             dropdown.addItem(style_name)

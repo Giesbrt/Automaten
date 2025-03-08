@@ -170,6 +170,7 @@ class Style:
                 palette_parameter.append(part)
             elif part.startswith("QPalette["):
                 palette_part = True
+                palette_parameter.append(part.removeprefix("QPalette["))
             else:
                 parameters.append(part)
 
@@ -318,14 +319,27 @@ class Theme:
                 formatted_placeholder[front] = back
             for qpalette_placeholder in style.get_palette_parameters():
                 key, val = qpalette_placeholder.split(":")
-                palette.setColor(getattr(QPalette.ColorRole, key), val)
+                color: QColor
+                if val.startswith("#") and val[1:].isalnum():
+                    color = QColor.fromString(val)
+                elif (val.startswith("rba(") or val.startswith("rgba(")) and val.endswith(")"):
+                    pattern = r"rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+))?\)"
+                    match = re.match(pattern, val)
+                    if match:
+                        r, g, b = map(int, match.groups()[:3])  # Extract R, G, B
+                        a = int(match.group(4)) if match.group(4) else 255  # Extract A or default to 255 (fully opaque)
+                        color = QColor(r, g, b, a)  # Create QColor object
+                    else:
+                        raise ValueError(f"Invalid color format in style {style.get_style_name()}'s QPalette: {val}")
+                else:
+                    raise ValueError(f"Invalid color format in style {style.get_style_name()}'s QPalette: {val}")
+                palette.setColor(getattr(QPalette.ColorRole, key), color)
 
         for placeholder in placeholders:
             front, assignment_type, end = self._find_special_sequence(placeholder)
             if assignment_type == "~=":
                 if end.startswith("QPalette."):
-                #    placeholder = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
-                    ...
+                    placeholder = palette.color(getattr(QPalette.ColorRole, end.removeprefix("QPalette."))).name()
                 elif end.startswith("#") and end[1:].isalnum():
                     placeholder = end
                 elif (end.startswith("rba(") or end.startswith("rgba(")) and end.endswith(")"):
@@ -343,8 +357,7 @@ class Theme:
                     formatted_placeholder[front] = placeholder
             elif assignment_type == "==":
                 if end.startswith("QPalette."):
-                    # placeholder = getattr(palette, self._to_camel_case(end.removeprefix("QPalette.")))().color()
-                    ...
+                    placeholder = palette.color(getattr(QPalette.ColorRole, end.removeprefix("QPalette."))).name()
                 elif end.startswith("#") and end[1:].isalnum():
                     placeholder = end
                 elif (end.startswith("rba(") or end.startswith("rgba(")) and end.endswith(")"):

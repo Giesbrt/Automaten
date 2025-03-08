@@ -8,10 +8,10 @@ import platform as _platform
 INDEV: bool = False
 INDEV_KEEP_RUNTIME_FILES: bool = True
 OLD_CWD: str = _os.getcwd()
-PROGRAM_NAME: str = "N.E.F.S Simulator"
-PROGRAM_NAME_NORMALIZED: str = "nefs_simulator"
+PROGRAM_NAME: str = "N.E.F.S.' Simulator"
 VERSION: int = 1400
-VERSION_ADD: str = "b1"
+VERSION_ADD: str = "b4"
+PROGRAM_NAME_NORMALIZED: str = f"nefs_simulator_{VERSION}{VERSION_ADD}"
 OS_LIST: list[str] = ["Windows"]
 OS_VERSIONS_LIST: list[tuple[str, ...]] = [("any",)]
 MAJOR_OS_VERSIONS_LIST: list[tuple[str, ...]] = [("10", "11")]
@@ -52,7 +52,7 @@ def _configure() -> dict[str, str]:
     install_dir = _os.path.join(old_cwd, "default-config")
     base_app_dir = _os.path.join(_os.environ.get("LOCALAPPDATA", "."), PROGRAM_NAME_NORMALIZED)
 
-    if (INDEV or 1) and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
+    if INDEV and _os.path.exists(base_app_dir):  # Remove everything to simulate a fresh install
         if not INDEV_KEEP_RUNTIME_FILES:
             _shutil.rmtree(base_app_dir)
             _os.mkdir(base_app_dir)

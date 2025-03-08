@@ -13,10 +13,12 @@ from aplustools.io.qtquick import QQuickMessageBox
 from abstractions import IMainWindow
 from storage import AppSettings
 from automaton.UiSettingsProvider import UiSettingsProvider
+from utils.IOManager import IOManager
 from ._panels import UserPanel, SettingsPanel
 
 # Standard typing imports for aps
 import typing as _ty
+import types as _ts
 
 
 class AutomatonSelectionDialog(QDialog):
@@ -255,6 +257,18 @@ class MainWindow(QMainWindow, IMainWindow):
         super().setStyleSheet(styleSheet)
         self.user_panel.grid_view.reset_cache()
 
+    def open_recent_file(self, file: str) -> None:
+        if not os.path.exists(file):
+            IOManager().warning(f"The file {file} does not exist anymore.\nRemoving entry.", show_dialog=True)
+            recent_files = list(self.settings.get_recent_files())
+            recent_files.remove(file)
+            self.settings.set_recent_files(tuple(recent_files))
+            self.update_recent_files_menu()
+            return None
+        self.user_panel.grid_view.empty_scene()
+        self.open_file_signal.emit(file)
+        setattr(self, "file_path", file)
+
     def update_recent_files_menu(self):
         """Refreshes the Open Recent menu with updated file list."""
         self.recent_menu.clear()
@@ -262,12 +276,8 @@ class MainWindow(QMainWindow, IMainWindow):
         if not recent_files:
             self.recent_menu.addAction("No Recent Files").setEnabled(False)
         else:
-            def _make_lambda(file):
-                return lambda checked, f=file: (
-                    self.user_panel.grid_view.empty_scene(),
-                    self.open_file_signal.emit(f),
-                     setattr(self, "file_path", file)
-                )
+            def _make_lambda(file: str) -> _ty.Callable[[_ty.Any, _ty.Any], None]:
+                return lambda checked, f=file: self.open_recent_file(f)
             for file in recent_files:
                 action = QAction(os.path.basename(file), self)
                 action.triggered.connect(_make_lambda(file))
@@ -475,7 +485,12 @@ class MainWindow(QMainWindow, IMainWindow):
     def set_global_theme(self, theme_str: str, base: str | None = None) -> None:
         self.setStyleSheet(theme_str)
         if base is not None:
+            if not hasattr(self, "default_style"):
+                self.default_style = self.app.style().objectName()
             self.app.setStyle(base)
+        else:
+            if hasattr(self, "default_style"):
+                self.app.setStyle(self.default_style)
 
     def switch_panel(self):
         menubar_bottom = self.menuBar().height()

@@ -48,6 +48,8 @@ class IMainWindow:
     stop_simulation: ISignal[None]  # Maybe combine into one?
     update_single_step: ISignal[bool]
 
+    default_style: str
+
     class AppStyle:
         """QApp Styles"""
         Windows11 = "windows11"

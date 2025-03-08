@@ -879,14 +879,14 @@ class SettingsPanel(Panel):
             #     self.dark_theme_dropdown.setCurrentIndex(self.dark_theme_dropdown.count() - 1)
 
         self.light_theme_dropdown.currentTextChanged.connect(lambda: (
-            self.populate_style_dropdown(self.light_theme_dropdown.currentText(), light_style, self.light_style_dropdown),
+            self.populate_style_dropdown(self.light_theme_dropdown.currentText(), self.light_style_dropdown.currentText(), self.light_style_dropdown),
             # self.settings.set_theming(SystemTheme.LIGHT, f"{self.light_theme_dropdown.currentText()}/{self.light_style_dropdown.currentText()}")
         ))
         self.light_style_dropdown.currentTextChanged.connect(
             lambda: self.settings.set_theming(SystemTheme.LIGHT, f"{self.light_theme_dropdown.currentText()}/{self.light_style_dropdown.currentText().lower().replace(' ', '_')}")
         )
         self.dark_theme_dropdown.currentTextChanged.connect(lambda: (
-            self.populate_style_dropdown(self.dark_theme_dropdown.currentText(), dark_style, self.dark_style_dropdown),
+            self.populate_style_dropdown(self.dark_theme_dropdown.currentText(), self.dark_style_dropdown.currentText(), self.dark_style_dropdown),
             # self.settings.set_theming(SystemTheme.DARK, f"{self.dark_theme_dropdown.currentText()}/{self.dark_style_dropdown.currentText()}")
         ))
         self.dark_style_dropdown.currentTextChanged.connect(
@@ -924,11 +924,11 @@ class SettingsPanel(Panel):
 
     def populate_style_dropdown(self, theme_name: str, wanted_style: str, dropdown: QComboBox):
         dropdown.clear()
-        print("POPULATING", self.theme_styles[self.name_to_theme[theme_name]])
+        print("POPULATING", theme_name, wanted_style, self.theme_styles[self.name_to_theme[theme_name]])
         for style in self.theme_styles[self.name_to_theme[theme_name]]:
             style_name = style.get_style_name()
             dropdown.addItem(style_name)
-            if style_name.lower().replace(" ", "_") == wanted_style:
+            if style_name.lower().replace(" ", "_") == wanted_style.lower().replace(" ", "_"):
                 dropdown.setCurrentIndex(dropdown.count() - 1)
 
     def create_performance_page(self) -> QWidget:

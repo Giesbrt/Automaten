@@ -42,7 +42,7 @@ def is_compiled() -> bool:
 
 def _configure() -> dict[str, str]:
     if is_compiled():
-        _os.chdir(_os.path.join(_os.getcwd(), "_internal"))
+        _os.chdir(_os.path.dirname(_os.path.abspath(__file__)))
         if not _sys.stdout:
             _sys.stdout = open(_os.devnull, "w")
         if not _sys.stderr:

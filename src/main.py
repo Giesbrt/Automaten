@@ -722,7 +722,7 @@ if __name__ == "__main__":
     print(
         f"Starting {config.PROGRAM_NAME} {str(config.VERSION) + config.VERSION_ADD} with py{'.'.join([str(x) for x in sys.version_info])} ...")
     CODES: dict[int, _a.Callable[[], None]] = {
-        1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv)  # RESTART_CODE (only works compiled)
+        1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv[1:])  # RESTART_CODE (only works compiled)
     }
     qapp: QApplication | None = None
     qgui: IMainWindow | None = None
@@ -758,14 +758,25 @@ if __name__ == "__main__":
         dp_app = App(qgui, qapp, input_path, logging_level)  # Shows gui
         current_exit_code = qapp.exec()
     except Exception as e:
+        perm_error = False
+        if isinstance(e.__cause__, PermissionError):
+            perm_error = True
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        error_title = "Info"
-        error_text = (f"There was an error while running the app {config.PROGRAM_NAME}.\n"
-                      "This error is unrecoverable.\nPlease submit the details to our GitHub issues page.")
+        icon: QIcon
+        if perm_error:
+            error_title = "Warning"
+            icon = QIcon(QMessageBox.standardIcon(QMessageBox.Icon.Warning))
+            error_text = (f"{config.PROGRAM_NAME} encountered a permission error. This error is unrecoverable.     \n"
+                          "Make sure no other instance is running and that no internal app files are open.     ")
+        else:
+            error_title = "Fatal Error"
+            icon = QIcon(QMessageBox.standardIcon(QMessageBox.Icon.Critical))
+            error_text = (f"There was an error while running the app {config.PROGRAM_NAME}.\n"
+                          "This error is unrecoverable.\n"
+                          "Please submit the details to our GitHub issues page.")
         error_description = format_exc()
 
-        icon: QIcon = QIcon(QMessageBox.standardIcon(QMessageBox.Icon.Warning))
         custom_icon: bool = False
         if hasattr(dp_app, "abs_window_icon_path"):
             icon_path = dp_app.abs_window_icon_path
@@ -796,4 +807,5 @@ if __name__ == "__main__":
             qapp.instance().quit()
         results: str = diagnose_shutdown_blockers(return_result=True)
         # print(results)
+        # os.chdir(config.install_cwd)
         CODES.get(current_exit_code, lambda: sys.exit(current_exit_code))()

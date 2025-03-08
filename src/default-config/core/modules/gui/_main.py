@@ -343,6 +343,7 @@ class MainWindow(QMainWindow, IMainWindow):
         file_dialog = QFileDialog(self)
         self.file_path, _ = file_dialog.getSaveFileName(
             self, "Save File", filter="JSON (*.json);;YAML (*.yml, *.yaml);;Binary (*.au)")
+        self.save_file()
 
     def open_file(self):
         """

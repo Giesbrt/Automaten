@@ -27,7 +27,7 @@
     {
       "versionNumber": "1400b4",
       "description": "[Stable Release]\nImplemented everything. Mostly bug-free",
-      "updateUrl": "None",
+      "updateUrl": "https://github.com/Giesbrt/Automaten/releases/tag/v1400b4",
       "push": "True"
     }
   ]

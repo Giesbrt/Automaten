@@ -286,7 +286,7 @@ class App:
                     f"{update_json['metadata']['lastUpdated'].replace('-', '.')}.")
             description = f" --- v{found_version} --- \n{found_release.get('description')}"  # type: ignore
             checkbox, checkbox_setting = "Do not show again", ("auto", "show_no_update_info")
-        elif show_no_update_info and found_push:
+        elif show_no_update_info and not found_push:
             title = "Info"
             text = (f"New version available, but not recommended {found_version}.\n"
                     f"Checklist last updated {update_json['metadata']['lastUpdated'].replace('-', '.')}.")

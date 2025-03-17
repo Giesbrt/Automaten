@@ -1,5 +1,13 @@
 # N.E.F.S.' Simulator
 
+<p float="center">
+  <img src="/meta/repo_images/image_1.png" width="90%" />
+</p>
+
+<p float="center">
+  <img src="/meta/repo_images/image_2.png" width="90%" />
+</p>
+
 ## How to run
 
 ````shell

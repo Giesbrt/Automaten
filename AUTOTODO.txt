@@ -1,0 +1,9 @@
+When using open recent change the file the default Save saves to
+When saving to a file the positions of the states are messed up
+-> This is because the scene only updates the position when the states are created
+-> Meaning it saves them wrongly
+>>>> See meta/testing-saving.mkv
+
+When using file new and asking for a new location, save right after to create file
+
+Fix needing a starting state when saving -> Just have multiple

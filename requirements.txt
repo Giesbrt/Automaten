@@ -1,5 +1,5 @@
 PySide6-Essentials~=6.8.1
-aplustools[all]~=2.0.0.0a12
+aplustools[all]~=2.0.0.0a12  # 2.0.0.0b2  >>> Should fix binary problems and fix db problems (turn on WAL mode) but old binary files will be incompatible
 stdlib_list~=0.10.0
 returns>=0.24.0
 auto-py-to-exe==2.44.2

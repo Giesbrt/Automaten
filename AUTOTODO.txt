@@ -7,3 +7,5 @@ When saving to a file the positions of the states are messed up
 When using file new and asking for a new location, save right after to create file
 
 Fix needing a starting state when saving -> Just have multiple
+
+aplustools[all]~=2.0.0.0b2  >>> Should fix binary problems and fix db problems (turn on WAL mode) but old binary files will be incompatible

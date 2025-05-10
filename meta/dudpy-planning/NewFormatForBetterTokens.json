@@ -1,4 +1,5 @@
 {
+	"version": 2.0,
 	"info": {
 		"uuid": "",
 		"types": ["default", "end", "fehler"],
@@ -15,6 +16,7 @@
 		]
 	},
 	"styling": {// Maybe ask if it should load custom (state) styling? Values are always [light, dark], we could also just completely exclude this styling now
+		"activation_graphics_effect": "Glow: Yellow",
 		"states": {
 			"default": ["Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;", ""],
 			"end": ["Ellipse: ((180.0, 180.0), 180.0, 180.0), 6#000000##ffffff;Ellipse: ((180.0, 180.0), 153.0, 153.0), 2#000000##00000000;", ""],

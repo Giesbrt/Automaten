@@ -7,7 +7,7 @@
 			["a", "b"]
 		],
 		"token_lst_info": [
-			{
+			{  // RUNNING WIDGET !!! Maybe custom widget for running state instead of custom widget for output?
 				"name": "input",
 				"is_input": true,
 				"is_changeable": true,

@@ -301,7 +301,7 @@ class Extensions_Loader:
 
                 with open(os.path.join(self.cache_path, "cache.json"), 'w') as file:
                     json.dump(self.data, file, indent=4)
-        return self.content
+        return (self.content,)  # Fix as this gets *ed as the arguments for the self.set_extensions method
 
 if __name__ == "__main__":
     loader = Extensions_Loader(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))

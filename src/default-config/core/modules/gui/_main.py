@@ -108,13 +108,19 @@ class MainWindow(QMainWindow, IMainWindow):
         super().__init__(parent=None)
         # self.statusBar().showMessage("Statusbar")
 
-    def setup_gui(self, ui_automaton: 'UiAutomaton') -> None:
-        self.settings = AppSettings()
+    def set_ui_automaton(self, ui_automaton: 'UiAutomaton'):
         self.ui_automaton = ui_automaton
+        self.user_panel = UserPanel(ui_automaton, parent=self)
+
+        self.switch_panel_simple()  # So they are ordered correctly
+        self.restore_default_zoom_action.triggered.connect(self.user_panel.grid_view.reset_zoom)
+
+    def setup_gui(self) -> None:
+        self.settings = AppSettings()
 
         self.settings_button = QPushButton(parent=self)
         self.menu_bar = self.menuBar()
-        self.user_panel = UserPanel(ui_automaton, parent=self)
+        self.user_panel: UserPanel | None = None
         self.settings_panel = SettingsPanel(parent=self)
         self.manual_update_check = self.settings_panel.manual_update_check
 
@@ -127,8 +133,6 @@ class MainWindow(QMainWindow, IMainWindow):
         self.panel_animation_group = QParallelAnimationGroup()
         self.panel_animation_group.addAnimation(self.user_panel_animation)
         self.panel_animation_group.addAnimation(self.settings_panel_animation)
-
-        self.switch_panel_simple()  # So they are ordered correctly
 
         file_menu = self.menuBar().addMenu("File")
         new_action = QAction('New', self)
@@ -197,10 +201,9 @@ class MainWindow(QMainWindow, IMainWindow):
         zoom_out_action.triggered.connect(lambda: self.user_panel.grid_view.zoom(0.9))
         view_menu.addAction(zoom_out_action)
 
-        restore_default_zoom_action = QAction("Restore default zoom", self)
-        restore_default_zoom_action.setShortcut("Ctrl+0")
-        restore_default_zoom_action.triggered.connect(self.user_panel.grid_view.reset_zoom)
-        view_menu.addAction(restore_default_zoom_action)
+        self.restore_default_zoom_action = QAction("Restore default zoom", self)
+        self.restore_default_zoom_action.setShortcut("Ctrl+0")
+        view_menu.addAction(self.restore_default_zoom_action)
         # status_bar_action = QAction("Status bar", self)
         # status_bar_action.setCheckable(True)
         # view_menu.addAction(status_bar_action)
@@ -255,7 +258,8 @@ class MainWindow(QMainWindow, IMainWindow):
 
     def setStyleSheet(self, styleSheet, /):
         super().setStyleSheet(styleSheet)
-        self.user_panel.grid_view.reset_cache()
+        if self.user_panel is not None:
+            self.user_panel.grid_view.reset_cache()
 
     def open_recent_file(self, file: str) -> None:
         if not os.path.exists(file):

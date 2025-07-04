@@ -1,4 +1,5 @@
 """Panels of the gui"""
+import logging
 import os
 
 from PySide6.QtWidgets import (QWidget, QListWidget, QStackedLayout, QFrame, QSpacerItem, QSizePolicy, QLabel,
@@ -802,7 +803,7 @@ class SettingsPanel(Panel):
         return general_panel
 
     def create_design_page(self) -> QWidget:
-        from . import Style, Theme
+        from dancer.qts import Style, Theme
         design_panel = QWidget()
         layout = QQuickBoxLayout(QBoxDirection.TopToBottom, apply_layout_to=design_panel)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -859,12 +860,14 @@ class SettingsPanel(Panel):
         light_theme, light_style = self.settings.get_theming(SystemTheme.LIGHT).split("/", maxsplit=1)
         dark_theme, dark_style = self.settings.get_theming(SystemTheme.DARK).split("/", maxsplit=1)
 
+        # raise Exception(f"{light_theme, light_style, dark_theme, dark_style}")
+
         self.name_to_theme: dict[str, Theme] = {}
         self.theme_styles: dict[Theme, list[Style]] = {}
         for file in os.listdir(os.path.join(os.getcwd(), "data", "styling", "themes")):
-            if not file.endswith(".th"):
+            if not file.endswith(".qth"):
                 continue
-            author, name = file.removesuffix(".th").split("_", maxsplit=1)
+            author, name = file.removesuffix(".qth").split("_", maxsplit=1)
             theme_name = f"{author}::{name}"
             theme = Theme.get_loaded_theme(theme_name)
             if theme is None:  # Theme isn't loaded due to error

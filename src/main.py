@@ -1,13 +1,38 @@
 """TBA"""
-import time
+from dancer import config, start, ActLogger
+from dancer.qt import DefaultAppGUIQt
 
-import config
-config.check()
-config.setup()
+app_info = config.AppInfo(
+    False, True,
+    "N.E.F.S.' Simulator",
+    "nefs_simulator",
+    1400, "b4",
+    {"Windows": {"10": ("any",), "11": ("any",)}},
+    [(3, 10), (3, 11), (3, 12), (3, 13)],
+    {
+        "config": {},
+        "core": {
+            "libs": {},
+            "modules": {}
+        },
+        "data": {
+            "assets": {
+                "app_icons": {}
+            },
+            "styling": {
+                "styles": {},
+                "themes": {}
+            },
+            "logs": {}
+        }
+    },
+    ["./core/common", "./core/plugins", "./"]
+)
+config.do(app_info)
 
 # Std Lib imports
 from pathlib import Path as PLPath
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from traceback import format_exc
 from functools import partial
 from string import Template
@@ -37,7 +62,7 @@ from automaton.UIAutomaton import UiAutomaton
 from automaton.automatonProvider import AutomatonProvider
 from serializer import serialize, deserialize
 from storage import AppSettings
-from gui import MainWindow, assign_object_names_iterative, Theme, Style
+from gui import MainWindow
 from abstractions import IMainWindow, IBackend, IAppSettings
 from automaton import start_backend
 from utils.IOManager import IOManager
@@ -56,78 +81,56 @@ hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
 
 
-class App:
+class App(DefaultAppGUIQt):
     """The main logic and gui are separated"""
-    def __init__(self, window: IMainWindow, qapp: QApplication, input_path: str, logging_level: int | None = None
-                 ) -> None:
+    def __init__(self, parsed_args: Namespace, logging_level: int) -> None:
+        self.base_app_dir: str = config.base_app_dir
+        self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
+        self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
+        self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
+        self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
+        self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
+        settings: IAppSettings = AppSettings()
+        settings.init(config, self.config_folder)
+
+        super().__init__(MainWindow, settings,
+                         os.path.join(self.styling_folder, "themes"),
+                         os.path.join(self.styling_folder, "styles"),
+                         os.path.join(self.data_folder, "logs"),
+                         parsed_args, logging_level, setup_thread_pool=True
+        )
         try:
-            self.window: IMainWindow = window
-            self.qapp: QApplication = qapp
-            self.window.app = self.qapp
-
-            self.base_app_dir: str = config.base_app_dir
-            self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
-            self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
-            self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
-            self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
-            self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
-
-            # Setup IOManager
-            self.io_manager: IOManager = IOManager()
-            self.io_manager.init(self.window.button_popup, f"{self.data_folder}/logs", config.INDEV)
-
-            # Settings
-            self.settings: AppSettings = AppSettings()
-            self.settings.init(config, self.config_folder)
-            if logging_level:
-                self.settings.set_logging_mode(logging.getLevelName(logging_level))
-            mode = getattr(logging, self.settings.get_logging_mode().upper())
-            if mode is not None:
-                self.io_manager.set_logging_level(mode)
-            self.settings.logging_mode_changed.connect(lambda x: self.io_manager.set_logging_level(getattr(logging, x.upper())))
-            for exported_line in config.exported_logs.split("\n"):
-                self.io_manager.debug(exported_line)  # Flush config prints
-
             recent_files = []
             for file in self.settings.get_recent_files():
                 if os.path.exists(file):
                     recent_files.append(file)
             self.settings.set_recent_files(tuple(recent_files))
 
-            # Thread pool
-            self.pool = LazyDynamicThreadPoolExecutor(0, 2, 1.0, 1)
-            self.for_loop_list: list[tuple[_ty.Callable[[_ty.Any], _ty.Any], tuple[_ty.Any]]] = ThreadSafeList()
-            self.pool.submit(lambda:
-                             self.for_loop_list.append(
-                                 (
-                                     self.set_extensions,
-                                     (Extensions_Loader(self.base_app_dir).load_content(),)
-                                 )
-                             ))
+            self.offload_work("load_extensions", self.set_extensions, lambda: Extensions_Loader(self.base_app_dir).load_content())
             self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
 
             # Automaton backend init
-            while self.extensions is None:
-                time.sleep(0.1)
-                if self.for_loop_list:
-                    entry = self.for_loop_list.pop()
-                    func, args = entry
-                    func(*args)
+            self.wait_for_manual_completion("load_extensions", check_interval=0.1)
+            self.io_manager.info(self.extensions)
 
             if self.settings.get_auto_check_for_updates():
                 self.pool.submit(self.check_for_update)
 
             self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
+            self.window.set_ui_automaton(self.ui_automaton)
 
             # Setup window
-            self.system: BaseSystemType = get_system()
-            self.os_theme: SystemTheme = self.get_os_theme()
-            self.current_theming: str = ""
-            self.load_themes(os.path.join(self.styling_folder, "themes"))
-            self.load_styles(os.path.join(self.styling_folder, "styles"))
-
-            self.window.setup_gui(self.ui_automaton)
             self.window.manual_update_check.connect(lambda: self.pool.submit(self.check_for_update))
+
+            input_path: str = ""
+            if parsed_args.input != "":
+                input_path = os.path.abspath(parsed_args.input)
+
+                if not os.path.exists(input_path):
+                    logging.error(f"The input file ({input_path}) needs to exist")
+                    input_path = ""
+                else:
+                    config.exported_logs += f"Reading {input_path}\n"
 
             if input_path != "":
                 success: bool = self.load_file(input_path)
@@ -149,17 +152,6 @@ class App:
             self.backend_thread.start()
             # self.window.set_recently_opened_files(list(self.user_settings.retrieve("auto", "recent_files", "tuple")))
 
-            x, y, width, height = self.settings.get_window_geometry()
-            if not self.settings.get_save_window_dimensions():
-                width = 1050
-                height = 640
-            if self.settings.get_save_window_position():
-                self.window.set_window_geometry(x, y + 31, width, height)  # Somehow saves it as 31 pixels less,
-            else:  # I guess windows does some weird shit with the title bar
-                self.window.set_window_dimensions(width, height)
-
-            assign_object_names_iterative(self.window.internal_obj())  # Set object names for theming
-            self.apply_theme()
             self.connect_signals()
 
             self.update_icon()
@@ -169,16 +161,7 @@ class App:
             self.settings.window_title_template_changed.connect(lambda _: self.update_title())
             self.settings.automaton_type_changed.connect(lambda _: self.update_title())
             self.settings.font_changed.connect(lambda _: self.update_font())
-
-            self.window.start()  # Shows gui
-            self.update_font()  # So that everything gets updated
-
-            self.timer_number: int = 1
-            self.timer: QtTimidTimer = QtTimidTimer()
-            self.timer.timeout.connect(self.timer_tick)
-            self.timer.start(500, 0)
         except Exception as e:
-            self.exit()
             raise Exception("Exception occurred during initialization of the App class") from e
 
     def get_update_result(self) -> tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]:
@@ -635,177 +618,44 @@ class App:
         """Updates the window font with data from the settings. This is an expensive operation."""
         self.window.set_font(self.settings.get_font())
 
-    def load_themes(self, theme_folder: str, clear: bool = False) -> None:
-        """Loads all theme files from styling/themes"""
-        if clear:
-            Theme.clear_loaded_themes()
-        for file in os.listdir(theme_folder):
-            if file.endswith(".th"):
-                path = os.path.join(theme_folder, file)
-                Theme.load_from_file(path)
-
-        if Theme.get_loaded_theme("adalfarus::base") is None:
-            raise RuntimeError(f"Base theme is not present")
-
-    def load_styles(self, style_folder: str, clear: bool = False) -> None:
-        """Loads all styles from styling/styles"""
-        if clear:
-            Style.clear_loaded_styles()
-        for file in os.listdir(style_folder):
-            if file.endswith(".st"):
-                path = os.path.join(style_folder, file)
-                Style.load_from_file(path)
-
-        if (Style.get_loaded_style("Default Dark", "*") is None
-                or Style.get_loaded_style("Default Light", "*") is None):
-            raise RuntimeError(f"Default light and/or dark style are/is not present")
-
-    def apply_theme(self) -> None:
-        theming_str: str = self.settings.get_theming(self.os_theme)
-        self.current_theming = theming_str
-        theme_str, style_str = theming_str.split("/", maxsplit=1)
-        theme: Theme | None = Theme.get_loaded_theme(theme_str)
-
-        if theme is None:  # TODO: Popup
-            IOManager().warning(f"Specified theme '{theme}' is not available", "", show_dialog=True)
-            return
-        style: Style | None = theme.get_compatible_style(style_str.replace("_", " ").title())
-        if style is None:
-            IOManager().warning(f"Couldn't find specified style {style_str} for theme {theme_str}", "",
-                                show_dialog=True)
-            return
-        theme_str, palette = theme.apply_style(style, QPalette(),
-                                               transparency_mode="none")  # TODO: Get from settings
-        self.qapp.setPalette(palette)
-        self.window.set_global_theme(theme_str, getattr(self.window.AppStyle, theme.get_base_styling()))
-
-    def check_theme_change(self):
-        if self.timer_number & 1 == 1:
-            current_os_theme = self.get_os_theme()
-            if current_os_theme != self.os_theme or self.settings.get_theming(current_os_theme) != self.current_theming:
-                self.os_theme = current_os_theme
-                self.apply_theme()
+    # def check_theme_change(self):
+    #     if self.timer_number & 1 == 1:
+    #         current_os_theme = self.get_os_theme()
+    #         if current_os_theme != self.os_theme or self.settings.get_theming(current_os_theme) != self.current_theming:
+    #             self.os_theme = current_os_theme
+    #             self.apply_theme()
 
     def timer_tick(self, index: int) -> None:
+        super().timer_tick(index)
         if index == 0:  # Default 500ms timer
-            self.check_theme_change()
-            self.timer_number += 1
-            if self.timer_number > 999:
-                self.timer_number = 1
+            # self.check_theme_change()
+            # self.timer_number += 1
+            # if self.timer_number > 999:
+            #     self.timer_number = 1
 
             # display cached Errors
-            self.io_manager.invoke_popup()
+            # self.io_manager.invoke_popup()
             SignalCache().invoke()
 
-            num_handled: int = 0
-            while len(self.for_loop_list) > 0 and num_handled < self.settings.get_max_timer_tick_handled_events():
-                entry = self.for_loop_list.pop()
-                func, args = entry
-                func(*args)
-                num_handled += 1
+            # num_handled: int = 0
+            # while len(self.for_loop_list) > 0 and num_handled < self.settings.get_max_timer_tick_handled_events():
+            #     entry = self.for_loop_list.pop()
+            #     func, args = entry
+            #     func(*args)
+            #     num_handled += 1
 
-    def exit(self) -> None:
+    def close(self) -> None:
         """Cleans up resources"""
-        if hasattr(self, "timer"):
-            self.timer.stop_all()
-        if hasattr(self, "pool"):
-            self.pool.shutdown()
+        super().close()
         if hasattr(self, "backend_thread") and self.backend_thread.is_alive():  # TODO: Is it alive after error?
             self.backend_stop_event.set()
             self.backend_thread.join()
 
-    def __del__(self) -> None:
-        self.exit()
-
 
 if __name__ == "__main__":
-    print(
-        f"Starting {config.PROGRAM_NAME} {str(config.VERSION) + config.VERSION_ADD} with py{'.'.join([str(x) for x in sys.version_info])} ...")
-    CODES: dict[int, _a.Callable[[], None]] = {
-        1000: lambda: os.execv(sys.executable, [sys.executable] + sys.argv[1:])  # RESTART_CODE (only works compiled)
-    }
-    qapp: QApplication | None = None
-    qgui: IMainWindow | None = None
-    dp_app: App | None = None
-    current_exit_code: int = -1
-
     parser = ArgumentParser(description=f"{config.PROGRAM_NAME}")
     parser.add_argument("input", nargs="?", default="", help="Path to the input file.")
-    parser.add_argument("--logging-mode", choices=["DEBUG", "INFO", "WARN", "WARNING", "ERROR"], default=None,
-                        help="Logging mode (default: None)")
-    args = parser.parse_args()
 
-    logging_mode: str = args.logging_mode
-    logging_level: int | None = None
-    if logging_mode is not None:
-        logging_level = getattr(logging, logging_mode.upper(), None)
-        if logging_level is None:
-            logging.error(f"Invalid logging mode: {logging_mode}")
+    start(App, parser)
 
-    input_path: str = ""
-    if args.input != "":
-        input_path = os.path.abspath(args.input)
-
-        if not os.path.exists(input_path):
-            logging.error(f"The input file ({input_path}) needs to exist")
-            input_path = ""
-        else:
-            config.exported_logs += f"Reading {input_path}\n"
-
-    try:
-        qapp = QApplication(sys.argv)
-        qgui = MainWindow()
-        dp_app = App(qgui, qapp, input_path, logging_level)  # Shows gui
-        current_exit_code = qapp.exec()
-    except Exception as e:
-        perm_error = False
-        if isinstance(e.__cause__, PermissionError):
-            perm_error = True
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        icon: QIcon
-        if perm_error:
-            error_title = "Warning"
-            icon = QIcon(QMessageBox.standardIcon(QMessageBox.Icon.Warning))
-            error_text = (f"{config.PROGRAM_NAME} encountered a permission error. This error is unrecoverable.     \n"
-                          "Make sure no other instance is running and that no internal app files are open.     ")
-        else:
-            error_title = "Fatal Error"
-            icon = QIcon(QMessageBox.standardIcon(QMessageBox.Icon.Critical))
-            error_text = (f"There was an error while running the app {config.PROGRAM_NAME}.\n"
-                          "This error is unrecoverable.\n"
-                          "Please submit the details to our GitHub issues page.")
-        error_description = format_exc()
-
-        custom_icon: bool = False
-        if hasattr(dp_app, "abs_window_icon_path"):
-            icon_path = dp_app.abs_window_icon_path
-            icon = QIcon(icon_path)
-            custom_icon = True
-
-        msg_box = QQuickMessageBox(None, QMessageBox.Icon.Warning if custom_icon else None, error_title, error_text,
-                                   error_description,
-                                   standard_buttons=QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Retry,
-                                   default_button=QMessageBox.StandardButton.Ok)
-        msg_box.setWindowIcon(icon)
-        pressed_button = msg_box.exec()
-        if pressed_button == QMessageBox.StandardButton.Retry:
-            current_exit_code = 1000
-
-        logger: logging.Logger = logging.getLogger("ActLogger")
-        if not logger.hasHandlers():
-            print(error_description.strip())  # We print, in case the logger is not initialized yet
-        else:
-            for line in error_description.strip().split("\n"):
-                logger.error(line)
-    finally:
-        if dp_app is not None:
-            dp_app.exit()
-        if qgui is not None:
-            qgui.close()
-        if qapp is not None:
-            qapp.instance().quit()
-        results: str = diagnose_shutdown_blockers(return_result=True)
-        # print(results)
-        # os.chdir(config.install_cwd)
-        CODES.get(current_exit_code, lambda: sys.exit(current_exit_code))()
+    results: str = diagnose_shutdown_blockers(return_result=True)

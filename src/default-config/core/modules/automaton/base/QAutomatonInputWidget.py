@@ -3,7 +3,8 @@ from PySide6.QtWidgets import QApplication, QFrame, QTextEdit, QPushButton, QScr
 from PySide6.QtCore import Qt, QSize, QRect, QPoint
 from PySide6.QtGui import QShowEvent, QTextCursor, QTextCharFormat, QColor
 
-from aplustools.io.qtquick import QQuickBoxLayout, QBoxDirection, QNoSpacingBoxLayout
+# from aplustools.io.qtquick import QQuickBoxLayout, QBoxDirection, QNoSpacingBoxLayout
+from dancer.qt import QQuickBoxLayout, QBoxDirection, QNoSpacingBoxLayout
 
 
 

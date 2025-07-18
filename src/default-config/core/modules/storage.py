@@ -4,9 +4,11 @@ from abstractions import IAppSettings
 
 from PySide6.QtCore import Signal, QObject
 
-from aplustools.data.storage import SQLite3Storage as _SQLite3Storage  # User safe
-from aplustools.data.storage import SimpleJSONStorage as _SimpleJSONStorage
-from aplustools.io.env import SystemTheme
+# from aplustools.data.storage import SQLite3Storage as _SQLite3Storage  # User safe
+# from aplustools.data.storage import SimpleJSONStorage as _SimpleJSONStorage
+# from aplustools.io.env import SystemTheme
+from dancer.data import SQLite3Storage, JSONStorage
+from dancer.system import SystemTheme
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -26,7 +28,7 @@ class MultiUserDBStorage:
         _default_settings (dict[str, dict[str, str]]): Default settings for each table.
     """
     def __init__(self, db_path: str, tables: tuple[str, ...] = ("storage",)) -> None:
-        self._storage: _SQLite3Storage = _SQLite3Storage(db_path, tables, drop_unused_tables=True)
+        self._storage: SQLite3Storage = SQLite3Storage(db_path, tables, drop_unused_tables=True)
         self._tables: tuple[str, ...] = tables
         self._table: str = tables[0]
         self._default_settings: dict[str, dict[str, str]] = {}
@@ -161,7 +163,7 @@ class JSONAppStorage:
         _default_settings (dict[str, str]): Default settings for the storage.
     """
     def __init__(self, path: str, default_settings: dict[str, str] | None = None) -> None:
-        self._storage: _SimpleJSONStorage = _SimpleJSONStorage(path, beautify=True)
+        self._storage: JSONStorage = JSONStorage(path, beautify=True)
         self._default_settings: dict[str, str] = {}
         self._lock: _RLock = _RLock()
         if default_settings is not None:

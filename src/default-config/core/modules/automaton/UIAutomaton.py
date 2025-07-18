@@ -13,9 +13,11 @@ from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 from abstractions import IUiState, IUiTransition, IUiAutomaton
 
 from aplustools.io.env import auto_repr_with_privates
-from aplustools.io import ActLogger
+# from aplustools.io import ActLogger
+from dancer.io import ActLogger
 from utils.OrderedSet import OrderedSet
-from utils.IOManager import IOManager
+# from utils.IOManager import IOManager
+from dancer.io import IOManager
 from utils.staticSignal import Signal
 
 # Standard typing imports for aps

@@ -8,12 +8,14 @@ from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QPushButton
 from PySide6.QtGui import QIcon, QAction, QDesktopServices, QFont, QColor, QPalette
 from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QParallelAnimationGroup, QUrl, Qt, Signal
 
-from aplustools.io.qtquick import QQuickMessageBox
+# from aplustools.io.qtquick import QQuickMessageBox
+from dancer.qt import QQuickMessageBox
 
 from abstractions import IMainWindow
 from storage import AppSettings
 from automaton.UiSettingsProvider import UiSettingsProvider
-from utils.IOManager import IOManager
+# from utils.IOManager import IOManager
+from dancer.io import IOManager
 from ._panels import UserPanel, SettingsPanel
 
 # Standard typing imports for aps

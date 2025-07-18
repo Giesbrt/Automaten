@@ -1,7 +1,9 @@
 from automaton.base.settings import Settings as BaseSettings
 from abstractions import IUiAutomaton
-from utils.IOManager import IOManager
-from aplustools.io import ActLogger
+# from utils.IOManager import IOManager
+from dancer.io import IOManager
+# from aplustools.io import ActLogger
+from dancer.io import ActLogger
 
 # Standard typing imports for aps
 import typing as _ty

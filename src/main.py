@@ -1,34 +1,5 @@
 """TBA"""
-from dancer import config, start, ActLogger
-from dancer.qt import DefaultAppGUIQt
-
-app_info = config.AppInfo(
-    False, True,
-    "N.E.F.S.' Simulator",
-    "nefs_simulator",
-    1400, "b4",
-    {"Windows": {"10": ("any",), "11": ("any",)}},
-    [(3, 10), (3, 11), (3, 12), (3, 13)],
-    {
-        "config": {},
-        "core": {
-            "libs": {},
-            "modules": {}
-        },
-        "data": {
-            "assets": {
-                "app_icons": {}
-            },
-            "styling": {
-                "styles": {},
-                "themes": {}
-            },
-            "logs": {}
-        }
-    },
-    ["./core/common", "./core/plugins", "./"]
-)
-config.do(app_info)
+import bootstrap  # Bootstraps the app
 
 # Std Lib imports
 from pathlib import Path as PLPath
@@ -52,10 +23,16 @@ from PySide6.QtWidgets import QApplication, QMessageBox, QSizePolicy
 from PySide6.QtGui import QIcon, QDesktopServices, Qt, QPalette
 from PySide6.QtCore import QUrl
 # aplustools
-from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
-from aplustools.io.fileio import os_open
-from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeList
-from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
+# from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
+# from aplustools.io.fileio import os_open
+# from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeList
+# from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
+# dancer
+from dancer import Translator, Translation
+from dancer.io import ActLogger
+from dancer.qt import DefaultAppGUIQt, QQuickMessageBox, QtTimidTimer
+from dancer.system import os_open, get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
+from dancer.concurrency import ThreadPool, ThreadSafeList
 
 # Internal imports
 from automaton.UIAutomaton import UiAutomaton
@@ -65,7 +42,8 @@ from storage import AppSettings
 from gui import MainWindow
 from abstractions import IMainWindow, IBackend, IAppSettings
 from automaton import start_backend
-from utils.IOManager import IOManager
+# from utils.IOManager import IOManager
+from dancer.io import IOManager
 from utils.staticSignal import SignalCache
 from automaton.UiSettingsProvider import UiSettingsProvider
 from customPythonHandler import CustomPythonHandler
@@ -84,21 +62,22 @@ multiprocessing.freeze_support()
 class App(DefaultAppGUIQt):
     """The main logic and gui are separated"""
     def __init__(self, parsed_args: Namespace, logging_level: int) -> None:
-        self.base_app_dir: str = config.base_app_dir
+        self.base_app_dir: str = bootstrap.config.base_app_dir
         self.data_folder: str = os.path.join(self.base_app_dir, "data")  # Like logs, icons, ...
         self.core_folder: str = os.path.join(self.base_app_dir, "core")  # For core functionality like gui
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
         self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
-        settings: IAppSettings = AppSettings()
-        settings.init(config, self.config_folder)
+        settings: AppSettings = AppSettings()
+        settings.init(bootstrap.config, self.config_folder)
 
+        print("Starting init ...")
         super().__init__(MainWindow, settings,
                          os.path.join(self.styling_folder, "themes"),
                          os.path.join(self.styling_folder, "styles"),
                          os.path.join(self.data_folder, "logs"),
-                         parsed_args, logging_level, setup_thread_pool=True
-        )
+                         parsed_args, logging_level, setup_thread_pool=True)
+        print("Starting setup ...")
         try:
             recent_files = []
             for file in self.settings.get_recent_files():
@@ -114,7 +93,7 @@ class App(DefaultAppGUIQt):
             self.io_manager.info(self.extensions)
 
             if self.settings.get_auto_check_for_updates():
-                self.pool.submit(self.check_for_update)
+                self.offloader.pool.submit(self.check_for_update)
 
             self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
             self.window.set_ui_automaton(self.ui_automaton)
@@ -161,6 +140,7 @@ class App(DefaultAppGUIQt):
             self.settings.window_title_template_changed.connect(lambda _: self.update_title())
             self.settings.automaton_type_changed.connect(lambda _: self.update_title())
             self.settings.font_changed.connect(lambda _: self.update_font())
+            print("Finished setup ...")
         except Exception as e:
             raise Exception("Exception occurred during initialization of the App class") from e
 
@@ -611,7 +591,11 @@ class App(DefaultAppGUIQt):
     def update_title(self) -> None:
         """Updates the window title with data from the settings"""
         raw_title: Template = Template(self.settings.get_window_title_template())
-        formatted_title: str = raw_title.safe_substitute(program_name=config.PROGRAM_NAME, version=config.VERSION, version_add=config.VERSION_ADD, automaton_type=str(self.ui_automaton.get_automaton_type()).upper())
+        formatted_title: str = raw_title.safe_substitute(program_name=bootstrap.config.PROGRAM_NAME,
+                                                         version=bootstrap.config.VERSION,
+                                                         version_add=bootstrap.config.VERSION_ADD,
+                                                         automaton_type=str(self.ui_automaton.get_automaton_type()).upper()
+                                                         )
         self.window.set_window_title(formatted_title)
 
     def update_font(self) -> None:
@@ -653,9 +637,9 @@ class App(DefaultAppGUIQt):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description=f"{config.PROGRAM_NAME}")
+    parser = ArgumentParser(description=f"{bootstrap.config.PROGRAM_NAME}")
     parser.add_argument("input", nargs="?", default="", help="Path to the input file.")
 
-    start(App, parser)
+    bootstrap.start(App, parser)
 
     results: str = diagnose_shutdown_blockers(return_result=True)

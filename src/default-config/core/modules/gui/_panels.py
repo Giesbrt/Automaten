@@ -10,12 +10,15 @@ from PySide6.QtCore import Qt, QPropertyAnimation, QRect, QLocale, Signal, QPara
 from PySide6.QtGui import QColor, QIcon, QPen, QKeySequence, QFont
 from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
-from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
-from aplustools.io.env import SystemTheme
+# from aplustools.io.qtquick import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
+# from aplustools.io.env import SystemTheme
+from dancer.qt import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
+from dancer.system import SystemTheme
 
 from automaton.base.QAutomatonInputWidget import QFlowLayout
 from storage import AppSettings
-from utils.IOManager import IOManager
+# from utils.IOManager import IOManager
+from dancer.io import IOManager
 from painter import PainterStr
 
 # Standard typing imports for aps

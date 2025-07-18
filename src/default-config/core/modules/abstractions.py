@@ -540,6 +540,3 @@ class IUiAutomaton(_abc.ABC):
     def set_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput] | None) -> None:
         """sets the current active transition"""
         raise NotImplementedError("This method must be implemented by subclasses.")
-
-class IAppSettings(_abc.ABC):
-    ...

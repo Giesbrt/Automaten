@@ -10,37 +10,29 @@ from string import Template
 import multiprocessing
 import threading
 import logging
-import sys
 import os
 
 # Third party imports
 from packaging.version import Version, InvalidVersion
-from returns import result as _result
+# from returns import result as _result
 import stdlib_list
-import requests
+# import requests
 # PySide6
-from PySide6.QtWidgets import QApplication, QMessageBox, QSizePolicy
-from PySide6.QtGui import QIcon, QDesktopServices, Qt, QPalette
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtCore import QUrl
-# aplustools
-# from aplustools.io.env import get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
-# from aplustools.io.fileio import os_open
-# from aplustools.io.concurrency import LazyDynamicThreadPoolExecutor, ThreadSafeList
-# from aplustools.io.qtquick import QQuickMessageBox, QtTimidTimer
 # dancer
-from dancer import Translator, Translation
-from dancer.io import ActLogger
-from dancer.qt import DefaultAppGUIQt, QQuickMessageBox, QtTimidTimer
-from dancer.system import os_open, get_system, SystemTheme, BaseSystemType, diagnose_shutdown_blockers
-from dancer.concurrency import ThreadPool, ThreadSafeList
+from dancer import Translator  # , Translation
+from dancer.qt import DefaultAppGUIQt  # , QtTimidTimer
+from dancer.system import os_open, SystemTheme, diagnose_shutdown_blockers
+from dancer.timing import FlexTimer
 
 # Internal imports
 from automaton.UIAutomaton import UiAutomaton
 from automaton.automatonProvider import AutomatonProvider
 from serializer import serialize, deserialize
-from storage import AppSettings
+from globals import AppSettings, AppTranslation
 from gui import MainWindow
-from abstractions import IMainWindow, IBackend, IAppSettings
+from abstractions import IMainWindow, IBackend
 from automaton import start_backend
 # from utils.IOManager import IOManager
 from dancer.io import IOManager
@@ -68,61 +60,55 @@ class App(DefaultAppGUIQt):
         self.extensions_folder: str = os.path.join(self.base_app_dir, "extensions")  # Extensions
         self.config_folder: str = os.path.join(self.base_app_dir, "config")  # Configurations
         self.styling_folder: str = os.path.join(self.data_folder, "styling")  # App styling
-        settings: AppSettings = AppSettings()
-        settings.init(bootstrap.config, self.config_folder)
 
         print("Starting init ...")
-        super().__init__(MainWindow, settings,
-                         os.path.join(self.styling_folder, "themes"),
+        super().__init__(os.path.join(self.styling_folder, "themes"),
                          os.path.join(self.styling_folder, "styles"),
                          os.path.join(self.data_folder, "logs"),
                          parsed_args, logging_level, setup_thread_pool=True)
         print("Starting setup ...")
         try:
-            recent_files = []
-            for file in self.settings.get_recent_files():
-                if os.path.exists(file):
-                    recent_files.append(file)
-            self.settings.set_recent_files(tuple(recent_files))
-
-            self.offload_work("load_extensions", self.set_extensions, lambda: Extensions_Loader(self.base_app_dir).load_content())
-            self.extensions: dict[str, list[_ty.Type[_ty.Any]]] | None = None  # None means not yet loaded
+            self.window: IMainWindow = MainWindow()
+            self.settings: AppSettings = AppSettings()
+            self.settings.init(settings_folder_path=self.config_folder)
+            self.translator = Translator(os.path.join(self.data_folder, "localisations"))
+            self.translator.set_translation_cls(AppTranslation)
 
             # Automaton backend init
-            self.wait_for_manual_completion("load_extensions", check_interval=0.1)
-            self.io_manager.info(self.extensions)
+            self.offload_work("load_extensions", self.set_extensions, lambda: Extensions_Loader(self.base_app_dir).load_content())
 
             if self.settings.get_auto_check_for_updates():
-                self.offloader.pool.submit(self.check_for_update)
+                self.offload_work("check_for_update", self.show_update_result, self.get_update_result)
+
+            self.extensions: dict[str, list[_ty.Type[_ty.Any]]]
+            self.wait_for_manual_completion("load_extensions", check_interval=0.1)
 
             self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
             self.window.set_ui_automaton(self.ui_automaton)
+            #
+            # # Setup window
+            # self.window.manual_update_check.connect(lambda: self.pool.submit(self.check_for_update))
 
-            # Setup window
-            self.window.manual_update_check.connect(lambda: self.pool.submit(self.check_for_update))
-
-            input_path: str = ""
-            if parsed_args.input != "":
-                input_path = os.path.abspath(parsed_args.input)
-
-                if not os.path.exists(input_path):
-                    logging.error(f"The input file ({input_path}) needs to exist")
-                    input_path = ""
-                else:
-                    config.exported_logs += f"Reading {input_path}\n"
-
-            if input_path != "":
+            input_path: str = os.path.abspath(parsed_args.input)
+            if (
+                    os.path.exists(input_path)
+                    and os.path.isfile(input_path)
+                    and input_path.endswith((".au", ".json", ".yml", "yaml"))
+            ):
+                self.io_manager.info(f"Reading {input_path}")
                 success: bool = self.load_file(input_path)
                 self.window.user_panel.grid_view.load_automaton_from_file()
                 self.window.file_path = input_path
                 if not success:
                     self.ui_automaton.unload()
                     print('Could not load file')
+            else:
+                self.io_manager.error(f"The input file ({input_path}) needs to exist")
 
             # self.window.user_panel.setShowScrollbars(False)
             # self.window.user_panel.setAutoShowInfoMenu(False)
-            self.grid_view = self.window.user_panel.grid_view
-            self.control_menu = self.window.user_panel.control_menu
+            # self.grid_view = self.window.user_panel.grid_view
+            # self.control_menu = self.window.user_panel.control_menu
 
             self.backend: IBackend = start_backend(self.settings)
             self.backend_stop_event: threading.Event = threading.Event()
@@ -131,15 +117,15 @@ class App(DefaultAppGUIQt):
             self.backend_thread.start()
             # self.window.set_recently_opened_files(list(self.user_settings.retrieve("auto", "recent_files", "tuple")))
 
-            self.connect_signals()
+            # self.connect_signals()
 
-            self.update_icon()
-            self.update_title()
-            self.settings.window_icon_sets_path_changed.connect(lambda _: self.update_icon())
-            self.settings.window_icon_set_changed.connect(lambda _: self.update_icon())
-            self.settings.window_title_template_changed.connect(lambda _: self.update_title())
-            self.settings.automaton_type_changed.connect(lambda _: self.update_title())
-            self.settings.font_changed.connect(lambda _: self.update_font())
+            # self.update_icon()
+            # self.update_title()
+            # self.settings.window_icon_sets_path_changed.connect(lambda _: self.update_icon())
+            # self.settings.window_icon_set_changed.connect(lambda _: self.update_icon())
+            # self.settings.window_title_template_changed.connect(lambda _: self.update_title())
+            # self.settings.automaton_type_changed.connect(lambda _: self.update_title())
+            # self.settings.font_changed.connect(lambda _: self.update_font())
             print("Finished setup ...")
         except Exception as e:
             raise Exception("Exception occurred during initialization of the App class") from e
@@ -263,25 +249,21 @@ class App(DefaultAppGUIQt):
                 (checkbox, checkbox_setting),
                 (standard_buttons, default_button), retval_func)
 
-    def show_update_result(self, update_result: tuple[bool, tuple[str, str, str, str], tuple[str | None, tuple[str, str]], tuple[list[str], str], _a.Callable[[str], _ty.Any]]) -> None:
+    def show_update_result(self, do_popup: bool, box_settings: tuple[str, str, str, str],
+                           checkbox_settings: tuple[str | None, tuple[str, str]], buttons: tuple[list[str], str],
+                           retval_func: _a.Callable[[str], _ty.Any]) -> None:
         """
         Shows update result using a message box
         """
-        (do_popup,
-         (icon, title, text, description),
-         (checkbox, checkbox_setting),
-         (standard_buttons, default_button), retval_func) = update_result
+        (icon, title, text, description) = box_settings
+        (checkbox, checkbox_setting) = checkbox_settings
+        (standard_buttons, default_button) = buttons
         if do_popup:
             retval, checkbox_checked = self.window.button_popup(title, text, description, icon, standard_buttons,
                                                                 default_button, checkbox)
             retval_func(retval)
             if checkbox is not None and checkbox_checked:
                 getattr(self.settings, f"set_{checkbox_setting[1]}")(False)
-
-    def check_for_update(self) -> None:
-        """TBA"""
-        update_result = self.get_update_result()
-        self.for_loop_list.append((self.show_update_result, (update_result,)))
 
     def get_os_theme(self) -> SystemTheme:
         """Gets the os theme based on a number of parameters, like environment variables."""

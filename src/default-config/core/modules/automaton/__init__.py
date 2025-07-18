@@ -6,13 +6,14 @@ import time
 # Third party imports
 
 # Internal imports
-from abstractions import IBackend, IAppSettings
+from abstractions import IBackend
+from globals import AppSettings
 from automaton.simulationLoader import SimulationLoader
 
 # Standard typing imports for aps
 import typing as _ty
 
-settings: IAppSettings
+settings: AppSettings
 
 
 class _Backend(IBackend):
@@ -34,7 +35,7 @@ class _Backend(IBackend):
         return object.__new__(cls)
 
 
-def start_backend(app_settings: IAppSettings) -> IBackend:
+def start_backend(app_settings: AppSettings) -> IBackend:
     """TBA"""
     global settings
 

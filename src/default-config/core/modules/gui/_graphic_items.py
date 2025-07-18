@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QGraphicsItem, QGraphicsTextItem, QGraphi
 
 from ._graphic_support_items import FrameWidgetItem
 from painter import PainterStr, StrToPainter
-from storage import AppSettings
+from globals import AppSettings
 
 # Standard typing imports for aps
 from functools import partial

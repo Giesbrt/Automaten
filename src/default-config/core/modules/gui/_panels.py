@@ -16,7 +16,7 @@ from dancer.qt import QNoSpacingBoxLayout, QBoxDirection, QQuickBoxLayout
 from dancer.system import SystemTheme
 
 from automaton.base.QAutomatonInputWidget import QFlowLayout
-from storage import AppSettings
+from globals import AppSettings
 # from utils.IOManager import IOManager
 from dancer.io import IOManager
 from painter import PainterStr

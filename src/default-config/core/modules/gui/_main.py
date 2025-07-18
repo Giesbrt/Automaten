@@ -12,7 +12,7 @@ from PySide6.QtCore import QRect, QSize, QPropertyAnimation, QEasingCurve, QPara
 from dancer.qt import QQuickMessageBox
 
 from abstractions import IMainWindow
-from storage import AppSettings
+from globals import AppSettings
 from automaton.UiSettingsProvider import UiSettingsProvider
 # from utils.IOManager import IOManager
 from dancer.io import IOManager
@@ -114,15 +114,12 @@ class MainWindow(QMainWindow, IMainWindow):
         self.ui_automaton = ui_automaton
         self.user_panel = UserPanel(ui_automaton, parent=self)
 
-        self.switch_panel_simple()  # So they are ordered correctly
-        self.restore_default_zoom_action.triggered.connect(self.user_panel.grid_view.reset_zoom)
-
     def setup_gui(self) -> None:
         self.settings = AppSettings()
 
         self.settings_button = QPushButton(parent=self)
         self.menu_bar = self.menuBar()
-        self.user_panel: UserPanel | None = None
+        # self.user_panel: UserPanel | None = None
         self.settings_panel = SettingsPanel(parent=self)
         self.manual_update_check = self.settings_panel.manual_update_check
 
@@ -209,6 +206,9 @@ class MainWindow(QMainWindow, IMainWindow):
         # status_bar_action = QAction("Status bar", self)
         # status_bar_action.setCheckable(True)
         # view_menu.addAction(status_bar_action)
+
+        self.switch_panel_simple()  # So they are ordered correctly
+        self.restore_default_zoom_action.triggered.connect(self.user_panel.grid_view.reset_zoom)
 
         help_menu = self.menuBar().addMenu("Help")
         report_action = QAction("Report Issue", self)

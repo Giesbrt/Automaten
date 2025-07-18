@@ -5,7 +5,7 @@ from returns import result as _result
 from automaton.automatonSimulator import AutomatonSimulator
 from automaton.UiBridge import UiBridge
 
-from abstractions import IAppSettings
+from globals import AppSettings
 
 # from aplustools.io import ActLogger
 from dancer.io import ActLogger
@@ -22,9 +22,9 @@ import traceback
 
 class SimulationLoader:
 
-    def __init__(self, app_settings: IAppSettings):
+    def __init__(self, app_settings: AppSettings):
         super().__init__()
-        self._app_storage: IAppSettings = app_settings
+        self._app_storage: AppSettings = app_settings
 
         self._bridge: UiBridge = UiBridge()
 

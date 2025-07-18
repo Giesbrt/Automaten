@@ -12,7 +12,7 @@ from ._graphic_items import TransitionFunctionItem, TokenListFrame, TokenButtonF
 from ._graphic_support_items import TempTransitionItem
 from ._panels import UserPanel
 from automaton.UIAutomaton import UiState, UiTransition
-from storage import AppSettings
+from globals import AppSettings
 
 # Standard typing imports for aps
 import collections.abc as _a

@@ -591,6 +591,16 @@ class App(DefaultAppGUIQt):
     #             self.os_theme = current_os_theme
     #             self.apply_theme()
 
+    def exec(self) -> int:  # Overwrite GUI exec, so we can focus on the backend
+        # Start simulation
+
+
+        try:
+            while True:
+                self.timer_tick(0)
+        except KeyboardInterrupt:
+            return 0
+
     def timer_tick(self, index: int) -> None:
         super().timer_tick(index)
         if index == 0:  # Default 500ms timer

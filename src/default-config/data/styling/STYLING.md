@@ -1,13 +1,13 @@
-### What Are `.th` and `.st` Files, and How Do They Work?
+### What Are `.qth` and `.qst` Files, and How Do They Work?
 
-#### `.th` Files:
+#### `.qth` Files:
 
-`.th` files are theme files where the filename is important. The first word of the filename indicates the creator, followed by the theme name. For example:
+`.qth` files are theme files where the filename is important. The first word of the filename indicates the creator, followed by the theme name. For example:
 
-`adalfarus_cool_theme.th`  
-This is a theme called "Cool Theme" by the creator "adalfarus." Naming themes this way avoids conflicts when linking to `.st` files later.
+`adalfarus_cool_theme.qth`  
+This is a theme called "Cool Theme" by the creator "adalfarus." Naming themes this way avoids conflicts when linking to `.qst` files later.
 
-**Key Parts of a `.th` File:**
+**Key Parts of a `.qth` File:**
 
 1. **Inheriting or Extending Styles**  
    - **Extending:** Adds new properties without overwriting existing ones. Themes are applied in reverse order: your theme first, then the base.  
@@ -48,7 +48,7 @@ This is a theme called "Cool Theme" by the creator "adalfarus." Naming themes th
    button_color==#007bff;
    ```
 
-**Sample `.th` File:**  
+**Sample `.qth` File:**  
 ```  
 inheriting adalfarus::base;  
 Fusion/os/color  
@@ -61,9 +61,9 @@ button_color~=#007bff;
 
 ---
 
-#### `.st` Files:
+#### `.qst` Files:
 
-`.st` files define style-specific settings and link to compatible themes.
+`.qst` files define style-specific settings and link to compatible themes.
 
 1. **Theme Compatibility (`for` Command)**  
    Specifies which themes can use the style. Use `*` for wildcards. Example:  
@@ -86,4 +86,4 @@ button_color~=#007bff;
      background_secondaryT: rgba(255, 222, 111, 200);
      ```
 
-By combining `.th` and `.st` files, you can create modular and reusable themes with dynamic customization options.
+By combining `.qth` and `.qst` files, you can create modular and reusable themes with dynamic customization options.

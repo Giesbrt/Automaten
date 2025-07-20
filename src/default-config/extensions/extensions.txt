@@ -1,2 +1,0 @@
-1. Extension file names have to be in lower case
-2. Extensions have to include all base classes

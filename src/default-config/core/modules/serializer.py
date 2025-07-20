@@ -1,7 +1,7 @@
 """TBA"""
 
-from abstractions import IUiState, IUiTransition, IUiAutomaton  # Many thanks :)
-from automaton.UIAutomaton import UiAutomaton, UiState, UiTransition  # Don't know how to do without this
+# from abstractions import IUiState, IUiTransition, IUiAutomaton  # Many thanks :)
+# from automaton.UIAutomaton import UiAutomaton, UiState, UiTransition  # Don't know how to do without this
 
 from queue import Queue
 from io import BytesIO, StringIO

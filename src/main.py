@@ -27,20 +27,29 @@ from dancer.system import os_open, SystemTheme, diagnose_shutdown_blockers
 from dancer.timing import FlexTimer
 
 # Internal imports
-from automaton.UIAutomaton import UiAutomaton
-from automaton.automatonProvider import AutomatonProvider
-from serializer import serialize, deserialize
+# from automaton.UIAutomaton import UiAutomaton
+# from automaton.automatonProvider import AutomatonProvider
+# from serializer import serialize, deserialize  # TODO: Re-enable
 from globals import AppSettings, AppTranslation
-from gui import MainWindow
+# from gui import MainWindow  # TODO: Re-enable
 from abstractions import IMainWindow, IBackend
-from automaton import start_backend
+# from automaton import start_backend
 # from utils.IOManager import IOManager
 from dancer.io import IOManager
-from utils.staticSignal import SignalCache
-from automaton.UiSettingsProvider import UiSettingsProvider
+# from utils.staticSignal import SignalCache
+# from automaton.UiSettingsProvider import UiSettingsProvider
+# from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 from customPythonHandler import CustomPythonHandler
-from extensions_loader import Extensions_Loader
-from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
+# from extensions_loader import Extensions_Loader
+from core.backend.loader.automatonProvider import AutomatonProvider
+from core.backend.loader.loader import Loader
+from core.backend.backend import start_backend, BackendType
+from core.backend.packets.simulationPackets import SimulationStartPacket, SimulationDataPacket
+from core.backend.data.transition import Transition
+from core.backend.default.defaultTape import DefaultTape
+from core.libs.utils.staticSignal import SignalCache
+from core.backend.data.simulation import Simulation
+from core.backend.packets.packetManager import PacketManager
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -49,6 +58,58 @@ import types as _ts
 
 hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
+
+
+def packet_notifier(simulation: Simulation, frontend_stopevent: threading.Event):
+    from time import sleep, time, perf_counter
+    next_signal = perf_counter()
+    fps: float = 30
+    while True:
+        if not (perf_counter() >= next_signal):
+            continue
+        next_signal += (1.0 / fps)
+
+        res = step_simulation(simulation)
+        if res is None:
+            continue
+
+        if not res:
+            print("break")
+            break
+    frontend_stopevent.set()
+
+
+def step_simulation(simulation: Simulation, step_size: int = 1,
+                    MAX_SIMULATION_REPLAY_STEPS: int = 100) -> bool | None:
+    if simulation.finished.get_value() and simulation.paused.get_value():
+        print("finished")
+        return False
+
+    if simulation.step_index >= len(simulation.simulation_steps):
+        if simulation.finished.get_value():
+            return False
+
+        print(f"bigger {simulation.step_index}, {len(simulation.simulation_steps)}")
+        return None
+
+    if simulation.step_index >= MAX_SIMULATION_REPLAY_STEPS:
+        simulation.finished.set_value(True)
+        simulation.paused.set_value(True)
+        print("max")
+        return False
+
+    i = simulation.step_index
+
+    step = simulation.simulation_steps[i]
+    output: DefaultTape = step["complete_output"]
+    state_id = step["active_states"]
+
+    print(f"{i + 1} {len(simulation.simulation_steps)} {[output.get_tape()[k] for k in output.get_tape().keys()]} "
+          f"State: {state_id[0] + 1}")
+    print(f"{" " * len(str(i + 1))} {len(simulation.simulation_steps)} {' ' * 5 * output.get_pointer()}^")
+    simulation.step_index = simulation.step_index + step_size
+
+    return True
 
 
 class App(DefaultAppGUIQt):
@@ -68,23 +129,23 @@ class App(DefaultAppGUIQt):
                          parsed_args, logging_level, setup_thread_pool=True)
         print("Starting setup ...")
         try:
-            self.window: IMainWindow = MainWindow()
+            # self.window: IMainWindow = MainWindow()
             self.settings: AppSettings = AppSettings()
             self.settings.init(settings_folder_path=self.config_folder)
             self.translator = Translator(os.path.join(self.data_folder, "localisations"))
             self.translator.set_translation_cls(AppTranslation)
 
             # Automaton backend init
-            self.offload_work("load_extensions", self.set_extensions, lambda: Extensions_Loader(self.base_app_dir).load_content())
+            self.offload_work("load_extensions", self.set_extensions, lambda: Loader(PLPath(self.base_app_dir)).load())
 
             if self.settings.get_auto_check_for_updates():
                 self.offload_work("check_for_update", self.show_update_result, self.get_update_result)
 
-            self.extensions: dict[str, list[_ty.Type[_ty.Any]]]
+            self.extensions: list[dict[str, _ts.ModuleType | str]] = []
             self.wait_for_manual_completion("load_extensions", check_interval=0.1)
 
-            self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
-            self.window.set_ui_automaton(self.ui_automaton)
+            # self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
+            # self.window.set_ui_automaton(self.ui_automaton)
             #
             # # Setup window
             # self.window.manual_update_check.connect(lambda: self.pool.submit(self.check_for_update))
@@ -110,7 +171,7 @@ class App(DefaultAppGUIQt):
             # self.grid_view = self.window.user_panel.grid_view
             # self.control_menu = self.window.user_panel.control_menu
 
-            self.backend: IBackend = start_backend(self.settings)
+            self.backend: BackendType = start_backend(self.settings)
             self.backend_stop_event: threading.Event = threading.Event()
             self.backend_thread: threading.Thread = threading.Thread(target=self.backend.run_infinite,
                                                                      args=(self.backend_stop_event,))
@@ -454,13 +515,16 @@ class App(DefaultAppGUIQt):
         else:
             self.stop_simulation()
 
-    def set_extensions(self, extensions: dict[str, list[_ty.Type[_ty.Any]]]) -> None:
-        self.extensions = extensions
-        if not self.extensions:
+    def set_extensions(self, extensions: list[dict[str, _ts.ModuleType | str]]) -> None:
+        self.extensions.clear()
+        self.extensions.extend(extensions)
+
+        if len(self.extensions) == 0:
             self.io_manager.fatal_error('No extensions loaded!', '', True, True)
 
-        AutomatonProvider(None).load_from_dict(extensions)
-        UiSettingsProvider().load_from_incoherent_mess(self.extensions)
+        self.auto: AutomatonProvider = AutomatonProvider()
+        self.auto.register_automatons(self.extensions)
+        # UiSettingsProvider().load_from_incoherent_mess(self.extensions)
 
     def open_file(self, filepath: str) -> None:
         """Opens a file and notifies the GUI to update"""
@@ -529,7 +593,7 @@ class App(DefaultAppGUIQt):
             return False
         return True
 
-    def save_to_file(self, filepath: str, automaton: UiAutomaton) -> str | None:
+    def save_to_file(self, filepath: str, automaton: _ty.Any) -> str | None:
         """Saves a UIAutomaton to a file.
         Returns the filepath upon successful save or None if an error occurred."""
         # print(automaton)
@@ -594,15 +658,31 @@ class App(DefaultAppGUIQt):
     def exec(self) -> int:  # Overwrite GUI exec, so we can focus on the backend
         # Start simulation
 
+        frontend_stopevent = threading.Event()
+        sim_packet = SimulationStartPacket([(0, "default"), (1, "end")],
+                                           0,
+                                           [
+                                               Transition(0, 1, 0, ["b", "a", "h"]),
+                                               Transition(1, 0, 1, ["a", "b", "h"])
+                                           ],
+                                           DefaultTape(
+                                               ["a"]),
+                                           "tm",
+                                           lambda simulation: packet_notifier(simulation, frontend_stopevent))
+
+        PacketManager().send_backend_packet(sim_packet)
+        print(f"packet send {PacketManager().has_backend_packets()}")
+        print("REPLAY START")
 
         try:
-            while True:
+            while not frontend_stopevent.is_set():
                 self.timer_tick(0)
         except KeyboardInterrupt:
             return 0
+        return 0
 
     def timer_tick(self, index: int) -> None:
-        super().timer_tick(index)
+        # super().timer_tick(index)
         if index == 0:  # Default 500ms timer
             # self.check_theme_change()
             # self.timer_number += 1
@@ -611,6 +691,8 @@ class App(DefaultAppGUIQt):
 
             # display cached Errors
             # self.io_manager.invoke_popup()
+            if SignalCache().has_elements() is None:
+                return
             SignalCache().invoke()
 
             # num_handled: int = 0

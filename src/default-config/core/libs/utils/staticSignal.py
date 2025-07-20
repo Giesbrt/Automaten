@@ -1,17 +1,12 @@
-# from aplustools.io import ActLogger
-from dancer.io import ActLogger
-
 # Standard typing imports for aps
 import collections.abc as _a
 import abc as _abc
 import typing as _ty
 import types as _ts
 
-T = _ty.TypeVar('T')
 
-
-class Signal(_ty.Generic[T]):
-    def __init__(self, callback: _ts.FunctionType | None = None, add_to_cache: bool = True) -> None:
+class Signal:
+    def __init__(self, callback: _ts.FunctionType | _ty.Callable | None = None, add_to_cache: bool = True) -> None:
         self._callback: _ts.FunctionType = callback
         self._add_to_cache: bool = add_to_cache
 
@@ -19,7 +14,7 @@ class Signal(_ty.Generic[T]):
         if self._add_to_cache:
             self._cache: SignalCache = SignalCache()
 
-    def connect(self, callback: _ts.FunctionType | None) -> None:
+    def connect(self, callback: _ts.FunctionType | _ty.Callable | None) -> None:
         """ Connects the signal to a callback
 
         :param callback: the callback to be stored in the signal
@@ -53,12 +48,21 @@ class Signal(_ty.Generic[T]):
         :param kwargs: key word arguments
         :return: None
         """
-        ActLogger().debug("Emitted signal")
         if self._callback is None:
             raise ValueError("Can not emit a callback which is none")
 
-        callback: _ty.Callable = lambda: self._callback(*args, **kwargs)
+        if not args and not kwargs:
+            callback: _ty.Callable = lambda: self._callback()
+        else:
+            callback: _ty.Callable = lambda: self._callback(*args, **kwargs)
+
         self._to_cache(callback)
+
+    def copy(self) -> "Signal":
+        return Signal(
+            callback=self._callback,
+            add_to_cache=self._add_to_cache
+        )
 
 
 class SignalCache:
@@ -90,8 +94,6 @@ class SignalCache:
         """
         if not self.has_elements():
             return
-
-        ActLogger().debug("Invoking methods")
 
         match amount:
             case "all":

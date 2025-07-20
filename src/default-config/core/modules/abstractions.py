@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
-from utils.OrderedSet import OrderedSet
-from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
+from core.libs.utils.OrderedSet import OrderedSet
+# from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 # Standard typing imports for aps
 import abc as _abc
@@ -326,217 +326,217 @@ class IUiTransition(_abc.ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
 
-class IUiAutomaton(_abc.ABC):
-    def __init__(self, automaton_type: str | None = None, author: str | None = None,
-                 state_types_with_design: _ty.Dict[str, _ty.Any] | None = None,
-                 token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
-                 transition_pattern: _ty.List[int] = []):
-        # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
-        self._type: str | None = automaton_type
-
-        self._states: _ty.Set[IUiState] = set()
-        self._transitions: _ty.Set[IUiTransition] = set()
-
-        self._start_state: IUiState | None = None
-        self._input: _ty.List[_ty.Any] = []
-        self._pointer_index: int = 0
-
-        self._author: str | None = author
-        self._token_lists: _ty.List[_ty.List[str]] = token_lists
-        self._changeable_token_lists: _ty.List[bool] = changeable_token_lists
-        self._transition_pattern: _ty.List[int] = transition_pattern
-
-        self._state_types_with_design: _ty.Dict[str, _ty.Any] | None = state_types_with_design
-
-        self._active_state: IUiState | None = None
-        self._active_transition: IUiTransition | None = None
-
-    @_abc.abstractmethod
-    def get_start_state(self) -> IUiState | None:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_state_types_with_design(self) -> _ty.Dict[str, _ty.Any]:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, _ty.Any]) -> None:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_author(self) -> str:
-        """Returns the author of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_author(self, author: str) -> None:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_token_lists(self) -> _ty.List[_ty.List[str]]:
-        """Returns the token lists of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_is_changeable_token_list(self) -> _ty.List[bool]:
-        """Returns the changeable token lists of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_transition_pattern(self) -> _ty.List[int]:
-        """Returns the transition pattern of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_automaton_type(self, automaton_type: str) -> None:
-        """Sets the type of the Automaton"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
-        """Sets the token lists of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_is_changeable_token_list(self, changeable_token_lists: _ty.List[bool]) -> None:
-        """Sets the changeable token lists of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
-        """Sets the transition pattern of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_states(self) -> OrderedSet['IUiState']:
-        """Returns all states in the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_transitions(self) -> OrderedSet['IUiTransition']:
-        """Returns all transitions in the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def add_state(self, state: 'IUiState') -> None:
-        """Adds a state to the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def add_transition(self, transition: 'IUiTransition') -> None:
-        """Adds a transition to the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def delete_state(self, state: 'IUiState') -> None:
-        """Deletes a state from the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def delete_transition(self, transition: 'IUiTransition') -> None:
-        """Deletes a transition from the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_automaton_type(self) -> str:
-        """Returns the type of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_start_state(self, state: 'IUiState') -> None:
-        """Sets the starting state of the automaton."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_state_by_id(self, state_id: int) -> 'IUiState':
-        """Fetches a state by its ID."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_state_index(self, state: 'IUiState') -> int:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_transition_index(self, transition: 'IUiTransition') -> int:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_transition_by_id(self, transition_id: int) -> 'IUiTransition':
-        """Fetches a transition by its ID."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def _serialise_structure_for_simulation(self) -> _ty.Dict[str, _ty.Any]:
-        """Serialises the automaton into a format the backend can understand"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def simulate(self, input: _ty.List[_ty.Any], notification_callback: _ty.Callable or None) -> None:
-        """Simulates the automaton with a given input."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def handle_simulation_updates(self) -> '_result.Result | None':
-        """
-        Handles updates from the simulation bridge and returns the result.
-
-        Returns:
-            _result.Result: The success or failure of the simulation step.
-            None: If no updates are available.
-        """
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def handle_bridge_updates(self) -> None:
-        """Handles updates from the UI bridge."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def has_simulation_data(self) -> bool:
-        """Returns True if the automaton has unstaged simulation data"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def has_bridge_updates(self) -> bool:
-        """Checks if there are updates from the UI bridge."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def is_simulation_data_available(self) -> bool:
-        """Checks if simulation data is available from the bridge."""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def stop_simulation(self) -> None:
-        """Stops the current simulation and resets all data"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_active_state(self) -> IUiState | None:
-        """Returns the current active state"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_active_state(self, state: IUiState) -> None:
-        """sets the current active state"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_active_transition(self) -> IUiTransition | None:
-        """Returns the current active transition"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_active_transition(self, transition: IUiTransition) -> None:
-        """sets the current active transition"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def get_input_widget(self) -> _ty.Type[QAutomatonInputOutput] | None:
-        """Returns the current active transition"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    @_abc.abstractmethod
-    def set_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput] | None) -> None:
-        """sets the current active transition"""
-        raise NotImplementedError("This method must be implemented by subclasses.")
+# class IUiAutomaton(_abc.ABC):
+#     def __init__(self, automaton_type: str | None = None, author: str | None = None,
+#                  state_types_with_design: _ty.Dict[str, _ty.Any] | None = None,
+#                  token_lists: _ty.List[_ty.List[str]] = [], changeable_token_lists: _ty.List[bool] = [],
+#                  transition_pattern: _ty.List[int] = []):
+#         # state_types_with_design = {"end": {"design": "Linex",  future}, "default": {"design": "Line y", future}}
+#         self._type: str | None = automaton_type
+#
+#         self._states: _ty.Set[IUiState] = set()
+#         self._transitions: _ty.Set[IUiTransition] = set()
+#
+#         self._start_state: IUiState | None = None
+#         self._input: _ty.List[_ty.Any] = []
+#         self._pointer_index: int = 0
+#
+#         self._author: str | None = author
+#         self._token_lists: _ty.List[_ty.List[str]] = token_lists
+#         self._changeable_token_lists: _ty.List[bool] = changeable_token_lists
+#         self._transition_pattern: _ty.List[int] = transition_pattern
+#
+#         self._state_types_with_design: _ty.Dict[str, _ty.Any] | None = state_types_with_design
+#
+#         self._active_state: IUiState | None = None
+#         self._active_transition: IUiTransition | None = None
+#
+#     @_abc.abstractmethod
+#     def get_start_state(self) -> IUiState | None:
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_state_types_with_design(self) -> _ty.Dict[str, _ty.Any]:
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_state_types_with_design(self, state_types_with_design: _ty.Dict[str, _ty.Any]) -> None:
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_author(self) -> str:
+#         """Returns the author of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_author(self, author: str) -> None:
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_token_lists(self) -> _ty.List[_ty.List[str]]:
+#         """Returns the token lists of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_is_changeable_token_list(self) -> _ty.List[bool]:
+#         """Returns the changeable token lists of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_transition_pattern(self) -> _ty.List[int]:
+#         """Returns the transition pattern of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_automaton_type(self, automaton_type: str) -> None:
+#         """Sets the type of the Automaton"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_token_lists(self, token_lists: _ty.List[_ty.List[str]]) -> None:
+#         """Sets the token lists of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_is_changeable_token_list(self, changeable_token_lists: _ty.List[bool]) -> None:
+#         """Sets the changeable token lists of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_transition_pattern(self, transition_pattern: _ty.List[int]) -> None:
+#         """Sets the transition pattern of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_states(self) -> OrderedSet['IUiState']:
+#         """Returns all states in the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_transitions(self) -> OrderedSet['IUiTransition']:
+#         """Returns all transitions in the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def add_state(self, state: 'IUiState') -> None:
+#         """Adds a state to the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def add_transition(self, transition: 'IUiTransition') -> None:
+#         """Adds a transition to the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def delete_state(self, state: 'IUiState') -> None:
+#         """Deletes a state from the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def delete_transition(self, transition: 'IUiTransition') -> None:
+#         """Deletes a transition from the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_automaton_type(self) -> str:
+#         """Returns the type of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_start_state(self, state: 'IUiState') -> None:
+#         """Sets the starting state of the automaton."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_state_by_id(self, state_id: int) -> 'IUiState':
+#         """Fetches a state by its ID."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_state_index(self, state: 'IUiState') -> int:
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_transition_index(self, transition: 'IUiTransition') -> int:
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_transition_by_id(self, transition_id: int) -> 'IUiTransition':
+#         """Fetches a transition by its ID."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def _serialise_structure_for_simulation(self) -> _ty.Dict[str, _ty.Any]:
+#         """Serialises the automaton into a format the backend can understand"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def simulate(self, input: _ty.List[_ty.Any], notification_callback: _ty.Callable or None) -> None:
+#         """Simulates the automaton with a given input."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def handle_simulation_updates(self) -> '_result.Result | None':
+#         """
+#         Handles updates from the simulation bridge and returns the result.
+#
+#         Returns:
+#             _result.Result: The success or failure of the simulation step.
+#             None: If no updates are available.
+#         """
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def handle_bridge_updates(self) -> None:
+#         """Handles updates from the UI bridge."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def has_simulation_data(self) -> bool:
+#         """Returns True if the automaton has unstaged simulation data"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def has_bridge_updates(self) -> bool:
+#         """Checks if there are updates from the UI bridge."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def is_simulation_data_available(self) -> bool:
+#         """Checks if simulation data is available from the bridge."""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def stop_simulation(self) -> None:
+#         """Stops the current simulation and resets all data"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_active_state(self) -> IUiState | None:
+#         """Returns the current active state"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_active_state(self, state: IUiState) -> None:
+#         """sets the current active state"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_active_transition(self) -> IUiTransition | None:
+#         """Returns the current active transition"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_active_transition(self, transition: IUiTransition) -> None:
+#         """sets the current active transition"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def get_input_widget(self) -> _ty.Type[QAutomatonInputOutput] | None:
+#         """Returns the current active transition"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")
+#
+#     @_abc.abstractmethod
+#     def set_input_widget(self, input_widget: _ty.Type[QAutomatonInputOutput] | None) -> None:
+#         """sets the current active transition"""
+#         raise NotImplementedError("This method must be implemented by subclasses.")

@@ -24,6 +24,6 @@ app_info = config.AppInfo(
             "logs": {}
         }
     },
-    ["./core/common", "./core/modules", "./core/libs", "./core/plugins", "./"]
+    ["./", "./core", "./core/modules", "./core/libs"]
 )
 config.do(app_info)

@@ -7,7 +7,7 @@ from pathlib import Path as _Path
 from pprint import pprint
 from time import time, perf_counter
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 from core.backend.abstract.automaton.iautomaton import IAutomaton as _IAutomaton
 from core.backend.data.automatonSettings import AutomatonSettings as _Settings
@@ -57,7 +57,7 @@ class Loader:
         with open(full_cache_path, "w") as file:
             file.write(json_parsed)
 
-    def load(self) -> _ty.List[_ty.Dict[str, _ts.ModuleType | str]]:
+    def load(self) -> tuple[_ty.List[_ty.Dict[str, _ts.ModuleType | str]]]:
         implementation_files = [file for file in os.listdir(self._implementation_path) if
                                 os.path.isfile(os.path.join(self._implementation_path, file)) and
                                 os.path.splitext(file)[1].lower() == ".py"]
@@ -80,7 +80,7 @@ class Loader:
             if module_data is not None:
                 loaded_modules.append(module_data)
 
-        return [loaded_modules]
+        return (loaded_modules,)
 
     def _check_for_classes(self, classes_in_module: _ty.List[_ty.Tuple[str, _ts.ModuleType]]) -> _ty.Dict[
                                                                                                      _ts.ModuleType, \

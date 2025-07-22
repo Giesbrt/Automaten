@@ -72,7 +72,7 @@ from dancer.io import IOManager
 # from utils.staticSignal import SignalCache
 # from automaton.UiSettingsProvider import UiSettingsProvider
 # from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
-from customPythonHandler import CustomPythonHandler
+# from customPythonHandler import CustomPythonHandler  # TODO: Re-enable
 # from extensions_loader import Extensions_Loader
 from core.backend.loader.automatonProvider import AutomatonProvider
 from core.backend.loader.loader import Loader
@@ -94,26 +94,34 @@ multiprocessing.freeze_support()
 
 
 def packet_notifier(simulation: Simulation, frontend_stopevent: threading.Event):
-    from time import sleep, time, perf_counter
-    next_signal = perf_counter()
-    fps: float = 30
-    while True:
-        if not (perf_counter() >= next_signal):
-            continue
-        next_signal += (1.0 / fps)
-
-        res = step_simulation(simulation)
-        if res is None:
-            continue
-
-        if not res:
-            print("break")
+    for i, step in enumerate(simulation.simulation_steps):
+        print(i, step)
+        if i == 100:
+            simulation.finished.set_value(True)
+            simulation.paused.set_value(True)
+            print("max")
             break
+    # from time import sleep, time, perf_counter
+    # next_signal = perf_counter()
+    # fps: float = 30
+    # while True:
+    #     if not (perf_counter() >= next_signal):
+    #         continue
+    #     next_signal += (1.0 / fps)
+    #
+    #     res = step_simulation(simulation)
+    #     if res is None:
+    #         continue
+    #
+    #     if not res:
+    #         print("break")
+    #         break
     frontend_stopevent.set()
 
 
 def step_simulation(simulation: Simulation, step_size: int = 1,
                     MAX_SIMULATION_REPLAY_STEPS: int = 100) -> bool | None:
+    timer = FlexTimer()
     if simulation.finished.get_value() and simulation.paused.get_value():
         print("finished")
         return False
@@ -136,6 +144,7 @@ def step_simulation(simulation: Simulation, step_size: int = 1,
     step = simulation.simulation_steps[i]
     output: DefaultTape = step["complete_output"]
     state_id = step["active_states"]
+    print("Inner", timer.end())
 
     print(f"{i + 1} {len(simulation.simulation_steps)} {[output.get_tape()[k] for k in output.get_tape().keys()]} "
           f"State: {state_id[0] + 1}")
@@ -690,6 +699,52 @@ class App(DefaultAppGUIQt):
 
     def exec(self) -> int:  # Overwrite GUI exec, so we can focus on the backend
         # Start simulation
+        import sys, logging, platform
+
+        self.io_manager.info("Disabling logger and entering into tty mode ...")
+        self.io_manager.set_logging_level(logging.CRITICAL)
+        sys.stdout = self.io_manager._logger.restore_pipe(sys.stdout)  # type: ignore
+        sys.stderr = self.io_manager._logger.restore_pipe(sys.stderr)  # type: ignore
+
+        try:
+            while True:
+                print("Please choose an action:")
+                print("1 {type} - Create new automaton of type {type}\n"
+                      "2 {filepath} - Load file from {filepath}"
+                      "3 - List automaton types"
+                      "4 - quit")
+
+                inp = input("> ")
+
+                if inp.startswith("1"):
+                    ...
+                elif inp.startswith("2"):
+                    ...
+                elif inp.startswith("3"):
+                    print()
+                elif inp.startswith("4"):
+                    raise KeyboardInterrupt()
+                else:
+                    continue
+
+                while True:
+                    print("Please choose an action:")
+
+                    "2 {name, default ascending} - Create new state with name {name}\n"
+                    "3 {q1} {q2} {params} - Connect state {q1} to state {q2} with params {params}"
+
+                inp = input("> ")
+
+                if platform.system() == "Windows":
+                    os.system("cls")
+                else:
+                    os.system("clear")
+        except Exception as e:
+            print(e)
+            return -1
+        except KeyboardInterrupt:
+            ...
+        return 0
 
         frontend_stopevent = threading.Event()
         sim_packet = SimulationStartPacket([(0, "default"), (1, "end")],

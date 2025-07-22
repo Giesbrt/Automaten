@@ -1,6 +1,39 @@
 """TBA"""
 import bootstrap  # Bootstraps the app
 
+# Debugging
+# print("Debugging stuff ...")
+# import os
+# import subprocess, sys
+#
+# # 1. Run `pip list --format=freeze` and capture the text
+# raw = subprocess.check_output(
+#     [sys.executable, "-m", "pip", "list", "--format=freeze"],
+#     text=True                      # decode to str instead of bytes
+# )
+#
+# # 2. Extract just the distribution names (part before the first '=')
+# packages = [line.split("=", 1)[0].lower() for line in raw.splitlines()]
+# # import site
+#
+# import re
+# to_delete: list[str] = []
+#
+# for pkgs_site in site.getsitepackages():
+#     for file in os.listdir(pkgs_site):
+#         match = re.fullmatch(r"([^-]+)-(?:\w+\.)+dist-info", file)
+#         if match is not None:
+#             to_delete.append(match.group(1))
+#         elif file.endswith(".dist-info"):
+#             print(fr"{file} did not match ([^-]+)-(?:\d\.)+dist-info")
+#
+# print(to_delete)
+#
+# print(set(to_delete) - set(packages))
+# print(set(packages) - set(to_delete))
+
+# exit(1)
+
 # Std Lib imports
 from pathlib import Path as PLPath
 from argparse import ArgumentParser, Namespace

@@ -8,10 +8,12 @@ __pycache__/
 .idea/
 .vscode/
 output/
+.nixpy/
 .mypy_cache/
 main.build/
 main.dist/
 test_compilation/
+extra-libs/
 
 # C extensions
 *.so

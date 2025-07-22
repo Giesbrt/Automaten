@@ -735,12 +735,12 @@ class App(DefaultAppGUIQt):
                     ...
                 elif inp.startswith("list"):
                     if inp != "list":
-                        raise RuntimeError(f"The list option does not have any parameters")
+                        input(f"The list option does not have any parameters")
                     ...
                     continue
                 elif inp.startswith("quit"):
                     if inp != "quit":
-                        raise RuntimeError(f"The quit option does not have any parameters")
+                        input(f"The quit option does not have any parameters")
                     raise KeyboardInterrupt()
                 else:
                     input(f"{inp} is not a valid command")
@@ -749,6 +749,8 @@ class App(DefaultAppGUIQt):
                 while True:
                     print("\nPlease choose an edit action:")
                     print("create {name, default ascending} - Create new state with name {name}\n"
+                          "change {name} {type} - Change the type of state with name {name} to type {type}\n"
+                          "list - List all state types\n"
                           "conn {q1} {q2} {params} - Connect state {q1} to state {q2} with params {params}\n"
                           "unconn {q1} {q2} - Remove connection between state {q1} to state {q2}\n"
                           "remv {name} - Remove the state with the name {name}\n\n"
@@ -766,6 +768,20 @@ class App(DefaultAppGUIQt):
                             idx = 0
                             print(f"Using ascending idx {idx}")
                         ...
+                    elif inner_inp.startswith("change"):
+                        state_name: str
+                        state_type: str
+                        try:
+                            state_name, state_type = inner_inp.split(" ", maxsplit=2)[1:]
+                        except ValueError:
+                            input("You did not provide enough arguments")
+                            continue
+                        ...
+                    elif inner_inp.startswith("list"):
+                        if inp != "list":
+                            input(f"The list option does not have any parameters")
+                        ...
+                        continue
                     elif inner_inp.startswith("conn"):
                         q1: str
                         q2: str
@@ -818,7 +834,7 @@ class App(DefaultAppGUIQt):
                         continue
                     elif inner_inp.startswith("close"):
                         if inner_inp != "close":
-                            raise RuntimeError(f"The close option does not have any parameters")
+                            input(f"The close option does not have any parameters")
                         break
                     elif inner_inp.startswith("save"):
                         try:

@@ -700,6 +700,7 @@ class App(DefaultAppGUIQt):
     def exec(self) -> int:  # Overwrite GUI exec, so we can focus on the backend
         # Start simulation
         import sys, logging, platform
+        from ast import literal_eval
 
         self.io_manager.info("Disabling logger and entering into tty mode ...")
         self.io_manager.set_logging_level(logging.CRITICAL)
@@ -708,32 +709,128 @@ class App(DefaultAppGUIQt):
 
         try:
             while True:
-                print("Please choose an action:")
-                print("1 {type} - Create new automaton of type {type}\n"
-                      "2 {filepath} - Load file from {filepath}"
-                      "3 - List automaton types"
-                      "4 - quit")
+                print("\nPlease choose an action:")
+                print("create {type} - Create new automaton of type {type}\n"
+                      "load {filepath} - Load file from {filepath}\n"
+                      "list - List automaton types\n"
+                      "quit - Exit the application")
 
                 inp = input("> ")
 
-                if inp.startswith("1"):
+                if inp.startswith("create"):
+                    try:
+                        automaton_type: str = inp.split(" ", maxsplit=1)[1]
+                    except IndexError:
+                        input("You did not provide enough arguments")
+                        continue
+                    print(f"Creating automaton of type {automaton_type} ...")
                     ...
-                elif inp.startswith("2"):
+                elif inp.startswith("load"):
+                    try:
+                        file_path: str = inp.split(" ", maxsplit=1)[1]
+                    except IndexError:
+                        input("You did not provide enough arguments")
+                        continue
+                    print(f"Loading automaton from filepath {file_path} ...")
                     ...
-                elif inp.startswith("3"):
-                    print()
-                elif inp.startswith("4"):
+                elif inp.startswith("list"):
+                    if inp != "list":
+                        raise RuntimeError(f"The list option does not have any parameters")
+                    ...
+                    continue
+                elif inp.startswith("quit"):
+                    if inp != "quit":
+                        raise RuntimeError(f"The quit option does not have any parameters")
                     raise KeyboardInterrupt()
                 else:
+                    input(f"{inp} is not a valid command")
                     continue
 
                 while True:
-                    print("Please choose an action:")
+                    print("\nPlease choose an edit action:")
+                    print("create {name, default ascending} - Create new state with name {name}\n"
+                          "conn {q1} {q2} {params} - Connect state {q1} to state {q2} with params {params}\n"
+                          "unconn {q1} {q2} - Remove connection between state {q1} to state {q2}\n"
+                          "remv {name} - Remove the state with the name {name}\n\n"
+                          "start {input} - Start the automaton with input {input}\n"
+                          "startstep {input} - Start automaton in step mode, giving you back control after every simulation step\n\n"
+                          "close - Close the automaton without saving\n"
+                          "save {filepath} - Save the automaton to {filepath}")
 
-                    "2 {name, default ascending} - Create new state with name {name}\n"
-                    "3 {q1} {q2} {params} - Connect state {q1} to state {q2} with params {params}"
+                    inner_inp = input("> ")
 
-                inp = input("> ")
+                    if inner_inp.startswith("create"):
+                        try:
+                            state_name: str = inner_inp.split(" ", maxsplit=1)[1]
+                        except IndexError:
+                            idx = 0
+                            print(f"Using ascending idx {idx}")
+                        ...
+                    elif inner_inp.startswith("conn"):
+                        q1: str
+                        q2: str
+                        raw_params: str
+                        params: tuple[str]
+                        try:
+                            q1, q2, raw_params = inner_inp.split(" ", maxsplit=3)[1:]
+                        except ValueError:
+                            input("You did not provide enough arguments")
+                            continue
+                        try:
+                            params = literal_eval(raw_params)
+                        except ValueError:
+                            input("You did not pass valid strings as tokens in the tuple")
+                            continue
+                        except SyntaxError:
+                            input("You did not pass a valid tuple as the last argument")
+                            continue
+                        ...
+                    elif inner_inp.startswith("unconn"):
+                        q1: str
+                        q2: str
+                        try:
+                            q1, q2 = inner_inp.split(" ", maxsplit=2)
+                        except ValueError:
+                            input("You did not provide enough arguments")
+                            continue
+                        ...
+                    elif inner_inp.startswith("remv"):
+                        try:
+                            state_name: str = inner_inp.split(" ", maxsplit=1)[1]
+                        except IndexError:
+                            input("You did not provide enough arguments")
+                            continue
+                        ...
+                    elif inner_inp.startswith("start"):
+                        try:
+                            automaton_input: str = inner_inp.split(" ", maxsplit=1)[1]
+                        except IndexError:
+                            input("You did not provide enough arguments")
+                            continue
+                        ...
+                    elif inner_inp.startswith("startstep"):
+                        try:
+                            automaton_input: str = inner_inp.split(" ", maxsplit=1)[1]
+                        except IndexError:
+                            input("You did not provide enough arguments")
+                            continue
+                        input("This option is currently not available")
+                        continue
+                    elif inner_inp.startswith("close"):
+                        if inner_inp != "close":
+                            raise RuntimeError(f"The close option does not have any parameters")
+                        break
+                    elif inner_inp.startswith("save"):
+                        try:
+                            file_path: str = inp.split(" ", maxsplit=1)[1]
+                        except IndexError:
+                            input("You did not provide enough arguments")
+                            continue
+                        print(f"Saving automaton to filepath {file_path} ...")
+                        ...
+                    else:
+                        input(f"{inner_inp} is not a valid command")
+                        continue
 
                 if platform.system() == "Windows":
                     os.system("cls")
@@ -743,7 +840,7 @@ class App(DefaultAppGUIQt):
             print(e)
             return -1
         except KeyboardInterrupt:
-            ...
+            print("Exiting")
         return 0
 
         frontend_stopevent = threading.Event()

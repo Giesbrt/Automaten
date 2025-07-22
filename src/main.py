@@ -84,6 +84,9 @@ from core.libs.utils.staticSignal import SignalCache
 from core.backend.data.simulation import Simulation
 from core.backend.packets.packetManager import PacketManager
 
+from core.backend.abstract.automaton.iautomaton import IAutomaton
+from core.backend.data.automatonSettings import AutomatonSettings
+
 # Standard typing imports for aps
 import collections.abc as _a
 import typing as _ty
@@ -183,7 +186,7 @@ class App(DefaultAppGUIQt):
             if self.settings.get_auto_check_for_updates():
                 self.offload_work("check_for_update", self.show_update_result, self.get_update_result)
 
-            self.extensions: list[dict[str, _ts.ModuleType | str]] = []
+            self.extensions: AutomatonProvider = AutomatonProvider()
             self.wait_for_manual_completion("load_extensions", check_interval=0.1)
 
             # self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
@@ -559,14 +562,10 @@ class App(DefaultAppGUIQt):
 
     def set_extensions(self, extensions: list[dict[str, _ts.ModuleType | str]]) -> None:
         self.extensions.clear()
-        self.extensions.extend(extensions)
+        self.extensions.register_automatons(extensions, append=True)
 
         if len(self.extensions) == 0:
             self.io_manager.fatal_error('No extensions loaded!', '', True, True)
-
-        self.auto: AutomatonProvider = AutomatonProvider()
-        self.auto.register_automatons(self.extensions)
-        # UiSettingsProvider().load_from_incoherent_mess(self.extensions)
 
     def open_file(self, filepath: str) -> None:
         """Opens a file and notifies the GUI to update"""
@@ -707,7 +706,14 @@ class App(DefaultAppGUIQt):
         sys.stdout = self.io_manager._logger.restore_pipe(sys.stdout)  # type: ignore
         sys.stderr = self.io_manager._logger.restore_pipe(sys.stderr)  # type: ignore
 
-        try:
+        try:  # TODO: Add token lists plus token validation
+            loaded_automaton_type: str = ""
+            loaded_automaton: IAutomaton
+            settings: AutomatonSettings
+            states: list[str] = []
+            state_types: list[str] = []
+            transitions: list[tuple[str, str, tuple[str, ...]]] = []
+
             while True:
                 print("\nPlease choose an action:")
                 print("create {type} - Create new automaton of type {type}\n"
@@ -723,20 +729,34 @@ class App(DefaultAppGUIQt):
                     except IndexError:
                         input("You did not provide enough arguments")
                         continue
+                    if automaton_type not in self.extensions.loaded_automatons:
+                        input(f"Automaton type '{automaton_type}' is not loaded")
+                        continue
                     print(f"Creating automaton of type {automaton_type} ...")
-                    ...
+                    loaded_automaton_type = automaton_type
+                    automaton_dict: dict = self.extensions.get_automaton(automaton_type)
+                    loaded_automaton = automaton_dict[IAutomaton]
+                    settings = automaton_dict[AutomatonSettings]
+                    states.clear()
+                    transitions.clear()
                 elif inp.startswith("load"):
                     try:
                         file_path: str = inp.split(" ", maxsplit=1)[1]
                     except IndexError:
                         input("You did not provide enough arguments")
                         continue
+                    if not os.path.isfile(file_path):
+                        input("You need to provide a real file path to load")
+                    elif not file_path.endswith((".au", ".json", ".yml", ".yaml")):
+                        input("You need to select an automaton file")
                     print(f"Loading automaton from filepath {file_path} ...")
-                    ...
+                    input("This option is currently not available")
+                    continue
                 elif inp.startswith("list"):
                     if inp != "list":
                         input(f"The list option does not have any parameters")
-                    ...
+                    for automaton in self.extensions.loaded_automatons:
+                        input(automaton)
                     continue
                 elif inp.startswith("quit"):
                     if inp != "quit":
@@ -748,7 +768,7 @@ class App(DefaultAppGUIQt):
 
                 while True:
                     print("\nPlease choose an edit action:")
-                    print("create {name, default ascending} - Create new state with name {name}\n"
+                    print("add {name, default ascending} - Create new state with name {name}\n"
                           "change {name} {type} - Change the type of state with name {name} to type {type}\n"
                           "list - List all state types\n"
                           "conn {q1} {q2} {params} - Connect state {q1} to state {q2} with params {params}\n"
@@ -761,13 +781,14 @@ class App(DefaultAppGUIQt):
 
                     inner_inp = input("> ")
 
-                    if inner_inp.startswith("create"):
+                    if inner_inp.startswith("add"):
                         try:
                             state_name: str = inner_inp.split(" ", maxsplit=1)[1]
                         except IndexError:
-                            idx = 0
-                            print(f"Using ascending idx {idx}")
-                        ...
+                            state_name = "q" + str(len(states))
+                            print(f"Using ascending name '{state_name}'")
+                        states.append(state_name)
+                        state_types.append(settings.state_types[0])
                     elif inner_inp.startswith("change"):
                         state_name: str
                         state_type: str
@@ -776,11 +797,19 @@ class App(DefaultAppGUIQt):
                         except ValueError:
                             input("You did not provide enough arguments")
                             continue
-                        ...
+                        idx: int = states.index(state_name)
+                        if idx == -1:
+                            input(f"Name '{state_name}' is not a valid state")
+                            continue
+                        if state_type not in settings.state_types:
+                            input(f"State type '{state_type}' is not a valid state type for automaton of type {loaded_automaton_type}")
+                            continue
+                        state_types[idx] = state_type
                     elif inner_inp.startswith("list"):
                         if inp != "list":
                             input(f"The list option does not have any parameters")
-                        ...
+                        for state_type in settings.state_types:
+                            input(state_type)
                         continue
                     elif inner_inp.startswith("conn"):
                         q1: str
@@ -800,30 +829,61 @@ class App(DefaultAppGUIQt):
                         except SyntaxError:
                             input("You did not pass a valid tuple as the last argument")
                             continue
-                        ...
+                        idx1: int = states.index(q1)
+                        idx2: int = states.index(q2)
+                        if idx1 == -1 or idx2 == -1:
+                            input("One of the provided states is not valid")
+                            continue
+                        if len(params) != len(settings.transition_description_layout):
+                            input(f"You did not provide the correct param length, they need to be {len(settings.transition_description_layout)} long")
+                            continue
+                        transitions.append((q1, q2, params))
                     elif inner_inp.startswith("unconn"):
                         q1: str
                         q2: str
                         try:
-                            q1, q2 = inner_inp.split(" ", maxsplit=2)
+                            q1, q2 = inner_inp.split(" ", maxsplit=2)[1:]
                         except ValueError:
                             input("You did not provide enough arguments")
                             continue
-                        ...
+                        idx1: int = states.index(q1)
+                        idx2: int = states.index(q2)
+                        if idx1 == -1 or idx2 == -1:
+                            input("One of the provided states is not valid")
+                            continue
+                        i: int = -1
+                        for i, (tq1, tq2, _) in transitions:
+                            if tq1 == q1 and tq2 == q2:
+                                break
+                        if i == -1:
+                            input(f"There is no transition between {q1} and {q2}")
+                            continue
+                        transitions.pop(i)
                     elif inner_inp.startswith("remv"):
                         try:
                             state_name: str = inner_inp.split(" ", maxsplit=1)[1]
                         except IndexError:
                             input("You did not provide enough arguments")
                             continue
-                        ...
+                        try:
+                            states.remove(state_name)
+                        except ValueError:
+                            input(f"State '{state_name}' does not exist")
+                            continue
+                        idxs_to_delete: list[int] = []
+                        for i, (tq1, tq2, _) in transitions:
+                            if tq1 == state_name or tq2 == state_name:
+                                idxs_to_delete.append(i)
+                        for idx in idxs_to_delete:
+                            transitions.pop(idx)
                     elif inner_inp.startswith("start"):
                         try:
                             automaton_input: str = inner_inp.split(" ", maxsplit=1)[1]
                         except IndexError:
                             input("You did not provide enough arguments")
                             continue
-                        ...
+                        input("This option is currently not available")
+                        continue
                     elif inner_inp.startswith("startstep"):
                         try:
                             automaton_input: str = inner_inp.split(" ", maxsplit=1)[1]
@@ -843,7 +903,9 @@ class App(DefaultAppGUIQt):
                             input("You did not provide enough arguments")
                             continue
                         print(f"Saving automaton to filepath {file_path} ...")
-                        ...
+                        os.makedirs(os.path.basename(file_path), exist_ok=True)
+                        input("This option is currently not available")
+                        continue
                     else:
                         input(f"{inner_inp} is not a valid command")
                         continue

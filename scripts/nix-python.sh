@@ -26,8 +26,8 @@ if [ ! -f "$flake_root/flake.nix" ]; then
   exit 1
 fi
 
-target_dir="src/default-config/core/extra-libs"
-project_root="$(dirname "$(pwd)")"
+target_dir="src/default-config/core/extra-libs"  # Where the other packages will go
+project_root="$(dirname "$(pwd)")"  # Because for me this is in ./scripts
 
 confirm_and_rm "$project_root/.nixpy"
 mkdir -p "$project_root/.nixpy/bin"
@@ -91,7 +91,7 @@ for nix_pkg in $nix_pkgs; do
   fi
 done
 
-# Copy everything from .venv/lib/python3.13/site-packages to "$project_root/$target_dir"
+# Copy everything from .venv/lib/python*/site-packages to "$project_root/$target_dir"
 if [ -d "$project_root/$target_dir" ]; then
   confirm_and_rm "$project_root/$target_dir"
 fi

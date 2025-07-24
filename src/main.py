@@ -62,7 +62,6 @@ from dancer.timing import FlexTimer
 # Internal imports
 # from automaton.UIAutomaton import UiAutomaton
 # from automaton.automatonProvider import AutomatonProvider
-# from serializer import serialize, deserialize  # TODO: Re-enable
 from globals import AppSettings, AppTranslation
 # from gui import MainWindow  # TODO: Re-enable
 from abstractions import IMainWindow, IBackend
@@ -72,20 +71,12 @@ from dancer.io import IOManager
 # from utils.staticSignal import SignalCache
 # from automaton.UiSettingsProvider import UiSettingsProvider
 # from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
-# from customPythonHandler import CustomPythonHandler  # TODO: Re-enable
 # from extensions_loader import Extensions_Loader
-from core.backend.loader.automatonProvider import AutomatonProvider
 from core.backend.loader.loader import Loader
 from core.backend.backend import start_backend, BackendType
-from core.backend.packets.simulationPackets import SimulationStartPacket, SimulationDataPacket
-from core.backend.data.transition import Transition
-from core.backend.default.defaultTape import DefaultTape
 from core.libs.utils.staticSignal import SignalCache
-from core.backend.data.simulation import Simulation
-from core.backend.packets.packetManager import PacketManager
 
-from core.backend.abstract.automaton.iautomaton import IAutomaton
-from core.backend.data.automatonSettings import AutomatonSettings
+from core.modules.new_serializer import AutomatonData, InvalidParameterError
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -94,67 +85,6 @@ import types as _ts
 
 hiddenimports = list(stdlib_list.stdlib_list())
 multiprocessing.freeze_support()
-
-
-def packet_notifier(simulation: Simulation, frontend_stopevent: threading.Event):
-    for i, step in enumerate(simulation.simulation_steps):
-        print(i, step)
-        if i == 100:
-            simulation.finished.set_value(True)
-            simulation.paused.set_value(True)
-            print("max")
-            break
-    # from time import sleep, time, perf_counter
-    # next_signal = perf_counter()
-    # fps: float = 30
-    # while True:
-    #     if not (perf_counter() >= next_signal):
-    #         continue
-    #     next_signal += (1.0 / fps)
-    #
-    #     res = step_simulation(simulation)
-    #     if res is None:
-    #         continue
-    #
-    #     if not res:
-    #         print("break")
-    #         break
-    frontend_stopevent.set()
-
-
-def step_simulation(simulation: Simulation, step_size: int = 1,
-                    MAX_SIMULATION_REPLAY_STEPS: int = 100) -> bool | None:
-    timer = FlexTimer()
-    if simulation.finished.get_value() and simulation.paused.get_value():
-        print("finished")
-        return False
-
-    if simulation.step_index >= len(simulation.simulation_steps):
-        if simulation.finished.get_value():
-            return False
-
-        print(f"bigger {simulation.step_index}, {len(simulation.simulation_steps)}")
-        return None
-
-    if simulation.step_index >= MAX_SIMULATION_REPLAY_STEPS:
-        simulation.finished.set_value(True)
-        simulation.paused.set_value(True)
-        print("max")
-        return False
-
-    i = simulation.step_index
-
-    step = simulation.simulation_steps[i]
-    output: DefaultTape = step["complete_output"]
-    state_id = step["active_states"]
-    print("Inner", timer.end())
-
-    print(f"{i + 1} {len(simulation.simulation_steps)} {[output.get_tape()[k] for k in output.get_tape().keys()]} "
-          f"State: {state_id[0] + 1}")
-    print(f"{" " * len(str(i + 1))} {len(simulation.simulation_steps)} {' ' * 5 * output.get_pointer()}^")
-    simulation.step_index = simulation.step_index + step_size
-
-    return True
 
 
 class App(DefaultAppGUIQt):
@@ -186,7 +116,7 @@ class App(DefaultAppGUIQt):
             if self.settings.get_auto_check_for_updates():
                 self.offload_work("check_for_update", self.show_update_result, self.get_update_result)
 
-            self.extensions: AutomatonProvider = AutomatonProvider()
+            # self.extensions: AutomatonProvider = AutomatonProvider()
             self.wait_for_manual_completion("load_extensions", check_interval=0.1)
 
             # self.ui_automaton: UiAutomaton = UiAutomaton(None, 'TheCodeJak', {})  # Placeholder
@@ -561,11 +491,12 @@ class App(DefaultAppGUIQt):
             self.stop_simulation()
 
     def set_extensions(self, extensions: list[dict[str, _ts.ModuleType | str]]) -> None:
-        self.extensions.clear()
-        self.extensions.register_automatons(extensions, append=True)
+        # self.extensions.clear()
+        # self.extensions.register_automatons(extensions, append=True)
 
-        if len(self.extensions) == 0:
-            self.io_manager.fatal_error('No extensions loaded!', '', True, True)
+        # if len(self.extensions) == 0:
+        #     self.io_manager.fatal_error('No extensions loaded!', '', True, True)
+        self.automaton: AutomatonData = AutomatonData(extensions, self.extensions_folder)
 
     def open_file(self, filepath: str) -> None:
         """Opens a file and notifies the GUI to update"""
@@ -706,14 +637,7 @@ class App(DefaultAppGUIQt):
         sys.stdout = self.io_manager._logger.restore_pipe(sys.stdout)  # type: ignore
         sys.stderr = self.io_manager._logger.restore_pipe(sys.stderr)  # type: ignore
 
-        try:  # TODO: Add token lists plus token validation
-            loaded_automaton_type: str = ""
-            loaded_automaton: IAutomaton
-            settings: AutomatonSettings
-            states: list[str] = []
-            state_types: list[str] = []
-            transitions: list[tuple[str, str, tuple[str, ...]]] = []
-
+        try:
             while True:
                 print("\nPlease choose an action:")
                 print("create {type} - Create new automaton of type {type}\n"
@@ -726,36 +650,27 @@ class App(DefaultAppGUIQt):
                 if inp.startswith("create"):
                     try:
                         automaton_type: str = inp.split(" ", maxsplit=1)[1]
+                        self.automaton.create(automaton_type)
                     except IndexError:
                         input("You did not provide enough arguments")
                         continue
-                    if automaton_type not in self.extensions.loaded_automatons:
-                        input(f"Automaton type '{automaton_type}' is not loaded")
+                    except (InvalidParameterError, NotImplementedError) as e:
+                        input(e.args[0])
                         continue
-                    print(f"Creating automaton of type {automaton_type} ...")
-                    loaded_automaton_type = automaton_type
-                    automaton_dict: dict = self.extensions.get_automaton(automaton_type)
-                    loaded_automaton = automaton_dict[IAutomaton]
-                    settings = automaton_dict[AutomatonSettings]
-                    states.clear()
-                    transitions.clear()
                 elif inp.startswith("load"):
                     try:
                         file_path: str = inp.split(" ", maxsplit=1)[1]
+                        self.automaton.load(file_path)
                     except IndexError:
                         input("You did not provide enough arguments")
                         continue
-                    if not os.path.isfile(file_path):
-                        input("You need to provide a real file path to load")
-                    elif not file_path.endswith((".au", ".json", ".yml", ".yaml")):
-                        input("You need to select an automaton file")
-                    print(f"Loading automaton from filepath {file_path} ...")
-                    input("This option is currently not available")
-                    continue
+                    except (InvalidParameterError, NotImplementedError) as e:
+                        input(e.args[0])
+                        continue
                 elif inp.startswith("list"):
                     if inp != "list":
                         input(f"The list option does not have any parameters")
-                    for automaton in self.extensions.loaded_automatons:
+                    for automaton in self.automaton.get_loaded_automaton_types():
                         input(automaton)
                     continue
                 elif inp.startswith("quit"):
@@ -769,6 +684,7 @@ class App(DefaultAppGUIQt):
                 while True:
                     print("\nPlease choose an edit action:")
                     print("add {name, default ascending} - Create new state with name {name}\n"
+                          "startstate {name} - Set the state with name {name} as the start state\n"
                           "change {name} {type} - Change the type of state with name {name} to type {type}\n"
                           "list - List all state types\n"
                           "conn {q1} {q2} {params} - Connect state {q1} to state {q2} with params {params}\n"
@@ -783,107 +699,103 @@ class App(DefaultAppGUIQt):
 
                     if inner_inp.startswith("add"):
                         try:
-                            state_name: str = inner_inp.split(" ", maxsplit=1)[1]
+                            state_name: str | None = None
+                            args = inner_inp.split(" ", maxsplit=1)[1:]
+                            if args:
+                                state_name = args[0]
+                            self.automaton.add_state(state_name)
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
+                            continue
+                    elif inner_inp.startswith("startstate"):
+                        try:
+                            state_name: str = inner_inp.split(" ", maxsplit=2)[1]
+                            self.automaton.set_start_state(state_name)
                         except IndexError:
-                            state_name = "q" + str(len(states))
-                            print(f"Using ascending name '{state_name}'")
-                        states.append(state_name)
-                        state_types.append(settings.state_types[0])
+                            input("You did not provide enough arguments")
+                            continue
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
+                            continue
                     elif inner_inp.startswith("change"):
                         state_name: str
                         state_type: str
                         try:
                             state_name, state_type = inner_inp.split(" ", maxsplit=2)[1:]
+                            self.automaton.change_state_type(state_name, state_type)
                         except ValueError:
                             input("You did not provide enough arguments")
                             continue
-                        idx: int = states.index(state_name)
-                        if idx == -1:
-                            input(f"Name '{state_name}' is not a valid state")
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
                             continue
-                        if state_type not in settings.state_types:
-                            input(f"State type '{state_type}' is not a valid state type for automaton of type {loaded_automaton_type}")
-                            continue
-                        state_types[idx] = state_type
                     elif inner_inp.startswith("list"):
-                        if inp != "list":
+                        if inner_inp != "list":
                             input(f"The list option does not have any parameters")
-                        for state_type in settings.state_types:
+                        for state_type in self.automaton.get_loaded_automatons_state_types():
                             input(state_type)
                         continue
                     elif inner_inp.startswith("conn"):
                         q1: str
                         q2: str
                         raw_params: str
-                        params: tuple[str]
+                        params: tuple[str, ...]
                         try:
-                            q1, q2, raw_params = inner_inp.split(" ", maxsplit=3)[1:]
-                        except ValueError:
-                            input("You did not provide enough arguments")
-                            continue
-                        try:
+                            args = inner_inp.split(" ", maxsplit=3)[1:]
+                            if len(args) == 3:
+                                q1, q2, raw_params = args
+                            else:
+                                input("You did not provide enough arguments")
+                                continue
                             params = literal_eval(raw_params)
+                            self.automaton.connect_states(q1, q2, params)
                         except ValueError:
                             input("You did not pass valid strings as tokens in the tuple")
                             continue
                         except SyntaxError:
                             input("You did not pass a valid tuple as the last argument")
                             continue
-                        idx1: int = states.index(q1)
-                        idx2: int = states.index(q2)
-                        if idx1 == -1 or idx2 == -1:
-                            input("One of the provided states is not valid")
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
                             continue
-                        if len(params) != len(settings.transition_description_layout):
-                            input(f"You did not provide the correct param length, they need to be {len(settings.transition_description_layout)} long")
-                            continue
-                        transitions.append((q1, q2, params))
                     elif inner_inp.startswith("unconn"):
                         q1: str
                         q2: str
                         try:
                             q1, q2 = inner_inp.split(" ", maxsplit=2)[1:]
+                            self.automaton.unconnect_states(q1, q2)
                         except ValueError:
                             input("You did not provide enough arguments")
                             continue
-                        idx1: int = states.index(q1)
-                        idx2: int = states.index(q2)
-                        if idx1 == -1 or idx2 == -1:
-                            input("One of the provided states is not valid")
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
                             continue
-                        i: int = -1
-                        for i, (tq1, tq2, _) in transitions:
-                            if tq1 == q1 and tq2 == q2:
-                                break
-                        if i == -1:
-                            input(f"There is no transition between {q1} and {q2}")
-                            continue
-                        transitions.pop(i)
                     elif inner_inp.startswith("remv"):
                         try:
                             state_name: str = inner_inp.split(" ", maxsplit=1)[1]
+                            self.automaton.remove_state(state_name)
                         except IndexError:
                             input("You did not provide enough arguments")
                             continue
-                        try:
-                            states.remove(state_name)
-                        except ValueError:
-                            input(f"State '{state_name}' does not exist")
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
                             continue
-                        idxs_to_delete: list[int] = []
-                        for i, (tq1, tq2, _) in transitions:
-                            if tq1 == state_name or tq2 == state_name:
-                                idxs_to_delete.append(i)
-                        for idx in idxs_to_delete:
-                            transitions.pop(idx)
                     elif inner_inp.startswith("start"):
                         try:
                             automaton_input: str = inner_inp.split(" ", maxsplit=1)[1]
+                            # TODO: We do not currently care about token longer than 1
+                            input_tokens: list[str] = list(automaton_input)
+                            stopevent = self.automaton.start_automaton(input_tokens)
+                            while not stopevent.is_set():
+                                print("Tick")  # TODO: What about about results? About length?
+                                self.timer_tick(0)
+                            input("Finished simulation")
                         except IndexError:
                             input("You did not provide enough arguments")
                             continue
-                        input("This option is currently not available")
-                        continue
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
+                            continue
                     elif inner_inp.startswith("startstep"):
                         try:
                             automaton_input: str = inner_inp.split(" ", maxsplit=1)[1]
@@ -895,17 +807,18 @@ class App(DefaultAppGUIQt):
                     elif inner_inp.startswith("close"):
                         if inner_inp != "close":
                             input(f"The close option does not have any parameters")
+                        self.automaton.close()
                         break
                     elif inner_inp.startswith("save"):
                         try:
-                            file_path: str = inp.split(" ", maxsplit=1)[1]
+                            file_path: str = inner_inp.split(" ", maxsplit=1)[1]
+                            self.automaton.save(file_path, [])
                         except IndexError:
                             input("You did not provide enough arguments")
                             continue
-                        print(f"Saving automaton to filepath {file_path} ...")
-                        os.makedirs(os.path.basename(file_path), exist_ok=True)
-                        input("This option is currently not available")
-                        continue
+                        except (InvalidParameterError, NotImplementedError) as e:
+                            input(e.args[0])
+                            continue
                     else:
                         input(f"{inner_inp} is not a valid command")
                         continue
@@ -914,34 +827,11 @@ class App(DefaultAppGUIQt):
                     os.system("cls")
                 else:
                     os.system("clear")
-        except Exception as e:
-            print(e)
-            return -1
+        # except Exception as e:  # We have a dedicated crash() for this
+        #     print(e)
+        #     return -1
         except KeyboardInterrupt:
-            print("Exiting")
-        return 0
-
-        frontend_stopevent = threading.Event()
-        sim_packet = SimulationStartPacket([(0, "default"), (1, "end")],
-                                           0,
-                                           [
-                                               Transition(0, 1, 0, ["b", "a", "h"]),
-                                               Transition(1, 0, 1, ["a", "b", "h"])
-                                           ],
-                                           DefaultTape(
-                                               ["a"]),
-                                           "tm",
-                                           lambda simulation: packet_notifier(simulation, frontend_stopevent))
-
-        PacketManager().send_backend_packet(sim_packet)
-        print(f"packet send {PacketManager().has_backend_packets()}")
-        print("REPLAY START")
-
-        try:
-            while not frontend_stopevent.is_set():
-                self.timer_tick(0)
-        except KeyboardInterrupt:
-            return 0
+            print("Exiting ...")
         return 0
 
     def timer_tick(self, index: int) -> None:

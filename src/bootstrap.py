@@ -15,7 +15,7 @@ app_info = config.AppConfig(
     "N.E.F.S.' Simulator",
     "nefs_simulator",
     1400, "b4",
-    {"Windows": {"11": ("22H2",)},
+    {"Windows": {"11": ("24H2",)},
      "Linux": {"6.12.37": ("#1-NixOS SMP PREEMPT_DYNAMIC Thu Jul 10 14:05:15 UTC 2025",)}},
     {"Windows": {"10": ("any",), "11": ("any",)},
      "Linux": {r"6\.\d+\.\d+(-[a-zA-Z0-9])?": ("any",)}},

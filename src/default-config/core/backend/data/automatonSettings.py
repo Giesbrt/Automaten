@@ -7,7 +7,7 @@ import abc as _abc
 import typing as _ty
 
 
-class AutomatonSettings:
+class AutomatonSettings:  # TODO: What about the file names? Like tm.py
     def __init__(
             self,
             module_name: str,

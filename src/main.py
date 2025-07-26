@@ -812,7 +812,7 @@ class App(DefaultAppGUIQt):
                     elif inner_inp.startswith("save"):
                         try:
                             file_path: str = inner_inp.split(" ", maxsplit=1)[1]
-                            self.automaton.save(file_path, [])
+                            self.automaton.save(file_path)
                         except IndexError:
                             input("You did not provide enough arguments")
                             continue
@@ -833,6 +833,10 @@ class App(DefaultAppGUIQt):
         except KeyboardInterrupt:
             print("Exiting ...")
         return 0
+
+    def crash(self, error_title: str, error_text: str, error_description: str) -> bool:
+        print(error_description)
+        return super().crash(error_title, error_text, error_description)
 
     def timer_tick(self, index: int) -> None:
         # super().timer_tick(index)

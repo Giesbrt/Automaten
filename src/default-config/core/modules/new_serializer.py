@@ -1,9 +1,12 @@
 """Serialize an AutomatonData class to a file"""
 # Build-in
+from dataclasses import dataclass as _dq
 import contextlib
 import threading
 import hashlib
+import base64
 import json
+import zlib
 import re
 import os
 
@@ -29,28 +32,13 @@ import collections.abc as _a
 import typing as _ty
 import types as _ts
 
-from zope.interface.adapter import VerifyingBase
-
-
-def _strip_python_code(source: str) -> str:
-    # Remove docstrings (triple-quoted strings that appear as docstrings)
-    source = re.sub(r'(?s)"""(.*?)"""', '', source)  # triple double quotes
-    source = re.sub(r"(?s)'''(.*?)'''", '', source)  # triple single quotes
-
-    # Remove single-line comments
-    source = re.sub(r'#.*', '', source)
-
-    # Optionally: remove excessive blank lines
-    source = re.sub(r'\n\s*\n', '\n', source)
-
-    return source.strip()
-
 
 class SerializationModule(_ty.Protocol):
-    def hook(self, data: dict) -> dict: ...
+    def hook(self, data: dict) -> dict: ...  # TODO: Create beforehand or only from data? If yes then why?
+    def unhook(self, data: dict, auto: "AutomatonData") -> None: ...
 
 
-class GUIDataModule(SerializationModule):
+class QtGUIDataModule(SerializationModule):
     def __init__(self, state_extra_info: dict[str, dict[str, _ty.Any]],
                  transition_extra_info: dict[tuple[str, str], _ty.Any],
                  styling_extra_data: dict[str, _ty.Any]) -> None:
@@ -72,6 +60,9 @@ class GUIDataModule(SerializationModule):
         data["extra_data"]["styling"] = self._styling_extra_data
         return data
 
+    def unhook(self, data: dict, auto: "AutomatonData") -> None:
+        return None  # TODO: Implement
+
 
 class CustomPythonModule(SerializationModule):
     def __init__(self, extension_path: str) -> None:
@@ -79,12 +70,37 @@ class CustomPythonModule(SerializationModule):
         with os_open(extension_path, "r") as f:
             self._content = f.read().decode("UTF-8")
 
+    @staticmethod
+    def _strip_python_code(source: str) -> str:
+        # Remove docstrings (triple-quoted strings that appear as docstrings)
+        source = re.sub(r'(?s)"""(.*?)"""', '', source)  # triple double quotes
+        source = re.sub(r"(?s)'''(.*?)'''", '', source)  # triple single quotes
+
+        # Remove single-line comments
+        source = re.sub(r'#.*', '', source)
+
+        # Optionally: remove excessive blank lines
+        source = re.sub(r'\n\s*\n', '\n', source)
+
+        return source.strip()
+
+    @staticmethod
+    def _compress_python_code(source: str) -> str:
+        """Compress and base64-encode the code using zlib."""
+        compressed = zlib.compress(source.encode('utf-8'), level=9)
+        return base64.b64encode(compressed).decode('utf-8')
+
     def hook(self, data: dict) -> dict:
+        stripped: str = self._strip_python_code(self._content)
+        compressed: str = self._compress_python_code(stripped)
         data["extra_data"]["custom_python"] = {
             "full_hash_sha256": hashlib.sha256(self._content.encode("UTF-8")).digest(),
-            "stripped": _strip_python_code(self._content)
+            "compressed": compressed
         }
         return data
+
+    def unhook(self, data: dict, auto: "AutomatonData") -> None:
+        return None  # TODO: Implement
 
 
 class InvalidParameterError(Exception):
@@ -133,13 +149,16 @@ class AutomatonData:
         self._extensions: AutomatonProvider = AutomatonProvider()
         self._extensions.register_automatons(extensions)
         self._loaded: bool = False
+        self._automaton_uuid: str = "00000000-0000-0000-0000-000000000000"
         self._automaton_type: str = "Unknown"
         self._automaton: IAutomaton | None = None  # TODO: Remove
         self._settings: AutomatonSettings | None = None
         self._start_state: str = ""  # "" is an invalid state name
         self._states: list[str] = []
         self._state_types: list[str] = []
+        self._state_runtime_data: list[str] = []  # TODO: Manage together with states
         self._transitions: list[tuple[str, str, tuple[str, ...]]] = []
+        self._transition_runtime_data: list[str] = []  # TODO: Manage together with transitions
         self._token_lsts: list[tuple[list[str], bool]] = []
 
         self._simulation_result_lst: list = []
@@ -174,6 +193,7 @@ class AutomatonData:
         auto_dict = self._extensions.get_automaton(automaton_type)
         self._automaton = auto_dict[IAutomaton]  # TODO: Remove
         self._settings = auto_dict[AutomatonSettings]
+        # self._automaton_uuid = self._settings.get_uuid()  # TODO:
         self._start_state = ""
         self._states.clear()
         self._state_types.clear()
@@ -200,8 +220,11 @@ class AutomatonData:
         self.create(auto_type)
         self._states.extend(["a"])
 
-    def save(self, filepath: str, extra_modules: list[SerializationModule]) -> None:
+    def save(self, filepath: str, automaton_name: str = "New automaton",
+             extra_modules: list[SerializationModule] | None = None) -> None:
         """Saves the loaded automaton to filepath"""
+        if extra_modules is None:
+            extra_modules = []
         if not self._loaded:
             raise RuntimeError(
                 f"Cannot save automaton when there is none loaded."
@@ -211,13 +234,21 @@ class AutomatonData:
         print(f"Saving automaton to filepath {filepath} ...")
         os.makedirs(os.path.basename(filepath), exist_ok=True)
         modules: list[SerializationModule] = [
-            CustomPythonModule(os.path.join(self._base_extension_dir, f"{self._settings.module_name}.py"))
+            CustomPythonModule(os.path.join(self._base_extension_dir, f"{self._settings.module_name.lower()}.py"))
         ]
         modules.extend(extra_modules)
         file_ext: str = os.path.splitext(filepath)[-1][1:]  # Last element is .{ext} then we remove the dot
         format_: _ty.Literal["binary", "yaml", "json"] = {"au": "binary", "yml": "yaml"}.get(file_ext, file_ext)
 
-        serialized_automaton: bytes = serialize(self, modules, format_=format_)
+        user_name: str
+        try:
+            user_name = os.getlogin()
+        except OSError:
+            user_name = "Unknown"
+
+        automaton_info: AutomatonInfo = AutomatonInfo(automaton_name, user_name)
+
+        serialized_automaton: bytes = serialize(self, automaton_info, modules, format_=format_)
         with os_open(filepath, "w") as f:
             f.write(serialized_automaton)
 
@@ -412,7 +443,7 @@ def _verify_dcg_dict(target: dict[str, _ty.Any], tuple_as_lists: bool = False) -
             "name": str,
             "author": str,
             "state_types": [str],  # list[str]
-            "token_lsts": [[str]],  # list[list[str]]
+            "default_token_lsts": [[str]],  # list[list[str]]
             "token_lst_info": [
                 {  # RUNNING WIDGET !!! Maybe custom widget for running state instead of custom widget for output?
                     "name": str,
@@ -425,17 +456,18 @@ def _verify_dcg_dict(target: dict[str, _ty.Any], tuple_as_lists: bool = False) -
         "data": {
             "automaton_name": str,  # get this name from username of pc
             "automaton_author": str,
-            "start_idx": 0,
+            "token_lsts": [[str]],  # list[list[str]]
+            "start_idx": int,
             "content": [  # "content_root_idx": 0,  --> Always make 0, work through stack, if at bottom get next element that was not yet (de-)serialized?
                 {
                     "name": str,
                     "type": str,
-                    "extra_info": {  # dict[str, _ty.Any]
-                        "position": (float, float),
-                        "size": float,
-                        "background_color": str
-                    }
-                    # "extra_info": {str: object}
+                    # "extra_info": {  # dict[str, _ty.Any]
+                    #     "position": (float, float),
+                    #     "size": float,
+                    #     "background_color": str
+                    # }
+                    "extra_info": {str: object}
                 }
             ],
             "content_transitions": [
@@ -443,59 +475,99 @@ def _verify_dcg_dict(target: dict[str, _ty.Any], tuple_as_lists: bool = False) -
                     "from_idx": int,
                     "to_idx": int,
                     "transition": [int],
-                    "extra_info": {  # dict[str, _ty.Any]
-                        "points": [(int, int)]
-                    }
-                    # "extra_info": {str: object}
+                    # "extra_info": {  # dict[str, _ty.Any]
+                    #     "points": [(int, int)]
+                    # }
+                    "extra_info": {str: object}
                 }
             ]
         },
-        "extra_data": {
-            "styling": {  # Maybe ask if it should load custom (state) styling? Values are always [light, dark], we could also just completely exclude this styling now
-                "activation_graphics_effect": str,
-                # These all have different stylings depending on the os theme (light/dark)
-                "states": {},  # dict[str, tuple[str, str]]
-                "arrow_color": (str, str),
-                "text_color": (str, str),
-                "text_underglow_color": (str, str)
-            },
-            "custom_python": {
-                "full_hash_sha256": str,
-                "stripped": str
-            }
-        }
-        # "extra_data": {str: {str: object}}
+        # "extra_data": {
+        #     "styling": {  # Maybe ask if it should load custom (state) styling? Values are always [light, dark], we could also just completely exclude this styling now
+        #         "activation_graphics_effect": str,
+        #         # These all have different stylings depending on the os theme (light/dark)
+        #         "states": {},  # dict[str, tuple[str, str]]
+        #         "arrow_color": (str, str),
+        #         "text_color": (str, str),
+        #         "text_underglow_color": (str, str)
+        #     },
+        #     "custom_python": {
+        #         "full_hash_sha256": str,
+        #         "compressed": str
+        #     }
+        # }
+        "extra_data": {str: {str: object}}
     }
+
+    class Validator:
+        def __init__(self, default: bool, raise_if_fail: bool = False) -> None:
+            self._rif: bool = raise_if_fail
+            self._flag: bool = default
+
+        def set(self, value: bool) -> None:
+            if not value and self._rif:
+                raise RuntimeError("Failed check")
+            self._flag = value
+
+        def get(self) -> bool:
+            return self._flag
+
+        def __bool__(self) -> bool:
+            return self._flag
 
     def _validate(value: _ty.Any, rule: _ty.Any) -> bool:
         """Recursively validates a value against a rule."""
+        valid: Validator = Validator(True, raise_if_fail=False)  # Default true
         if isinstance(rule, type):  # Base type
-            return isinstance(value, rule)
+            print("Checking base type", rule, repr(value))
+            valid.set(isinstance(value, rule))
+            if not valid:
+                print("Failed to validate, is not of base type")
         elif isinstance(rule, list):  # List of specific structure
+            print("Checking list", rule, repr(value))
             if not isinstance(value, list):
-                return False
-            element_rule = rule[0]
-            return all(_validate(item, element_rule) for item in value)
+                print("Failed to validate, is not of type list")
+                valid.set(False)
+            else:
+                element_rule = rule[0]
+                valid.set(all(_validate(item, element_rule) for item in value))
+                if not valid:
+                    print("Failed to validate, not all elements are of the right type")
         elif isinstance(rule, tuple):  # Tuple of specific structure
+            print("Checking tuple", rule, repr(value))
             if (not isinstance(value, tuple) or len(value) != len(rule)) and not tuple_as_lists:
-                return False
-            return all(_validate(value[i], rule[i]) for i in range(len(rule)))
+                print("Failed to validate, value is not tuple or is of different length and TAL is not activated")
+                valid.set(False)
+            else:
+                valid.set(all(_validate(value[i], rule[i]) for i in range(len(rule))))
+                if not valid:
+                    print("Failed to validate all values are of correct type")
         elif isinstance(rule, dict):  # Dictionary with specific structure
+            print("Checking dict", rule, repr(value))
             if not isinstance(value, dict):
-                return False
-            for key_rule, val_rule in rule.items():
-                if isinstance(key_rule, type):  # Dynamic keys (e.g., str)
-                    if not all(isinstance(k, key_rule) and _validate(v, val_rule) for k, v in value.items()):
-                        return False
-                elif key_rule not in value or not _validate(value[key_rule], val_rule):
-                    return False
-            return True
+                print("Failed to validate, is not of type dict")
+                valid.set(False)
+            else:
+                for key_rule, val_rule in rule.items():
+                    if isinstance(key_rule, type):  # Dynamic keys (e.g., str)
+                        if not all(isinstance(k, key_rule) and _validate(v, val_rule) for k, v in value.items()):
+                            print("Failed to validate dynamic key rule", key_rule, value)
+                            valid.set(False)
+                    elif key_rule not in value or not _validate(value[key_rule], val_rule):
+                        print("Failed to validate set key rule", key_rule, val_rule, value[key_rule])
+                        valid.set(False)
+                # return True
         else:
-            return False
+            print("Unknown rule", rule)
+            valid.set(False)
+        if not valid:
+            print("Check failed")
+        return bool(valid)
 
     for key, key_rule in rules.items():
+        print(f"Key {key}")
         if key not in target or not _validate(target[key], key_rule):
-            print(f"Validation failed for key '{key}': {target.get(key)}")
+            print(f"Validation failed for key '{key}'-> {target.get(key)}")
             return False
     return True
 
@@ -507,13 +579,83 @@ def _serialize_to_yaml(serialisation_target: dict) -> bytes:
     if not isinstance(dump, str):
         raise RuntimeError("Yaml Dump did not result in str")
     return dump.encode("utf-8")
-def _serialize_to_binary(serialisation_target: dict) -> bytes: ...
+def _serialize_to_binary(serialisation_target: dict) -> bytes: raise NotImplementedError()
+
+
+@_dq
+class AutomatonInfo:
+    name: str
+    author: str
+
 
 def serialize(
-        automaton: AutomatonData, modules: list[SerializationModule], /,
+        automaton: AutomatonData, automaton_info: AutomatonInfo, modules: list[SerializationModule], /,
         format_: _ty.Literal["json", "yaml", "binary"] = "json"
     ) -> bytes:
     """TBA"""
+    dcg_dict: dict[str, _ty.Any] = {
+        "version": 1.0,
+        "info": {
+            "uuid": automaton._automaton_uuid,
+            "name": automaton._automaton_type,
+            "author": automaton._settings.author,
+            "state_types": list(automaton.get_loaded_automatons_state_types()),  # TODO: Always list?
+            "default_token_lsts": [token_lst[0] for token_lst in automaton._settings.token_lists],
+            "token_lst_info": [
+                {
+                    "name": "Unknown",
+                    "is_input": True,
+                    "is_changeable": automaton._token_lsts[idx][1],
+                    "transition_section_idx": idx
+                } for idx in automaton._settings.transition_description_layout
+            ]
+        },
+        "data": {
+            "automaton_name": automaton_info.name,
+            "automaton_author": automaton_info.author,
+            "token_lsts": [token_lst[0] for token_lst in automaton._token_lsts],
+            "start_idx": automaton._get_index(automaton._states, automaton._start_state),
+            "content": [],  # Will be filled later
+            "content_transitions": []  # Will be filled later
+        },
+        "extra_data": {}  # Will be filled by modules
+    }
+
+    nodes_lst: list[dict[str, str | tuple[float, float]]] = dcg_dict["data"]["content"]
+    transitions_lst: list = dcg_dict["data"]["content_transitions"]
+    transition_tokens: list[list[str]] = [
+        dcg_dict["data"]["token_lsts"][info["transition_section_idx"]]
+        for info in dcg_dict["info"]["token_lst_info"]
+    ]
+    for state_name in automaton._states:
+        nodes_lst.append({
+            "name": state_name,
+            "type": automaton._state_types[automaton._get_index(automaton._states, state_name)],
+            "extra_info": {}  # Will be filled by modules
+        })
+    for (q0, q1, params) in automaton._transitions:
+        idx1: int = automaton._get_index(automaton._states, q0)  # This works as we added them in the same order
+        idx2: int = automaton._get_index(automaton._states, q1)  # This works as we added them in the same order
+        transitions_lst.append(
+            {
+                "from_idx": idx1,
+                "to_idx": idx2,
+                "transition": [transition_tokens[i].index(x[0]) for i, x in enumerate(params)],
+                "extra_info": {}  # Will be filled by modules
+            }
+        )
+
+    for module in modules:
+        dcg_dict = module.hook(dcg_dict)
+
+    if not _verify_dcg_dict(dcg_dict):
+        raise RuntimeError("DCG Dict could not be verified")
+
+    return {
+        "json": _serialize_to_json,
+        "yaml": _serialize_to_yaml,
+        "binary": _serialize_to_binary
+    }[format_](dcg_dict)
 
 def _deserialize_from_json(bytes_like: bytes) -> dict:
     obj: _ty.Any = json.loads(bytes_like.decode("utf-8"))
@@ -530,3 +672,4 @@ def _deserialize_from_binary(bytes_like: bytes) -> dict: ...
 def deserialize(automaton: AutomatonData, bytes_like: bytes,
                 format_: _ty.Literal["json", "yaml", "binary"] = "json") -> str:
     """TBA"""
+    raise NotImplementedError()  # Account for v0.5 (the old one)

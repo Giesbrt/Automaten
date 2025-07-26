@@ -46,7 +46,9 @@ class DFA(iautomaton.IAutomaton):
 
             if not next_transition:
                 print("no next transition found")
-                break
+                simulation.finish_simulation(False, "No next Transition found!")
+                return
+
             current_state_id = next_transition.to_state_id
 
             self.get_simulation_tape().right()
@@ -56,7 +58,7 @@ class DFA(iautomaton.IAutomaton):
                                 self.get_simulation_tape())
 
         # Simulation finished
-        simulation.finished.set_value(True)
+        simulation.finish_simulation()
 
     def __repr__(self):
         return f"DFA({self._states=}, {self._transitions=})"

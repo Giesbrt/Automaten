@@ -58,8 +58,9 @@ class TM(iautomaton.IAutomaton):
             next_transition: transition.Transition = self._find_next_transition(current_state_id, input_char)
 
             if not next_transition:
-                print("no next transition found")
-                break
+                simulation.finish_simulation(False, "No next Transition found!")
+                return
+
             current_state_id = next_transition.to_state_id
             self.get_simulation_tape().write(next_transition.condition[1])
 
@@ -80,7 +81,7 @@ class TM(iautomaton.IAutomaton):
                                 self.get_simulation_tape())
 
         # Simulation finished
-        simulation.finished.set_value(True)
+        simulation.finish_simulation()
 
 
 if __name__ == '__main__':

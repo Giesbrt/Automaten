@@ -57,6 +57,7 @@ class BackendHandler:
                     self._logger.info(f"Simulated {automaton_type}-Automaton successfully in {(end - start) * 1000}ms")
 
                 except Exception as e:
+                    simulation.finish_simulation(False, str(e))
                     self._logger.error(
                         f"An Error occurred whilst trying to simulate a {automaton_type}-Automaton: {str(e)}")
 

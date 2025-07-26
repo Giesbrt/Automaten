@@ -1,3 +1,4 @@
+
 from dataclasses import dataclass, field
 from core.backend.abstract.automaton.itape import ITape as _Tape
 from core.libs.utils.staticSignal import Signal as _Signal
@@ -16,13 +17,13 @@ class Simulation:
     finished: StaticContainer[bool] = field(default_factory=lambda: StaticContainer(False))
     paused: StaticContainer[bool] = field(default_factory=lambda: StaticContainer(False))
     step_index: int = field(default=0)
-    # simulation_steps: _ty.List[_ty.Dict[str, _ty.Any]] = field(default_factory=list)
     simulation_steps: ThreadSafeList[_ty.Dict[str, _ty.Any]] = field(default_factory=ThreadSafeList)
     """
     'active_transitions' = ['transition_ids']
     'active_states' = ['state_ids']
     'complete_output' = Tape('current simulation tape')
     """
+    simulation_end_cause: StaticContainer[tuple[bool, str]] = field(default_factory=lambda: StaticContainer())  # contents may be None if simulation has not finished
 
     def add_step(self, active_transitions: _ty.List[int],
                  active_states: _ty.List[int],
@@ -34,6 +35,13 @@ class Simulation:
                                       "complete_output": complete_output.copy()})
 
         # self._notify()  # Remove for poc_one_callback.py, add for poc_step_callback.py
+
+    def finish_simulation(self, success: bool = True, cause: str = "Simulation finished!") -> None:
+        self.finished.set_value(True)
+        if not cause:
+            raise TypeError("Attribute cause can not be None!")
+
+        self.simulation_end_cause.set_value((success, cause))
 
     def _notify(self) -> None:
         if self.simulation_notification_signal is not None:

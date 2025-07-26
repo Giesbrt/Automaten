@@ -13,7 +13,8 @@ class Mealy(iautomaton.IAutomaton):
                                             [([], True)],
                                             [0, 0],
                                             None,
-                                            ["default"]))
+                                            ["default"],
+                                            0))
 
     def _find_next_transition(self, from_state_id: int, condition: str) -> _Transition | None:
         suitable_transitions = list(filter(lambda tr: tr.from_state_id == from_state_id and

@@ -16,10 +16,11 @@ class AutomatonSettings:  # TODO: What about the file names? Like tm.py
             token_lists: _ty.List[_ty.Tuple[_ty.List[str], bool]],
             transition_description_layout: _ty.List[int],
             default_widget: type[QFrame] = DefaultInputOutputWidget,
-            state_types: _ty.List[str] | None = None
+            state_types: _ty.List[str] | None = None,
+            default_state_type_index: int = 0
     ):
         if state_types is None:
-            state_types = ["end", "default"]
+            state_types = ["default", "end"]
 
         self._module_name: str = module_name
         self._full_automaton_name: str = full_automaton_name
@@ -28,6 +29,7 @@ class AutomatonSettings:  # TODO: What about the file names? Like tm.py
         self._transition_description_layout: _ty.List[int] = transition_description_layout
         self._default_widget: type[QFrame] = default_widget
         self._state_types: _ty.List[str] = state_types
+        self._default_state_type_index: int = default_state_type_index
 
     @property
     def module_name(self) -> str:
@@ -36,6 +38,14 @@ class AutomatonSettings:  # TODO: What about the file names? Like tm.py
     @module_name.setter
     def module_name(self, value: str) -> None:
         self._module_name = value
+
+    @property
+    def default_state_type_index(self) -> int:
+        return self._default_state_type_index
+
+    @default_state_type_index.setter
+    def default_state_type_index(self, value: int) -> None:
+        self._default_state_type_index = value
 
     @property
     def full_automaton_name(self) -> str:

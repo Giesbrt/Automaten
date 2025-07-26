@@ -55,7 +55,12 @@ class StaticContainer(_ty.Generic[T]):
             return f"StaticContainer({value=})"
 
     def __repr__(self):
-        return super().__repr__()
+        with self._lock:
+            return super().__repr__()
+
+    def __bool__(self):
+        with self._lock:
+            return bool(self._value)
 
 
 

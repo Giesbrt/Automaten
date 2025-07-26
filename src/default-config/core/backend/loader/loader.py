@@ -29,8 +29,7 @@ class Loader:
 
         self._previous_cache_data: _ty.Dict[str, _ty.Dict[str, _ty.Any]] = self._load_previous_caches()
 
-        self._required_abstract_class_implementations: _ty.Dict[_ts.ModuleType, _ts.ModuleType | None] = {
-            _IAutomaton: None}
+        self._required_abstract_class_implementations: _ty.Dict[_ts.ModuleType, _ts.ModuleType | None] = {_IAutomaton: None}
 
     def _load_previous_caches(self) -> _ty.Dict[str, _ty.Dict[str, _ty.Any]]:
         full_cache_path: str = os.path.join(self._cache_path, self._cache_file_name)

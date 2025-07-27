@@ -76,7 +76,7 @@ from core.backend.loader.loader import Loader
 from core.backend.backend import start_backend, BackendType
 from core.libs.utils.staticSignal import SignalCache
 
-from core.modules.new_serializer import AutomatonData, InvalidParameterError
+from core.modules.new_serializer import AutomatonInterface, InvalidParameterError
 
 # Standard typing imports for aps
 import collections.abc as _a
@@ -496,7 +496,7 @@ class App(DefaultAppGUIQt):
 
         # if len(self.extensions) == 0:
         #     self.io_manager.fatal_error('No extensions loaded!', '', True, True)
-        self.automaton: AutomatonData = AutomatonData(extensions, self.extensions_folder)
+        self.automaton: AutomatonInterface = AutomatonInterface(extensions, self.extensions_folder)
 
     def open_file(self, filepath: str) -> None:
         """Opens a file and notifies the GUI to update"""
@@ -658,15 +658,15 @@ class App(DefaultAppGUIQt):
                         input(e.args[0])
                         continue
                 elif inp.startswith("load"):
-                    try:
+                    # try:
                         file_path: str = inp.split(" ", maxsplit=1)[1]
                         self.automaton.load(file_path)
-                    except IndexError:
-                        input("You did not provide enough arguments")
-                        continue
-                    except (InvalidParameterError, NotImplementedError) as e:
-                        input(e.args[0])
-                        continue
+                    # except IndexError:
+                    #     input("You did not provide enough arguments")
+                    #     continue
+                    # except (InvalidParameterError, NotImplementedError) as e:
+                    #     input(e.args[0])
+                    #     continue
                 elif inp.startswith("list"):
                     if inp != "list":
                         input(f"The list option does not have any parameters")
@@ -750,7 +750,7 @@ class App(DefaultAppGUIQt):
                             params = literal_eval(raw_params)
                             while True:
                                 for param, token_lst_idx in zip(params, self.automaton._settings.transition_description_layout):
-                                    token_lst: list[str] = self.automaton._token_lsts[token_lst_idx][0]
+                                    token_lst: list[str] = self.automaton._data.token_lsts[token_lst_idx]
                                     if param not in token_lst:
                                         bool_inp = input(f"The token '{param}' is not in {token_lst}, do you want to add it? [Y/n]")
                                         if bool_inp.lower() != "n":
@@ -793,6 +793,10 @@ class App(DefaultAppGUIQt):
                             automaton_input: str = inner_inp.split(" ", maxsplit=1)[1]
                             # TODO: We do not currently care about token longer than 1
                             input_tokens: list[str] = list(automaton_input)
+                            input("Not implemented yet")
+                            continue
+                            with self.automaton.session() as s:
+                                s.start()
                             stopevent = self.automaton.start_automaton(input_tokens)
                             while not stopevent.is_set():
                                 print("Tick")  # TODO: What about about results? About length?

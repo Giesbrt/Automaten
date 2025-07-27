@@ -14,6 +14,7 @@
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 .\run.ps1
 ````
+
 ### Alternatively: run the installer and install the program according to the dialog.
 
 ## Open files

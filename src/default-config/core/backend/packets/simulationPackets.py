@@ -17,7 +17,8 @@ class SimulationStartPacket(_IPacket):
                  transition_ids_with_data: _ty.List[_Transition],
                  input_tape: _ITape,
                  automaton_type: str,
-                 notification_callback: _ty.Callable):
+                 notification_callback: _ty.Callable,
+                 simulation_bulk_size: int = 100):
         super().__init__()
 
         self._state_ids: _ty.List[_ty.Tuple[int, str]] = state_ids
@@ -27,6 +28,7 @@ class SimulationStartPacket(_IPacket):
         self._automaton_type: str = automaton_type
 
         self._notification_callback: _ty.Callable = notification_callback
+        self._simulation_bulk_size: int = simulation_bulk_size
 
     def get_state_ids(self) -> _ty.List[_ty.Tuple[int, str]]:
         return self._state_ids
@@ -63,6 +65,12 @@ class SimulationStartPacket(_IPacket):
 
     def set_notification_callback(self, callback: _ty.Callable) -> None:
         self._notification_callback = callback
+
+    def get_simulation_bulk_size(self) -> int:
+        return self._simulation_bulk_size
+
+    def set_simulation_bulk_size(self, bulk: int) -> None:
+        self._simulation_bulk_size = bulk
 
 
 # DEPRECATED

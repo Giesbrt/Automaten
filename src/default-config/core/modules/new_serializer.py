@@ -36,7 +36,7 @@ import types as _ts
 
 
 class SerializationModule(_ty.Protocol):
-    def hook(self, data: dict) -> dict: ...  # TODO: Create beforehand or only from data? If yes then why?
+    def hook(self, data: dict) -> dict: ...
     def unhook(self, data: dict, auto: "AutomatonData") -> None: ...
 
 
@@ -275,7 +275,6 @@ class AutomatonInterface:
         self._extensions: AutomatonProvider = AutomatonProvider()
         self._extensions.register_automatons(extensions)
         self._loaded: bool = False
-        # self._automaton: IAutomaton | None = None  # TODO: Remove
         self._settings: AutomatonSettings | None = None
         self._data: AutomatonData = AutomatonData()
 
@@ -887,7 +886,7 @@ def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
             proper_token_lsts,
             abs_transition_idxs,
             state_types=list(types.keys()),
-            default_state_type_index=0  # TODO: Should we save this?
+            default_state_type_index=-1
         )
 
         info = AutomatonInfo("Unknown", "Unknown")
@@ -968,7 +967,7 @@ def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
             proper_token_lsts,
             proper_transition_idxs,
             state_types=state_types,
-            default_state_type_index=0  # TODO: Should we save this?
+            default_state_type_index=-1
         )
 
         data_dict: dict[str, _ty.Any] = dcg_dict["data"]

@@ -885,7 +885,7 @@ def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
             author,
             proper_token_lsts,
             abs_transition_idxs,
-            state_types=list(types.keys()),
+            state_types=[x.lower() for x in types.keys()],
             default_state_type_index=-1
         )
 
@@ -894,12 +894,12 @@ def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
         data.token_lsts = token_lsts
         for state_dict in content:
             data.states.append(state_dict["name"])
-            type_: str = state_dict["type"]
+            type_: str = state_dict["type"].lower()
             if type_ == "start":
-                data.state_types.append(list(types.keys())[0])  # The default type
+                data.state_types.append(list(types.keys())[0].lower())  # The default type
                 data.start_state = state_dict["name"]
             else:
-                data.state_types.append(state_dict["type"])
+                data.state_types.append(type_)
             state_dict["extra_data"] = {  # To maintain compatibility with the newer modules
                 "position": state_dict["position"],
                 "size": 1.0,
@@ -907,15 +907,14 @@ def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
             }
             data.state_runtime_data.append({})
 
-        transition_tokens: list[list[str]] = [
-            data.token_lsts[i]
-            for i in settings.transition_description_layout
-        ]
         new_content_transitions: list[dict] = []
         for ((from_idx, to_idx), (_, _), trans_token_idxs) in content_transitions:
             from_name: str = data.states[from_idx]
             to_name: str = data.states[to_idx]
-            params: list[str] = [transition_tokens[i][j] for i, j in zip(settings.transition_description_layout, trans_token_idxs)]
+            params: list[str] = [data.token_lsts[i][j] for i, j in zip(settings.transition_description_layout, trans_token_idxs)]
+
+            if len(params) != len(settings.transition_description_layout):  # Unfinished transition
+                continue
 
             new_content_transitions.append({  # To maintain compatibility with the newer modules
                 "from_idx": from_idx,
@@ -929,6 +928,8 @@ def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
         content_transitions.clear()
         content_transitions.extend(new_content_transitions)
 
+        dcg_dict["info"] = {}
+        dcg_dict["info"]["name"] = name
         dcg_dict["extra_data"] = {  # To maintain compatibility with the newer modules
             "custom_python": {
                 "full_hash_sha256": hashlib.sha256(custom_python.encode("UTF-8")).hexdigest(),

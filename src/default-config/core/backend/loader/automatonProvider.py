@@ -18,9 +18,9 @@ class AutomatonProvider:
         self._lock: threading.Lock = threading.Lock()
 
     @property
-    def loaded_automatons(self) -> tuple[str, ...]:  # _ty.Dict[str, _ty.Dict[_ty.Type[IAutomaton | AutomatonSettings], IAutomaton | AutomatonSettings]]
+    def loaded_automatons(self) -> list[str]:  # _ty.Dict[str, _ty.Dict[_ty.Type[IAutomaton | AutomatonSettings], IAutomaton | AutomatonSettings]]
         with self._lock:
-            return tuple(self._loaded_automatons.keys())
+            return list(self._loaded_automatons.keys())
 
     def get_automaton(self, automaton_name: str) -> _ty.Dict[_ty.Type[IAutomaton | AutomatonSettings], IAutomaton | AutomatonSettings] | None:
         with self._lock:

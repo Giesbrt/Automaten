@@ -1,6 +1,7 @@
 """Serialize an AutomatonData class to a file"""
 # Build-in
 from dataclasses import dataclass as _dq
+from io import StringIO
 import contextlib
 import threading
 import hashlib
@@ -25,6 +26,7 @@ from core.backend.data.automatonSettings import AutomatonSettings
 from PySide6.QtGui import QColor
 from dancer.data import beautify_json
 from dancer.system import os_open
+import msgpack
 import yaml
 
 # Standard typing imports for aps
@@ -95,7 +97,7 @@ class CustomPythonModule(SerializationModule):
         compressed: str = self._compress_python_code(stripped)
         data["extra_data"]["custom_python"] = {
             "full_hash_sha256": hashlib.sha256(self._content.encode("UTF-8")).digest(),
-            "compressed": compressed
+            "minimal_compressed": compressed
         }
         return data
 
@@ -143,6 +145,67 @@ def step_simulation(simulation: Simulation, step_size: int = 1,
     return True
 
 
+class AutomatonSession:
+    def __init__(self, automaton_data: "AutomatonData") -> None:
+        self._data: "AutomatonData" = automaton_data
+        self._simulation_result_lst: list = []
+
+        self._settings: AutomatonSettings | None = None
+
+    def _packet_notifier(self, simulation: Simulation, step_size: int,
+                         max_simulation_replay_steps: int,
+                         stopevent: threading.Event):
+        for i, step in list(enumerate(simulation.simulation_steps))[::step_size]:
+            self._simulation_result_lst.append(step)
+            if i + step_size >= max_simulation_replay_steps:
+                simulation.finished.set_value(True)
+                simulation.paused.set_value(True)
+                break
+        stopevent.set()
+
+    # TODO: Maybe work more closely with backend?
+    def start(self, input_tokens: list[str], notifier: _a.Callable[[dict[str, _ty.Any]], int], /, step_size: int = 1,
+                        max_simulation_replay_steps: int = 100) -> threading.Event:
+        """Starts the automaton async and returns a stop event when for when it has finished."""
+        if self._settings is None:
+            raise RuntimeError("You need to enter the context manager to use this method")
+        self._simulation_result_lst.clear()
+        token_lst: list[str] = self._data._token_lsts[0][0]  # TODO: What to do about custom options with the Tape?
+        for token in input_tokens:
+            if token not in token_lst:
+                raise InvalidParameterError(f"The input token '{token}' is not in the token list {token_lst}")
+        stopevent = threading.Event()
+        start_state_idx: int = self._data._get_index(self._data._states, self._data._start_state)
+        if start_state_idx == -1:
+            raise InvalidParameterError("You need to set a start state before starting the automaton")
+        sim_packet = SimulationStartPacket(
+            [(i, v) for i, v in enumerate(self._data._state_types)],
+            start_state_idx,
+            [
+                Transition(i, self._data._states.index(q1), self._data._states.index(q2), list(params)) for
+                i, (q1, q2, params) in enumerate(self._data._transitions)
+            ],
+            DefaultTape(input_tokens),  # TODO: What to do about custom options with the Tape?
+            self._data._automaton_type,
+            lambda simulation: self._packet_notifier(simulation, step_size, max_simulation_replay_steps, stopevent)
+        )
+        PacketManager().send_backend_packet(sim_packet)
+        print(f"packet send {PacketManager().has_backend_packets()}")
+        print("REPLAY START")
+        return stopevent
+
+    def __enter__(self) -> None:
+        with self._data._ensure_loaded() as (settings):
+            self._settings = settings
+            yield
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        self._automaton = None
+        self._settings = None
+        return False
+
+
+# TODO: Add input Y/n for auto adding tokens && Change beautify json
 class AutomatonData:
     def __init__(self, extensions: list[dict[str, _ts.ModuleType | str]], /,
                  base_extensions_dir: str) -> None:
@@ -161,8 +224,6 @@ class AutomatonData:
         self._transition_runtime_data: list[str] = []  # TODO: Manage together with transitions
         self._token_lsts: list[tuple[list[str], bool]] = []
 
-        self._simulation_result_lst: list = []
-
         if not os.path.isdir(base_extensions_dir):
             raise ValueError(f"The path '{base_extensions_dir}' for base_extension_dir is not a directory.")
         self._base_extension_dir: str = base_extensions_dir
@@ -174,11 +235,11 @@ class AutomatonData:
         except ValueError:
             return -1
 
-    def get_loaded_automaton_types(self) -> tuple[str, ...]:
+    def get_loaded_automaton_types(self) -> list[str]:
         return self._extensions.loaded_automatons
 
-    def get_loaded_automatons_state_types(self) -> tuple[str, ...]:
-        return tuple(self._settings.state_types)
+    def get_loaded_automatons_state_types(self) -> list[str]:
+        return self._settings.state_types
 
     def create(self, automaton_type: str) -> None:
         """Creates a new automaton of automaton_type"""
@@ -191,7 +252,6 @@ class AutomatonData:
         print(f"Creating automaton of type {automaton_type} ...")
         self._automaton_type = automaton_type
         auto_dict = self._extensions.get_automaton(automaton_type)
-        self._automaton = auto_dict[IAutomaton]  # TODO: Remove
         self._settings = auto_dict[AutomatonSettings]
         # self._automaton_uuid = self._settings.get_uuid()  # TODO:
         self._start_state = ""
@@ -200,7 +260,6 @@ class AutomatonData:
         self._transitions.clear()
         self._token_lsts.clear()
         self._token_lsts.extend(self._settings.token_lists)
-        self._simulation_result_lst.clear()
         self._loaded = True
 
     # TODO: Implement together with how to load module / extra data
@@ -215,7 +274,7 @@ class AutomatonData:
         elif not filepath.endswith((".au", ".json", ".yml", ".yaml")):
             raise InvalidParameterError("You need to select a valid automaton file.")
         print(f"Loading automaton from filepath {filepath} ...")
-        raise NotImplementedError("This option is currently not available")
+        data: AutomatonData = deserialize()
         auto_type: str = "tm"
         self.create(auto_type)
         self._states.extend(["a"])
@@ -259,16 +318,16 @@ class AutomatonData:
         self._loaded = False
 
     @contextlib.contextmanager
-    def _ensure_loaded(self) -> tuple[IAutomaton, AutomatonSettings]:
+    def _ensure_loaded(self) -> tuple[AutomatonSettings]:
         if not self._loaded:
             raise RuntimeError("You can't perform operations when there is no automaton loaded.")
-        elif self._automaton is None or self._settings is None:
-            raise RuntimeError("Unknown error occurred, internal _automaton or _settings is None while loaded.")
-        yield self._automaton, self._settings
+        elif self._settings is None:
+            raise RuntimeError("Unknown error occurred, internal _settings is None while loaded.")
+        yield self._settings
 
     def add_state(self, state_name: str | None = None) -> None:
         """Adds a state with the name state_name. If no name is provided, it uses an ascending name."""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             if state_name is None:
                 state_name = f"q{len(self._states)}"
                 print(f"Using ascending name '{state_name}'")
@@ -280,7 +339,7 @@ class AutomatonData:
             self._state_types.append(settings.state_types[0])  # TODO: Assuming idx 0 is the default
 
     def change_state_name(self, old_state_name: str, new_state_name: str) -> None:
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             if old_state_name not in self._states:
                 raise InvalidParameterError(f"State '{old_state_name}' does not exist.")
             elif new_state_name == "":
@@ -303,7 +362,7 @@ class AutomatonData:
 
     def set_start_state(self, state_name: str) -> None:
         """Sets the state with the name state_name to be the start state"""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             idx: int = self._states.index(state_name)
             if idx == -1:
                 raise InvalidParameterError(f"A state with the name '{state_name}' does not exist.")
@@ -311,7 +370,7 @@ class AutomatonData:
 
     def change_state_type(self, state_name: str, new_state_type: str) -> None:
         """Changes the state type of the state with the name state_name"""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             idx: int = self._states.index(state_name)
             if idx == -1:
                 raise InvalidParameterError(f"A state with the name '{state_name}' does not exist.")
@@ -323,7 +382,7 @@ class AutomatonData:
 
     def connect_states(self, q1: str, q2: str, params: tuple[str, ...]) -> None:
         """Connects states q1 and q2 together with the parameters params"""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             idx1: int = self._get_index(self._states, q1)
             idx2: int = self._get_index(self._states, q2)
             if idx1 == -1 or idx2 == -1:
@@ -341,7 +400,7 @@ class AutomatonData:
 
     def unconnect_states(self, q1: str, q2: str) -> None:
         """Unconnects states q1 and q2"""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             idx1: int = self._get_index(self._states, q1)
             idx2: int = self._get_index(self._states, q2)
             if idx1 == -1 or idx2 == -1:
@@ -356,7 +415,7 @@ class AutomatonData:
 
     def remove_state(self, state_name: str) -> None:
         """Removes the state with the name state_name"""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             try:
                 self._states.remove(state_name)
                 if state_name == self._start_state:
@@ -372,7 +431,7 @@ class AutomatonData:
 
     def add_token(self, token_lst_idx: int, token_name: str) -> None:
         """Adds token token_name to token list at token_lst_idx"""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             if token_lst_idx >= len(self._token_lsts):
                 raise InvalidParameterError(f"The token lst idx '{token_lst_idx}' is invalid.")
             token_lst: tuple[list[str], bool] = self._token_lsts[token_lst_idx]
@@ -382,7 +441,7 @@ class AutomatonData:
 
     def remove_token(self, token_lst_idx: int, token_name: str) -> None:
         """Removes token token_name to token list at token_lst_idx"""
-        with self._ensure_loaded() as (automaton, settings):
+        with self._ensure_loaded() as (settings):
             if token_lst_idx >= len(self._token_lsts):
                 raise InvalidParameterError(f"The token lst idx '{token_lst_idx}' is invalid.")
             token_lst: tuple[list[str], bool] = self._token_lsts[token_lst_idx]
@@ -393,45 +452,12 @@ class AutomatonData:
             except ValueError:
                 raise InvalidParameterError(f"Token '{token_name}' does not exist in the token list at idx {token_lst_idx}.")
 
-    def _packet_notifier(self, simulation, step_size: int,
-                         max_simulation_replay_steps: int,
-                         stopevent: threading.Event):
-        for i, step in list(enumerate(simulation.simulation_steps))[::step_size]:
-            self._simulation_result_lst.append(step)
-            if i + step_size >= max_simulation_replay_steps:
-                simulation.finished.set_value(True)
-                simulation.paused.set_value(True)
-                break
-        stopevent.set()
+    def session(self) -> AutomatonSession:
+        return AutomatonSession(self)
 
-    def start_automaton(self, input_tokens: list[str], /, step_size: int = 1,
-                        max_simulation_replay_steps: int = 100) -> threading.Event:
-        """Starts the automaton async and returns a stop event when for when it has finished."""
-        with self._ensure_loaded() as (automaton, settings):
-            token_lst: list[str] = self._token_lsts[0][0]  # TODO: What to do about custom options with the Tape?
-            for token in input_tokens:
-                if token not in token_lst:  # TODO: Raise error
-                    print(f"The input token '{token}' is not in the token list {token_lst}")
-            stopevent = threading.Event()
-            start_state_idx: int = self._get_index(self._states, self._start_state)
-            if start_state_idx == -1:
-                raise InvalidParameterError("You need to set a start state before starting the automaton")
-            sim_packet = SimulationStartPacket(
-                [(i, v) for i, v in enumerate(self._state_types)],
-                start_state_idx,
-                [
-                    Transition(i, self._states.index(q1), self._states.index(q2), list(params)) for
-                    i, (q1, q2, params) in enumerate(self._transitions)
-                ],
-                DefaultTape(input_tokens),  # TODO: What to do about custom options with the Tape?
-                self._automaton_type,
-                lambda simulation: self._packet_notifier(simulation, step_size, max_simulation_replay_steps, stopevent)
-            )
-            self._simulation_result_lst.clear()  # TODO: Maybe move to _packet_notifier?
-            PacketManager().send_backend_packet(sim_packet)
-            print(f"packet send {PacketManager().has_backend_packets()}")
-            print("REPLAY START")
-            return stopevent
+
+class AutomatonInterface:
+    ...
 
 
 def _verify_dcg_dict(target: dict[str, _ty.Any], tuple_as_lists: bool = False) -> bool:
@@ -493,7 +519,7 @@ def _verify_dcg_dict(target: dict[str, _ty.Any], tuple_as_lists: bool = False) -
         #     },
         #     "custom_python": {
         #         "full_hash_sha256": str,
-        #         "compressed": str
+        #         "minimal_compressed": str
         #     }
         # }
         "extra_data": {str: {str: object}}
@@ -579,7 +605,8 @@ def _serialize_to_yaml(serialisation_target: dict) -> bytes:
     if not isinstance(dump, str):
         raise RuntimeError("Yaml Dump did not result in str")
     return dump.encode("utf-8")
-def _serialize_to_binary(serialisation_target: dict) -> bytes: raise NotImplementedError()
+def _serialize_to_binary(serialisation_target: dict) -> bytes:
+    return msgpack.packb(serialisation_target)
 
 
 @_dq
@@ -667,9 +694,29 @@ def _deserialize_from_yaml(bytes_like: bytes) -> dict:
     if not isinstance(obj, dict):
         raise RuntimeError("Loaded yaml object is not in the right format")
     return obj
-def _deserialize_from_binary(bytes_like: bytes) -> dict: ...
+def _deserialize_from_binary(bytes_like: bytes) -> dict:
+    def _decode_bytes(obj: dict) -> dict | list | str | bytes:
+        """
+        Recursively convert all bytes (b'...') to strings in a data structure.
+        """
+        if isinstance(obj, dict):
+            return {_decode_bytes(k): _decode_bytes(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [_decode_bytes(item) for item in obj]
+        elif isinstance(obj, bytes):
+            try:
+                return obj.decode('utf-8')
+            except UnicodeDecodeError:
+                return obj  # Leave as bytes if not UTF-8
+        else:
+            return obj
+    unpacked_obj: _ty.Any = msgpack.unpackb(bytes_like)
+    if not isinstance(unpacked_obj, dict):
+        raise RuntimeError("Loaded au/messagepack object is not in the right format")
+    return _decode_bytes(unpacked_obj)
 
-def deserialize(automaton: AutomatonData, bytes_like: bytes,
-                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> str:
+def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
+                format_: _ty.Literal["json", "yaml", "binary"] = "json") -> tuple[AutomatonData, AutomatonInfo]:
     """TBA"""
+    data: AutomatonData = AutomatonData()
     raise NotImplementedError()  # Account for v0.5 (the old one)

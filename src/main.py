@@ -748,6 +748,14 @@ class App(DefaultAppGUIQt):
                                 input("You did not provide enough arguments")
                                 continue
                             params = literal_eval(raw_params)
+                            while True:
+                                for param, token_lst_idx in zip(params, self.automaton._settings.transition_description_layout):
+                                    token_lst: list[str] = self.automaton._token_lsts[token_lst_idx][0]
+                                    if param not in token_lst:
+                                        bool_inp = input(f"The token '{param}' is not in {token_lst}, do you want to add it? [Y/n]")
+                                        if bool_inp.lower() != "n":
+                                            self.automaton.add_token(token_lst_idx, param)
+                                break
                             self.automaton.connect_states(q1, q2, params)
                         except ValueError:
                             input("You did not pass valid strings as tokens in the tuple")

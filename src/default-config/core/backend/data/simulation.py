@@ -24,6 +24,8 @@ class Simulation:
     'complete_output' = Tape('current simulation tape')
     """
     simulation_end_cause: StaticContainer[tuple[bool, str]] = field(default_factory=lambda: StaticContainer())  # contents may be None if simulation has not finished
+    simulation_bulk_size: int = field(default=100)
+    current_bulk: int = field(default=0)
 
     def add_step(self, active_transitions: _ty.List[int],
                  active_states: _ty.List[int],
@@ -37,6 +39,9 @@ class Simulation:
         # self._notify()  # Remove for poc_one_callback.py, add for poc_step_callback.py
 
     def finish_simulation(self, success: bool = True, cause: str = "Simulation finished!") -> None:
+        if self.finished.get_value():
+            return
+
         self.finished.set_value(True)
         if not cause:
             raise TypeError("Attribute cause can not be None!")

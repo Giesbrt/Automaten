@@ -86,7 +86,7 @@ class UIAutomaton:
             return
 
     # General
-    def simulate(self, input_tape: _ITape) -> None:
+    def simulate(self, input_tape: _ITape, bulk_size: int = 100) -> None:
         state_ids: _ty.List[_ty.Tuple[int, str]] = [(state_id, self._states[state_id]) for state_id in self._states]
 
         error: str = f"Can send a simulation packet: "
@@ -111,23 +111,48 @@ class UIAutomaton:
                                                         self._transitions,
                                                         input_tape,
                                                         self._automaton_type,
-                                                        self._handle_simulation)
+                                                        self._handle_simulation,
+                                                        bulk_size)
 
         packet_manager: _PacketManager = _PacketManager()
         packet_manager.send_backend_packet(start_packet)
 
-    def _handle_simulation(self, simulation: _Simulation) -> None:
+    def _handle_simulation(self, simulation: _Simulation, step_size: int = 1) -> None:
         print("handle")
+        from time import perf_counter
 
         # TODO TEMP CODE
 
-        print("Replay...")
-        for i, step in enumerate(simulation.simulation_steps):
-            output = step["complete_output"]
-            state_id = step["active_states"]
+        while True:
+            res = self.step_simulation(simulation)
+            if not res and res is not None:
+                print("break")
+                break
 
-            print(i + 1, [output.get_tape()[k] for k in output.get_tape().keys()], f"State: {state_id[0] + 1}")
-            print(i + 1, f"  {' ' * 5 * output.get_pointer()}^")
+            if res is not None:
+                simulation.step_index = simulation.step_index + step_size
 
-        if simulation.finished.get_value():
+    def step_simulation(self, simulation: _Simulation,
+                        MAX_SIMULATION_REPLAY_STEPS: int = 100) -> bool | None:
+        """Returns None when waiting for new results"""
+
+        if (simulation.step_index >= MAX_SIMULATION_REPLAY_STEPS or
+                (simulation.step_index >= len(simulation.simulation_steps) and simulation.finished.get_value())):
+            simulation.finished.set_value(True)
             print(f"Simulation finished: {simulation.simulation_end_cause.get_value()}")
+            return False
+
+        if simulation.step_index >= len(simulation.simulation_steps):
+            # print(f"Waiting for new simulation steps {simulation.step_index}, {len(simulation.simulation_steps)}")
+            return None
+
+        i = simulation.step_index
+
+        step = simulation.simulation_steps[i]
+        output = step["complete_output"]
+        state_id = step["active_states"]
+
+        print(f"{i + 1} {len(simulation.simulation_steps)} {[output.get_tape()[k] for k in output.get_tape().keys()]} "
+              f"State: {state_id[0] + 1}")
+        print(f"{" " * len(str(i + 1))} {len(simulation.simulation_steps)}   {(' ' * 5 * output.get_pointer()) if output.get_pointer() > 0 else ' ' * 2}^")
+        return True

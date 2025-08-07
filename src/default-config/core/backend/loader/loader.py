@@ -7,8 +7,6 @@ from pathlib import Path as _Path
 from pprint import pprint
 from time import time, perf_counter
 
-# from dotenv import load_dotenv
-
 from core.backend.abstract.automaton.iautomaton import IAutomaton as _IAutomaton
 from core.backend.data.automatonSettings import AutomatonSettings as _Settings
 
@@ -211,6 +209,7 @@ class Loader:
 
 
 if __name__ == '__main__':
+    from dotenv import load_dotenv
     load_dotenv(r"../../.env")
 
     start = perf_counter()

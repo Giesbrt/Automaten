@@ -28,7 +28,8 @@ class BackendHandler:
                 packet: _packets.SimulationStartPacket = packet
 
                 simulation_signal: _Signal = _Signal(packet.get_notification_callback())
-                simulation: _Simulation = _Simulation(simulation_signal)
+                simulation: _Simulation = _Simulation(simulation_notification_signal=simulation_signal,
+                                                      simulation_bulk_size=packet.get_simulation_bulk_size())
 
                 data_packet: _packets.SimulationDataPacket = _packets.SimulationDataPacket(packet.get_packet_id(),
                                                                                            simulation.copy())

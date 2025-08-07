@@ -6,6 +6,10 @@ from core.backend.data.automatonSettings import AutomatonSettings as _AutomatonS
 from core.backend.data.simulation import Simulation
 from core.backend.default.defaultTape import DefaultTape
 
+# Standard typing imports for aps
+import abc as _abc
+import typing as _ty
+
 
 class DFA(iautomaton.IAutomaton):
 
@@ -29,10 +33,7 @@ class DFA(iautomaton.IAutomaton):
         found_transition: transition.Transition = suitable_transitions[0]
         return found_transition
 
-    def simulate(self, simulation: Simulation) -> None:
-        if not self.can_simulate():
-            print("can not simulate")
-            return
+    def _simulate(self, simulation: Simulation) -> _ty.Generator[None, _ty.Any, None]:
 
         current_state_id: int = self.get_start_state_id()
         simulation.add_step([],
@@ -56,6 +57,7 @@ class DFA(iautomaton.IAutomaton):
                                 [current_state_id],
                                 {current_state_id: self.get_state_type(current_state_id)},
                                 self.get_simulation_tape())
+            yield
 
         # Simulation finished
         simulation.finish_simulation()

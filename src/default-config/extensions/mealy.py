@@ -3,6 +3,10 @@ from core.backend.data.simulation import Simulation as _Simulation
 from core.backend.data.transition import Transition as _Transition
 from core.backend.data.automatonSettings import AutomatonSettings as _AutomatonSettings
 
+# Standard typing imports for aps
+import abc as _abc
+import typing as _ty
+
 
 class Mealy(iautomaton.IAutomaton):
 
@@ -29,10 +33,7 @@ class Mealy(iautomaton.IAutomaton):
         found_transition: _Transition = suitable_transitions[0]
         return found_transition
 
-    def simulate(self, simulation: _Simulation) -> None:
-        if not self.can_simulate():
-            print("can not simulate")
-            return
+    def _simulate(self, simulation: _Simulation) -> _ty.Generator[None, _ty.Any, None]:
 
         current_state_id: int = self.get_start_state_id()
         simulation.add_step([],
@@ -57,6 +58,7 @@ class Mealy(iautomaton.IAutomaton):
                                 [current_state_id],
                                 {current_state_id: self.get_state_type(current_state_id)},
                                 self.get_simulation_tape())
+            yield
 
         # Simulation finished
         simulation.finish_simulation()

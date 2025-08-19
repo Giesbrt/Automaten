@@ -862,7 +862,7 @@ def deserialize(bytes_like: bytes, modules: list[SerializationModule], /,
     if version == 0.5:
         if not _verify_dcg_dict(dcg_dict, dcg_0_5_rules, tuple_as_lists=True):
             raise RuntimeError("DCG Dict could not be verified")
-        name: str = dcg_dict["name"]  # type: ignore
+        name: str = dcg_dict["name"].lower()  # type: ignore
         author: str = dcg_dict["author"]  # type: ignore
         token_lsts: list[list[str]] = dcg_dict["token_lsts"]  # type: ignore
         is_custom_token_lst: list[bool] = dcg_dict["is_custom_token_lst"]  # type: ignore

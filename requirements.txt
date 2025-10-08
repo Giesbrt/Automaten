@@ -1,5 +1,5 @@
-pyside6~=6.8.1
-dncer>=0.0.0.1a9
+pyside6~=6.10.0
+dncer>=0.0.1.0b0
 aplustools[all]~=2.0.0.0
 stdlib_list~=0.11.0  # Bumped to support python3.13
 # returns>=0.24.0
@@ -8,7 +8,7 @@ pyinstaller  # Use newest version
 pyyaml~=6.0.1
 requests~=2.32.3
 urllib3~=2.5.0
-msgpack~=1.1.1
+msgpack~=1.1.2
 
 # Testing
-pytest~=8.3.5
+pytest~=8.4.1

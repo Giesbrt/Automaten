@@ -9,9 +9,9 @@ packages = [
 include-package-data = true
 package-dir = {"" = "src"}
 
-[tool.setuptools.package-data]
-"main-pkgs.data" = [
-]
+#[tool.setuptools.package-data]
+#"main-pkg.data" = [
+#]
 
 [tool.ruff]
 line-length = 88  # For PEP8 compliance

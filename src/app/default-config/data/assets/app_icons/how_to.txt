@@ -1,0 +1,3 @@
+https://pinetools.com/round-corners-image ;; radius: 90px, margin: 0px
+shrink to 30x30 for milli version
+https://convertio.co/png-ico/ for large version

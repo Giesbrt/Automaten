@@ -4,19 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = [
-  "main-pkg"
+  "mainpkg"
 ]
 include-package-data = true
 package-dir = {"" = "src"}
 
 #[tool.setuptools.package-data]
-#"main-pkg.data" = [
+#"mainpkg.data" = [
 #]
 
 [tool.ruff]
 line-length = 88  # For PEP8 compliance
 exclude = [
-    "src/main-pkg/tests/*",
+    "src/mainpkg/tests/*",
     "scripts/*"
 ]
 
@@ -24,12 +24,12 @@ exclude = [
 select = ["E", "F"]
 ignore = ["E501", "F401", "F403"]  # E501 Line length checks for now; F401 & F403 because they are used for type checking
 exclude = [
-    "src/main-pkg/tests/*",
+    "src/mainpkg/tests/*",
     "scripts/*",
 ]
 
 [project]
-name = "main-pkg"
+name = "mainpkg"
 version = "2.0.0.2"
 dependencies = ["packaging", "pywin32>=306; os_name == 'nt'", "cachetools>=5.5.0", "typing_extensions"]
 requires-python = ">= 3.10"

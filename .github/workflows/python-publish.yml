@@ -1,0 +1,10 @@
+name: Upload compiled executable for Windows, macOS and generic GNU/Linux
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:

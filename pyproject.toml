@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+  "main-pkg"
+]
+include-package-data = true
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+"main-pkgs.data" = [
+]
+
+[tool.ruff]
+line-length = 88  # For PEP8 compliance
+exclude = [
+    "src/main-pkg/tests/*",
+    "scripts/*"
+]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501", "F401", "F403"]  # E501 Line length checks for now; F401 & F403 because they are used for type checking
+exclude = [
+    "src/main-pkg/tests/*",
+    "scripts/*",
+]
+
+[project]
+name = "main-pkg"
+version = "2.0.0.2"
+dependencies = ["packaging", "pywin32>=306; os_name == 'nt'", "cachetools>=5.5.0", "typing_extensions"]
+requires-python = ">= 3.10"
+authors = [
+  {name = "Cariel Becker", email = "cariel.becker@gmx.de"},
+]
+maintainers = [
+  {name = "Cariel Becker", email = "cariel.becker@gmx.de"},
+]
+description = "A collection of helpful tools"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "LGPL-2.1-or-later"
+keywords = ["general", "tools", "app tools", "production", "apt"]
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Programming Language :: Python",
+	"Natural Language :: English"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "coverage", "pre-commit", "ruff", "pdoc>=14.0"]
+all = [
+  "numpy>=1.26.4",
+  "requests>=2.32.0",
+  "BeautifulSoup4>=4.12.2",
+  "pytest",
+  "PySide6>=6.7.0"
+]
+
+[project.urls]
+Home = "https://github.com/giesbrt/automaten/"
+Repository = "https://github.com/giesbrt/automaten"
+Documentation = "https://github.com/giesbrt/automaten/wiki"
+"Issue tracker" = "https://github.com/giesbrt/automaten/issues"
+
+#[tool.pytest.ini_options]
+## This is equivalent to setup_requires and tests_require
+## Add your pytest configuration here
+#addopts = "your pytest options"
+
+#[project.scripts]
+#aps = "aplustools._cli:_cli"

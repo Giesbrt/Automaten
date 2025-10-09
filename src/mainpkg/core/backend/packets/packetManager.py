@@ -1,5 +1,5 @@
 from core.backend.abstract.ipacket import IPacket as _IPacket
-from core.libs.utils.threadSafeList import ThreadSafeList
+from core.utils.threadSafeList import ThreadSafeList
 from queue import Queue
 
 # Standard typing imports for aps

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QApplication, QMainWindow
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
-from core.libs.utils.OrderedSet import OrderedSet
+from core.utils.OrderedSet import OrderedSet
 # from automaton.base.QAutomatonInputWidget import QAutomatonInputOutput
 
 # Standard typing imports for aps

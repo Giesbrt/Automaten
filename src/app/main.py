@@ -4,7 +4,6 @@ import multiprocessing
 
 # Third party imports
 import stdlib_list
-import mainpkg
 from dancer import package
 
 hiddenimports = list(stdlib_list.stdlib_list())

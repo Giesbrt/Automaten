@@ -1,6 +1,6 @@
 from core.backend.abstract.automaton.iautomaton import IAutomaton as _IAutomaton, IAutomaton
 from core.backend.data.automatonSettings import AutomatonSettings as _Settings, AutomatonSettings
-from core.libs.utils.singleton import singleton
+from core.utils.singleton import singleton
 
 import threading
 

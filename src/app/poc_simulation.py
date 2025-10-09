@@ -14,7 +14,7 @@ from core.backend.loader.automatonProvider import AutomatonProvider
 from core.backend.loader.loader import Loader
 from core.backend.packets.packetManager import PacketManager as _PacketManager
 from core.backend.packets.simulationPackets import SimulationStartPacket
-from core.libs.utils.staticSignal import SignalCache
+from core.utils.staticSignal import SignalCache
 
 import keyboard
 

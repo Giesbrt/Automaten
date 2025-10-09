@@ -38,7 +38,7 @@ from dancer.io import IOManager
 # from extensions_loader import Extensions_Loader
 from core.backend.loader.loader import Loader
 from core.backend.backend import start_backend, BackendType
-from core.libs.utils.staticSignal import SignalCache
+from core.utils.staticSignal import SignalCache
 
 from core.modules.new_serializer import AutomatonInterface, InvalidParameterError
 

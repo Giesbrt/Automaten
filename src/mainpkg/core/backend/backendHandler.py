@@ -3,7 +3,7 @@ from core.backend.abstract.automaton.iautomaton import IAutomaton as _IAutomaton
 from core.backend.data.simulation import Simulation as _Simulation
 from core.backend.packets import simulationPackets as _packets
 from core.backend.packets.packetManager import PacketManager as _PacketManager
-from core.libs.utils.staticSignal import Signal as _Signal
+from core.utils.staticSignal import Signal as _Signal
 from core.backend.loader.automatonProvider import AutomatonProvider as _AutomatonProvider
 
 from time import perf_counter

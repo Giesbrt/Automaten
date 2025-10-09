@@ -1,9 +1,9 @@
 
 from dataclasses import dataclass, field
 from core.backend.abstract.automaton.itape import ITape as _Tape
-from core.libs.utils.staticSignal import Signal as _Signal
-from core.libs.utils.threadSafeList import ThreadSafeList
-from core.libs.utils.staticContainer import StaticContainer
+from core.utils.staticSignal import Signal as _Signal
+from core.utils.threadSafeList import ThreadSafeList
+from core.utils.staticContainer import StaticContainer
 import uuid as _uuid4
 
 # Standard typing imports for aps

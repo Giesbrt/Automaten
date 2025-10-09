@@ -52,11 +52,17 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pytest", "coverage", "pre-commit", "ruff", "pdoc>=14.0"]
 all = [
-  "numpy>=1.26.4",
-  "requests>=2.32.0",
-  "BeautifulSoup4>=4.12.2",
-  "pytest",
-  "PySide6>=6.7.0"
+    "pyside6~=6.10.0",
+    "dncer>=0.0.1.0b0",
+    "aplustools[all]~=2.0.0.0",
+    "stdlib_list~=0.11.0",  # Bumped to support python3.13
+    "auto-py-to-exe",  # Use newest version
+    "pyinstaller",  # Use newest version
+    "pyyaml~=6.0.1",
+    "requests~=2.32.3",
+    "urllib3~=2.5.0",
+    "msgpack~=1.1.2",
+    "pytest~=8.4.1"  # Testing
 ]
 
 [project.urls]

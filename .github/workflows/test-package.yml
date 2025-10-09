@@ -59,7 +59,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        coverage run --data-file=data.coverage -m pytest src/main-pkg/tests
+        coverage run --data-file=data.coverage -m pytest src/mainpkg/tests
 
     - name: Upload coverage data
       uses: actions/upload-artifact@v4

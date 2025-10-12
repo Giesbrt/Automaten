@@ -26,8 +26,13 @@ if [ ! -f "$flake_root/flake.nix" ]; then
   exit 1
 fi
 
-target_dir="src/default-config/core/extra-libs"  # Where the other packages will go
+target_dir="src/app/default-config/config/extra-libs"  # Where the other packages will go
 project_root="$(dirname "$(pwd)")"  # Because for me this is in ./scripts
+
+venv="$project_root/.nixpy/.venv"
+if [ -d "$venv" ]; then
+  confirm_and_rm "$venv"
+fi
 
 confirm_and_rm "$project_root/.nixpy"
 mkdir -p "$project_root/.nixpy/bin"
@@ -40,13 +45,10 @@ chmod +x "$project_root/.nixpy/bin/python"
 echo "Successfully created nixpy interpreter from flake.nix"
 
 # Install extra requirements
-if [ -d .venv ]; then
-  confirm_and_rm .venv
-fi
-python -m venv .venv
+python -m venv "$venv"
 echo "Created .venv"
 echo "Installing extra requirements"  # We create a venv so we can upgrade pip
-. .venv/bin/activate  # As . is more universal than source
+. "$venv/bin/activate"  # As . is more universal than source
 python -m pip install --upgrade pip  # We upgrade pip so we are sure to have the target flag
 echo "$project_root/requirements.txt"
 if [ -f "$project_root/requirements.txt" ]; then
@@ -83,6 +85,7 @@ echo "Collecting Nix-flake provided packages..."
 nix_pkgs=$(nix --extra-experimental-features 'nix-command flakes' develop "$flake_root" --command python -m pip list --format=freeze | cut -d= -f1 | tr '[:upper:]' '[:lower:]')
 
 echo "Cleaning up duplicates from $target_dir..."
+mkdir -p "$project_root/$target_dir"
 cd "$project_root/$target_dir"
 
 for nix_pkg in $nix_pkgs; do
@@ -95,9 +98,8 @@ done
 if [ -d "$project_root/$target_dir" ]; then
   confirm_and_rm "$project_root/$target_dir"
 fi
-mkdir -p "$project_root/$target_dir"
 cd "$flake_root"
-venv_site=$(find .venv/lib -type d -path "*/site-packages" | head -n 1)
+venv_site=$(find "$venv/lib" -type d -path "*/site-packages" | head -n 1)
 
 if [ -d "$venv_site" ]; then
   echo "Copying packages from $venv_site to $project_root/$target_dir..."
@@ -108,6 +110,6 @@ else
   exit 1
 fi
 
-confirm_and_rm .venv
+# confirm_and_rm .venv
 
 echo "Done."

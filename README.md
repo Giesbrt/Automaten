@@ -1,3 +1,8 @@
+[![Active Development](https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
+[![CI Test Status](https://github.com/giesbrt/automaten/actions/workflows/test-package.yml/badge.svg)](https://github.com/giesbrt/automaten/actions)
+[![License: LGPL-2.1](https://img.shields.io/github/license/giesbrt/automaten)](https://github.com/giesbrt/automaten/blob/main/LICENSE)
+![coverage](https://raw.githubusercontent.com/giesbrt/automaten/refs/heads/main/coverage-badge.svg)
+
 # N.E.F.S.' Simulator
 
 <p float="center">

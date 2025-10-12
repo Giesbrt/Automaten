@@ -1,15 +1,7 @@
 """TBA"""
 from importlib.resources import files as _files, as_file as _as_file
 from argparse import ArgumentParser as _ArgumentParser
-import sys
 import os
-
-# This is done because on NixOS installing dancer, ... with numpy, ... is not possible (pip vs flake)
-# because of that we install numpy, ... using flake and then install dancer, ... using pip into extra-libs,
-# so we need to load it here.
-extra_libs = "./default-config/config/extra-libs"
-os.makedirs(extra_libs, exist_ok=True)
-sys.path.append(extra_libs)  # We append it to make sure the flakes are prioritized
 
 from dancer import config
 
@@ -34,8 +26,8 @@ app_info = config.AppConfig(
     "nefs_simulator",
     1400, "b4",
     {"Windows": [config.OSEntry("11", ("24H2",), ("any",))],
-     "Linux": [config.OSEntry("6.12.37", (r".*NixOS.*",), ("any",))],
-     "Darwin": [config.OSEntry("24.6.0", (r"Darwin Kernel Version 24\.6\.0.*",), ("arm64",))]},
+     "Linux": [config.OSEntry(r"6\.12\..*", (r".*NixOS.*",), ("any",))],
+     "Darwin": [config.OSEntry(r"24\.6\..*", (r"Darwin Kernel Version 24\.6\.0.*",), ("arm64",))]},
     {"Windows": [config.OSEntry("10", ("any",), ("any",)), config.OSEntry("11", ("any",), ("any",))],
      "Linux": [config.OSEntry(r"6\.\d+\.\d+(-[a-zA-Z0-9])?", ("any",), ("any",))],
      "Darwin": [config.OSEntry(r"24\.\d+\.\d+(-[a-zA-Z0-9])?", ("any",), ("any",))]},

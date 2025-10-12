@@ -1,5 +1,5 @@
-pyside6~=6.10.0
-dncer>=0.0.1.0b0
+pyside6~=6.8.1
+dncer>=0.0.1.0b1
 aplustools[all]~=2.0.0.0
 stdlib_list~=0.11.0  # Bumped to support python3.13
 # returns>=0.24.0

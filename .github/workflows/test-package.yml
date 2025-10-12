@@ -106,7 +106,7 @@ jobs:
       run: python scripts/generate_coverage_badge.py
 
     - name: Commit and push coverage badge
-      if: github.ref == 'refs/heads/main'
+      # if: github.ref == 'refs/heads/main'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |

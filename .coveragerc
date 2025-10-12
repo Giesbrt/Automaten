@@ -4,6 +4,3 @@ source =
     */aplustools/src/aplustools
     */work/aplustools/aplustools/src/aplustools
     D:\a\aplustools\aplustools\src\aplustools
-[report]
-omit =
-    */__init__.py

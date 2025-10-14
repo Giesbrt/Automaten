@@ -3,6 +3,10 @@ branch = True
 source = src/mainpkg
 relative_files = True
 
+[report]
+include = src/mainpkg/**
+show_missing = True
+
 [paths]
 source =
     src/mainpkg

@@ -5,6 +5,9 @@ import multiprocessing
 import sys
 import os
 
+cwd: str = os.path.dirname(__file__)
+os.chdir(cwd)
+
 # This is done because on NixOS installing dancer, ... with numpy, ... is not possible (pip vs flake)
 # because of that we install numpy, ... using flake and then install dancer, ... using pip into extra-libs,
 # so we need to load it here.

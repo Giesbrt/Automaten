@@ -1,0 +1,6 @@
+@echo off
+
+echo Installing/Checking Packages ...
+call ../../.venv/scripts/activate.bat
+py -m pip install -r ../../requirements.txt
+echo Done ...

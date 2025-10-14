@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+  "mainpkg"
+]
+include-package-data = true
+package-dir = {"" = "src"}
+
+#[tool.setuptools.package-data]
+#"mainpkg.data" = [
+#]
+
+[tool.ruff]
+line-length = 88  # For PEP8 compliance
+exclude = [
+    "src/mainpkg/tests/*",
+    "scripts/*"
+]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501", "F401", "F403"]  # E501 Line length checks for now; F401 & F403 because they are used for type checking
+exclude = [
+    "src/mainpkg/tests/*",
+    "scripts/*",
+]
+
+[project]
+name = "mainpkg"
+version = "1400b4"
+dependencies = ["packaging", "typing_extensions"]
+requires-python = ">= 3.10"
+authors = [
+  {name = "Cariel Becker", email = "cariel.becker@gmx.de"},
+]
+maintainers = [
+  {name = "Cariel Becker", email = "cariel.becker@gmx.de"},
+]
+description = "A collection of helpful tools"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "LGPL-2.1-or-later"
+keywords = ["general", "tools", "app tools", "production", "apt"]
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Programming Language :: Python",
+	"Natural Language :: English"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "coverage", "pre-commit", "ruff", "pdoc>=14.0"]
+all = [
+    "pyside6~=6.8.1",
+    "dncer>=0.0.1.0b0",
+    "aplustools[all]~=2.0.0.3",
+    "stdlib_list~=0.11.0",  # Bumped to support python3.13
+    "auto-py-to-exe",  # Use newest version
+    "pyinstaller",  # Use newest version
+    "pyyaml~=6.0.1",
+    "requests~=2.32.3",
+    "urllib3~=2.5.0",
+    "msgpack~=1.1.2",
+    "pytest~=8.4.1"  # Testing
+]
+
+[project.urls]
+Home = "https://github.com/giesbrt/automaten/"
+Repository = "https://github.com/giesbrt/automaten"
+Documentation = "https://github.com/giesbrt/automaten/wiki"
+"Issue tracker" = "https://github.com/giesbrt/automaten/issues"
+
+#[tool.pytest.ini_options]
+## This is equivalent to setup_requires and tests_require
+## Add your pytest configuration here
+#addopts = "your pytest options"
+
+#[project.scripts]
+#aps = "aplustools._cli:_cli"

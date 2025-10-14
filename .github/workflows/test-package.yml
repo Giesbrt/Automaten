@@ -1,0 +1,122 @@
+name: CI Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['src/**']
+  push:
+    branches: [main]
+    paths: ['src/**']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3  # Updated to v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4  # Updated to v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Upgrade pip and install mainpkg with all optional and dev dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[all,dev]
+
+    - name: Prepare test_data directory (macOS/Linux)
+      if: runner.os != 'Windows'
+      run: |
+        DIR=test_data
+        if [ -d "$DIR" ]; then
+          echo "Clearing directory $DIR..."
+          rm -rf "$DIR"
+        fi
+        echo "Creating directory $DIR..."
+        mkdir "$DIR"
+
+    - name: Prepare test_data directory (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        $dir = "test_data"
+        if (Test-Path $dir) {
+          Write-Host "Clearing directory $dir..."
+          Remove-Item -Recurse -Force $dir
+        }
+        Write-Host "Creating directory $dir..."
+        New-Item -ItemType Directory -Force -Path $dir
+
+    - name: Run tests with coverage
+      run: |
+        coverage run --data-file=data.coverage -m pytest src/mainpkg/tests
+
+    - name: Upload coverage data
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
+        path: data.coverage
+
+  coverage-summary:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install coverage tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install coverage
+
+    - name: Download all coverage artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: coverages
+
+    - name: Rename data.coverage to .coverage and combine coverage data
+      run: |
+        mkdir combined
+        i=0
+        for file in $(find coverages -type f -name 'data.coverage'); do
+          cp "$file" "combined/.coverage.$i"
+          i=$((i + 1))
+        done
+        coverage combine --rcfile=.coveragerc combined/
+        coverage json -o coverage.json
+        coverage report
+
+    - name: Generate coverage badge
+      run: python scripts/generate_coverage_badge.py
+
+    - name: Commit and push coverage badge
+      if: github.ref == 'refs/heads/main'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+
+        git pull --ff-only
+
+        git add coverage-badge.svg
+        git diff --cached --quiet && echo "No changes to commit" || (
+          git commit -m "Update unified coverage badge"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
+          git push origin HEAD
+        )

@@ -1,10 +1,14 @@
-PySide6-Essentials~=6.8.1
-aplustools[all]~=2.0.0.0a12  # 2.0.0.0b2  >>> Should fix binary problems and fix db problems (turn on WAL mode) but old binary files will be incompatible
-stdlib_list~=0.10.0
-returns>=0.24.0
-auto-py-to-exe==2.44.2
-pyinstaller~=6.7.0
-PyYAML~=6.0.1
-pytest~=8.3.5
+pyside6~=6.8.1
+dncer>=0.0.1.0b1
+aplustools[all]~=2.0.0.3
+stdlib_list~=0.11.0  # Bumped to support python3.13
+# returns>=0.24.0
+auto-py-to-exe  # Use newest version
+pyinstaller  # Use newest version
+pyyaml~=6.0.1
 requests~=2.32.3
-urllib3~=2.3.0
+urllib3~=2.5.0
+msgpack~=1.1.2
+
+# Testing
+pytest~=8.4.1

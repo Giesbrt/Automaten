@@ -4,10 +4,10 @@ repos:
   hooks:
     - id: ruff-check  # Run the linter
       types_or: [python, pyi]
-      args: [src/aplustools, --fix, --quiet]
+      args: [src/mainpkg, --fix, --quiet]
     - id: ruff-format  # Run the formatter
       types_or: [python, pyi]
-      args: [src/aplustools]
+      args: [src/mainpkg]
 ci:
     autofix_commit_msg: |
         [pre-commit.ci] auto fixes from pre-commit.com hooks
